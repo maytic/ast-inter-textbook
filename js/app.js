@@ -1827,6 +1827,24 @@
   }
 
   /* ---- QUIZ ------------------------------------------------------ */
+  function sectionPages(id) {
+    var s = (D.sections || []).filter(function (x) { return x.id === id; })[0];
+    return s && s.pages ? s.pages : "";
+  }
+  // A "revisit the reading" line for a quiz question — page ref + a button
+  // that opens the section in a new tab so the quiz in this tab is preserved.
+  function quizSourceLine(sectionId) {
+    var pg = sectionPages(sectionId);
+    return h("div", { class: "q-source" }, [
+      h("span", { text: "From Section " + sectionId + (pg ? " · " + pg + " (printed book)" : "") }),
+      h("button", { class: "btn small ghost", text: "Reread this section ↗",
+        title: "Opens the reading in a new tab so your quiz stays where it is",
+        onclick: function () {
+          window.open(location.pathname + location.search + "#/s/" + sectionId, "_blank", "noopener");
+        } })
+    ]);
+  }
+
   function renderQuiz() {
     pageTitle("Self-Test Quiz");
     var v = h("div", { class: "view" });
@@ -1909,6 +1927,7 @@
                 document.createTextNode((correctChoice ? correctChoice.text + " — " : "") + q.explain)
               ]));
             }
+            explainBox.appendChild(quizSourceLine(q.section));
             var nb = h("button", { class: "btn primary", text: idx === qs2.length - 1 ? "See results →" : "Next question →" });
             nb.addEventListener("click", function () {
               idx++;
@@ -1960,7 +1979,9 @@
                 "You picked: " + q._picked.text + (q._picked.why ? " — " + q._picked.why : "") }) : null,
               h("div", { class: "ri-line ri-correct", text: "Answer: " + correct.text }),
               h("div", { class: "ri-line", style: "color:var(--text-dim)", text: q.explain }),
-              h("button", { class: "btn small ghost", style: "margin-top:8px", text: "Go to section " + q.section, onclick: function () { go("s/" + q.section); } })
+              h("button", { class: "btn small ghost", style: "margin-top:8px",
+                text: "Reread Section " + q.section + (sectionPages(q.section) ? " · " + sectionPages(q.section) : ""),
+                onclick: function () { go("s/" + q.section); } })
             ]));
           });
           host.appendChild(rev);

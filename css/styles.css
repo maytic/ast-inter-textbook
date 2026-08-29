@@ -1037,6 +1037,16 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 }
 .q-explain.ok { border-left-color: var(--good); }
 .q-explain.no { border-left-color: var(--bad); }
+.q-source {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+.q-source .btn { flex: none; }
 .quiz-nav { margin-top: 18px; display: flex; justify-content: flex-end; }
 
 .quiz-result { text-align: center; }
