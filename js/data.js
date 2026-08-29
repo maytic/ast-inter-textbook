@@ -17,7 +17,10 @@
     chapter: 1,
     chapterTitle: "Science and the Universe: A Brief Tour",
     license: "Content adapted from OpenStax Astronomy 2e, CC BY 4.0.",
-    sourceUrl: "https://openstax.org/books/astronomy-2e/pages/1-introduction"
+    sourceUrl: "https://openstax.org/books/astronomy-2e/pages/1-introduction",
+    // Printed book page numbers (the number shown at the foot of each PDF page).
+    // In the "astronomy-2e_-_WEB (1).pdf" file, the PDF file-page = book page + 18.
+    pages: "pp. 13–29"
   };
 
   // interactive study tools available for this chapter
@@ -33,6 +36,7 @@
       id: "1.1",
       title: "The Nature of Astronomy",
       minutes: 3,
+      pages: "p. 13",
       html:
         '<p><span class="term">Astronomy</span> is the study of the objects that lie beyond our planet ' +
         'Earth and the processes by which these objects interact with one another. But it is more than a ' +
@@ -66,6 +70,7 @@
       id: "1.2",
       title: "The Nature of Science",
       minutes: 5,
+      pages: "pp. 13–15",
       html:
         '<p>The ultimate judge in science is always what nature itself reveals through observations, ' +
         'experiments, models, and testing. Science is <strong>not merely a body of knowledge</strong> but ' +
@@ -118,6 +123,7 @@
       id: "1.3",
       title: "The Laws of Nature",
       minutes: 3,
+      pages: "p. 15",
       html:
         '<p>Over centuries, scientists have extracted <span class="term">scientific laws</span> from ' +
         'countless observations, hypotheses, and experiments &mdash; the &ldquo;rules&rdquo; of the game ' +
@@ -155,6 +161,7 @@
       id: "1.4",
       title: "Numbers in Astronomy",
       minutes: 4,
+      pages: "pp. 15–17",
       html:
         '<p>Astronomy deals with numbers larger than most people ever meet. Two tools make them ' +
         'manageable.</p>' +
@@ -195,6 +202,7 @@
       id: "1.5",
       title: "Consequences of Light Travel Time",
       minutes: 3,
+      pages: "pp. 17–18",
       html:
         '<p>Information about the universe reaches us almost only through light, and all light travels at ' +
         'the same speed &mdash; one light-year every year. This sets a limit on how quickly we can learn ' +
@@ -228,6 +236,7 @@
       id: "1.6",
       title: "A Tour of the Universe",
       minutes: 8,
+      pages: "pp. 18–23",
       html:
         '<p>A brief tour, from home outward.</p>' +
         '<h4>Earth</h4>' +
@@ -309,6 +318,7 @@
       id: "1.7",
       title: "The Universe on the Large Scale",
       minutes: 5,
+      pages: "pp. 23–27",
       html:
         '<p>Think of the solar system as your house and the Galaxy as your town. Just as the world holds ' +
         'many towns, the universe holds enormous numbers of <span class="term">galaxies</span>. We define ' +
@@ -358,6 +368,7 @@
       id: "1.8",
       title: "The Universe of the Very Small",
       minutes: 5,
+      pages: "pp. 27–28",
       html:
         '<p>The universe is extraordinarily large and extraordinarily <strong>empty</strong> &mdash; on ' +
         'average about 10,000 times emptier than our Galaxy, and the Galaxy itself is mostly empty. Air ' +
@@ -408,6 +419,7 @@
       id: "1.9",
       title: "A Conclusion and a Beginning",
       minutes: 3,
+      pages: "pp. 28–29",
       html:
         '<p>Newcomers often finish this tour with mixed feelings &mdash; fascination, plus a little ' +
         'overload from all the new words and ideas. Learning astronomy is like learning a language: ' +

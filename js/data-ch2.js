@@ -14,10 +14,47 @@
     chapter: 2,
     chapterTitle: "Observing the Sky: The Birth of Astronomy",
     license: "Content adapted from OpenStax Astronomy 2e, CC BY 4.0.",
-    sourceUrl: "https://openstax.org/books/astronomy-2e/pages/2-introduction"
+    sourceUrl: "https://openstax.org/books/astronomy-2e/pages/2-introduction",
+    // Printed book page numbers (the number shown at the foot of each PDF page).
+    // In the "astronomy-2e_-_WEB (1).pdf" file, the PDF file-page = book page + 18.
+    pages: "pp. 32–58"
   };
 
-  CH.tools = [];
+  CH.tools = ["astronomers"];
+
+  /* ------------------------------------------ MATCH: WHO DID WHAT */
+  /* The figures of Chapter 2 and the one thing each is best known for
+     here. "did" is short so it fits a matching-game tile; "more" adds
+     the dates and detail for the Learn tab. */
+  CH.astronomers = [
+    { name: "Pythagoras",
+      did: "Suggested Earth should be a sphere",
+      more: "Greek thinker of about 2,500 years ago who prized circles and spheres as the “perfect” forms and said Earth should have that shape; belief in a round Earth may trace back to him." },
+    { name: "Aristarchus of Samos",
+      did: "Suggested that Earth moves around the Sun",
+      more: "310–230 BCE. Centuries before Copernicus he argued for a Sun-centered cosmos, but almost no one followed him." },
+    { name: "Aristotle",
+      did: "Showed Earth is round from its curved shadow on the Moon",
+      more: "384–322 BCE. Also noted that travelers see new stars as they head south, and reasoned the Sun is farther away than the Moon." },
+    { name: "Eratosthenes",
+      did: "Measured the size of the whole Earth from two noon shadows",
+      more: "276–194 BCE, in Alexandria. The 7° gap between the noon Sun at Syene and at Alexandria is 1/50 of a circle — enough to size the planet." },
+    { name: "Hipparchus",
+      did: "Made a star catalog and discovered precession",
+      more: "About 150 BCE, on Rhodes. Catalogued ~850 stars, invented the brightness (magnitude) scale, and found that Earth's axis slowly wobbles." },
+    { name: "Ptolemy",
+      did: "Explained planet motion with circles-on-circles (epicycles)",
+      more: "About 140 CE, in Alexandria. His book the Almagest put each planet on an epicycle riding a deferent around a still Earth; it lasted over 1,000 years." },
+    { name: "Copernicus",
+      did: "Revived the Sun-centered model of the solar system",
+      more: "1473–1543. De Revolutionibus (1543) put the Sun in the middle, made Earth just another planet, and explained retrograde motion with no epicycles." },
+    { name: "Galileo",
+      did: "Turned a telescope on the sky — Jupiter's moons, the phases of Venus",
+      more: "1564–1642. Founder of experimental science; his telescope evidence tipped the balance to the Sun-centered model and got him tried by the Inquisition." },
+    { name: "Hans Lippershey",
+      did: "Made the 1608 “spyglass” that first drew notice",
+      more: "Dutch spectacle-maker (1570–1619). His spyglass was the first to attract wide attention; Galileo heard of it, rebuilt one far stronger, and pointed it upward." }
+  ];
 
   /* --------------------------------------------------------------- SECTIONS */
   CH.sections = [
@@ -25,6 +62,7 @@
       id: "2.1",
       title: "The Sky Above",
       minutes: 8,
+      pages: "pp. 32–41",
       html:
         '<p>Look up on a clear night and it really seems like Earth is sitting still in the middle of ' +
         'everything, with the whole sky turning around us. That idea is called the ' +
@@ -154,6 +192,7 @@
       id: "2.2",
       title: "Ancient Astronomy",
       minutes: 10,
+      pages: "pp. 41–48",
       html:
         '<h4>Sky-watchers all over the world</h4>' +
         '<p>Long before the Greeks, people everywhere were watching the sky to keep a calendar and to find ' +
@@ -281,6 +320,7 @@
       id: "2.3",
       title: "Astrology and Astronomy",
       minutes: 6,
+      pages: "pp. 48–52",
       html:
         '<p>Lots of ancient people believed the planets and stars were gods, or stood for gods &mdash; ' +
         'powerful beings who decided what happened in your life. So watching the sky was not just curiosity; ' +
@@ -366,6 +406,7 @@
       id: "2.4",
       title: "The Birth of Modern Astronomy",
       minutes: 10,
+      pages: "pp. 52–58",
       html:
         '<p>Not much new happened in astronomy in Europe during the Middle Ages. But scholars in the Islamic ' +
         'world, and Jewish scholars too, kept the old Greek astronomy alive &mdash; copying it, translating ' +
@@ -677,6 +718,38 @@
         "Getting the sun sign right doesn't make the personality description accurate.",
         "The sense of accuracy comes from vague, personal-sounding wording, not from any real alignment."],
       explain: "94% of people recognized themselves in a mass murderer's horoscope presented as a personal reading." },
+    { section: "2.3", q: "Natal astrology — the kind that reads your personal birth chart — took its familiar form with:",
+      choices: ["The Greeks by the 2nd century BCE, reaching its peak with Ptolemy's Tetrabiblos", "Copernicus, in De Revolutionibus", "The Maya, who based it on the planet Venus", "Hipparchus, who cast the first horoscope"],
+      answer: 0,
+      whyWrong: [null,
+        "Copernicus was an astronomer working on the Sun-centered model — his book has nothing to do with astrology.",
+        "The Maya did track Venus closely, but the personal birth-chart tradition comes from the Greeks and Ptolemy.",
+        "Hipparchus catalogued stars and discovered precession; he did not found natal astrology."],
+      explain: "Astrology began in Babylon ~2,500 years ago about kings and nations; the Greeks made it personal, and it peaked with Ptolemy's Tetrabiblos — still astrology's main rulebook." },
+    { section: "2.3", q: "In astrology, your “sun sign” is:",
+      choices: ["The 30°-wide zodiac slice the Sun occupied on your birthday", "The constellation that was directly overhead when you were born", "The constellation the Sun was really in on your birthday", "The planet nearest the Sun at the moment of your birth"],
+      answer: 0,
+      whyWrong: [null,
+        "The sun sign tracks the Sun's place along the zodiac, not whatever happened to be overhead.",
+        "Because of precession the calendar slice and the true constellation have drifted about one slot apart — the sign is the slice, not the real constellation.",
+        "No planet is involved in the sun sign; it is just the Sun's zodiac slice."],
+      explain: "Astrology cuts the zodiac into 12 signs of 30° each; your sun sign is the slice the Sun sat in on your birth date." },
+    { section: "2.3", q: "Tests checking birth signs against Olympic medalists, executives, officials, and re-enlisting Marines found that the signs:",
+      choices: ["Were spread evenly, with no power to predict success at all", "Clustered strongly in the fire signs", "Predicted the person's career but not their success", "Matched personality about 60% of the time"],
+      answer: 0,
+      whyWrong: [null,
+        "No clustering showed up — the distribution came out flat.",
+        "The studies found no predictive power of any kind, for career or for success.",
+        "Full-horoscope studies of thousands of people came out just as blank — not 60%."],
+      explain: "Hundreds of tests — including one where 22 readings were reversed and still accepted 95% of the time — show no real predictive effect." },
+    { section: "2.3", q: "Calling astrology a “pseudoscience” means that it:",
+      choices: ["Looks like science but has no testable, evidence-based support", "Is an early, now-outdated form of astronomy", "Works, but only for certain people", "Was disproven by one famous experiment"],
+      answer: 0,
+      whyWrong: [null,
+        "Astrology is not a rough draft of astronomy — it makes no successful predictions and never did.",
+        "Controlled tests find it works for no one; the feeling of accuracy comes from vague, personal-sounding wording.",
+        "It is the weight of hundreds of studies, not any single experiment, that sinks it."],
+      explain: "Astrology's real gift was getting people to learn the patterns of the sky — and out of that grew the actual science, astronomy." },
     { section: "2.4", q: "Copernicus's key claim in De Revolutionibus was that:",
       choices: ["Earth is a planet and all the planets orbit the Sun", "The Sun orbits Earth in an ellipse", "The planets move on epicycles around the Sun", "Earth is motionless at the center of the universe"],
       answer: 0,

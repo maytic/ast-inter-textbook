@@ -45,7 +45,8 @@
     light:    ["t/light", "Light Travel Time", "Turn any distance into look-back time"],
     calendar: ["t/calendar", "Cosmic Calendar", "13.8 billion years compressed into one year"],
     scale:    ["t/scale", "Cosmic Scale", "Step from Earth to the most distant quasars"],
-    elements: ["t/elements", "Element Abundance", "The cosmic ‘greatest hits’ of the periodic table"]
+    elements: ["t/elements", "Element Abundance", "The cosmic ‘greatest hits’ of the periodic table"],
+    astronomers: ["t/astronomers", "Match the Astronomers", "Pair each sky-watcher with what they did"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -516,7 +517,10 @@
 
   /* ============================================================= RENDERERS */
 
-  function pageTitle(t) { crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Chapter " + D.meta.chapter + " &middot; " + t; }
+  function pageTitle(t) {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Chapter " + D.meta.chapter + " &middot; " + t;
+    document.title = "Astronomy 2e · Ch. " + D.meta.chapter + " — " + t;
+  }
 
   /* ---- DASHBOARD (all chapters) ------------------------------------- */
   function renderDashboard() {
@@ -548,7 +552,7 @@
         h("div", { class: "ch-title", text: c.meta.chapterTitle }),
         h("div", { class: "ch-meta", text:
           total + " sections · " + (c.glossary ? c.glossary.length : 0) + " terms" +
-          (toolCount ? " · " + toolCount + " tools" : "") }),
+          (toolCount ? " · " + toolCount + (toolCount === 1 ? " tool" : " tools") : "") }),
         h("div", { class: "bar" }, h("span", { style: "width:" + pct + "%" })),
         h("div", { class: "ch-cta" }, [
           h("span", { class: "ch-go", text: pct === 100 ? "Review ✓" : started ? "Continue" : "Start" }),
@@ -572,6 +576,12 @@
     v.appendChild(h("p", { class: "lede", text:
       "Work through the " + D.sections.length + " sections, review the key ideas and self-checks, then " +
       "test yourself with flashcards and the quiz." }));
+    if (D.meta.pages) {
+      v.appendChild(h("p", { class: "src-ref", html:
+        "Adapted from <a href=\"" + (D.meta.sourceUrl || "https://openstax.org/books/astronomy-2e") +
+        "\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, Chapter " + D.meta.chapter +
+        " — <b>" + D.meta.pages + "</b> of the printed book (PDF file-page = book page + 18)" }));
+    }
 
     var read = readSet().length;
     var flash = flashKnownCount();
@@ -588,7 +598,8 @@
       tiles.appendChild(h("button", { class: "tile", onclick: function () { go("s/" + s.id); } }, [
         h("div", { class: "t-num", text: "SECTION " + s.id }),
         h("div", { class: "t-title", text: s.title }),
-        h("div", { class: "t-meta", text: "~" + s.minutes + " min read · " + s.keyIdeas.length + " key ideas" }),
+        h("div", { class: "t-meta", text: "~" + s.minutes + " min read · " + s.keyIdeas.length + " key ideas" +
+          (s.pages ? " · " + s.pages : "") }),
         isRead(s.id) ? h("div", { class: "t-check", text: "✓ reviewed" }) : null
       ]));
     });
@@ -622,6 +633,12 @@
     var v = h("div", { class: "view" });
     v.appendChild(h("div", { class: "eyebrow", text: "Section " + s.id + " · ~" + s.minutes + " min" }));
     v.appendChild(h("h1", { text: s.title }));
+    if (s.pages) {
+      v.appendChild(h("p", { class: "src-ref", html:
+        "<a href=\"" + (D.meta.sourceUrl || "https://openstax.org/books/astronomy-2e") +
+        "\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, §" + s.id + " — " +
+        "<b>" + s.pages + "</b> of the printed book" }));
+    }
 
     var prose = h("div", { class: "prose", html: s.html });
     v.appendChild(prose);
@@ -1614,6 +1631,56 @@
     mount(v);
   }
 
+  /* ---- MATCH THE ASTRONOMERS (Ch. 2) ----------------------------- */
+  function renderAstronomers() {
+    pageTitle("Match the Astronomers");
+    var people = D.astronomers || [];
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "Who did what?" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "The people of Chapter 2 built the story step by step — from the first guess that Earth is a ball to " +
+      "the telescope that ended the argument. Read them over, then match each one to what they did." }));
+
+    var dl = h("dl", { class: "astro-list" });
+    people.forEach(function (p) {
+      dl.appendChild(h("dt", { text: p.name }));
+      dl.appendChild(h("dd", {}, [h("b", { text: p.did + ". " }), document.createTextNode(p.more)]));
+    });
+    var learn = h("div", { class: "card" }, dl);
+
+    var matchInner = h("div");
+    var matchWrap = h("div", { style: "display:none" }, [
+      h("p", { class: "tool-intro",
+        text: "Tap a name on the left and a deed on the right. Six of the nine each round." }),
+      matchInner
+    ]);
+    function newMatch() {
+      clear(matchInner);
+      if (people.length < 3) {
+        matchInner.appendChild(h("div", { class: "card", text: "Not enough people to play." }));
+        return;
+      }
+      var pairs = shuffle(people.slice()).slice(0, Math.min(6, people.length)).map(function (p) {
+        return { a: p.name, b: p.did };
+      });
+      renderMatchGame(matchInner, pairs, {
+        leftLabel: "Astronomer", rightLabel: "What they did", onRestart: newMatch
+      });
+    }
+
+    v.appendChild(segControl(["Learn", "Match game"], 0, function (idx) {
+      stopMatch();
+      var gameMode = idx === 1;
+      learn.style.display = gameMode ? "none" : "";
+      matchWrap.style.display = gameMode ? "" : "none";
+      if (gameMode) newMatch();
+    }));
+    v.appendChild(learn);
+    v.appendChild(matchWrap);
+    mount(v);
+  }
+
   /* ---- FLASHCARDS -------------------------------------------------- */
   function flashMap() { return store.get("flash", {}); }
   function flashKnownCount() {
@@ -1764,7 +1831,7 @@
     pageTitle("Self-Test Quiz");
     var v = h("div", { class: "view" });
     v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
-    v.appendChild(h("h1", { text: "Chapter 1 self-test" }));
+    v.appendChild(h("h1", { text: "Chapter " + D.meta.chapter + " self-test" }));
 
     var best = store.get("quizBest", null);
     var bestFrac = store.get("quizBestFrac", null);
@@ -1911,7 +1978,7 @@
     pageTitle("Glossary");
     var v = h("div", { class: "view" });
     v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
-    v.appendChild(h("h1", { text: "Chapter 1 glossary" }));
+    v.appendChild(h("h1", { text: "Chapter " + D.meta.chapter + " glossary" }));
     v.appendChild(h("p", { class: "tool-intro", text: D.glossary.length + " terms, grouped by section. Use these as your flashcard deck too." }));
 
     D.sections.forEach(function (s) {
@@ -2016,7 +2083,9 @@
     mainEl.appendChild(viewNode);
     mainEl.appendChild(h("div", { class: "attribution", html:
       "Content adapted from <a href=\"https://openstax.org/books/astronomy-2e\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, " +
-      "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use." }));
+      "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use.<br>" +
+      "Page numbers cite the printed book (shown at the foot of each PDF page). In " +
+      "<span class=\"mono\">astronomy-2e_-_WEB (1).pdf</span>, the PDF file-page number = book page + 18." }));
     // every view starts at the top — otherwise a short view (e.g. a study tool)
     // opened while scrolled down inside a long section looks "scrolled to the bottom"
     window.scrollTo(0, 0);
@@ -2034,7 +2103,8 @@
     "t/light": ["light", function () { renderLight(); }],
     "t/calendar": ["calendar", function () { renderCalendar(); }],
     "t/scale": ["scale", function () { renderScale(); }],
-    "t/elements": ["elements", function () { renderElements(); }]
+    "t/elements": ["elements", function () { renderElements(); }],
+    "t/astronomers": ["astronomers", function () { renderAstronomers(); }]
   };
 
   function route() {

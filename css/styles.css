@@ -544,6 +544,19 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 
 /* ----- Tools shared ---------------------------------------------------- */
 .tool-intro { color: var(--text-dim); margin-bottom: 18px; }
+.astro-list { margin: 0; }
+.astro-list dt {
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 14px;
+}
+.astro-list dt:first-child { margin-top: 0; }
+.astro-list dd {
+  margin: 3px 0 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.astro-list dd b { color: var(--text); }
 .field {
   display: flex;
   flex-direction: column;
@@ -1074,6 +1087,16 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
   padding-top: 16px;
 }
 .attribution a { color: var(--text-dim); }
+.attribution .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; }
+
+/* ----- Source / page-number reference line --------------------------- */
+.src-ref {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: -4px 0 18px;
+}
+.src-ref b { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.src-ref a { color: var(--text-dim); }
 
 /* ----- Tooltip for glossary terms ------------------------------------- */
 .term-pop {
