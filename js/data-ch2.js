@@ -56,6 +56,55 @@
       more: "Dutch spectacle-maker (1570–1619). His spyglass was the first to attract wide attention; Galileo heard of it, rebuilt one far stronger, and pointed it upward." }
   ];
 
+  /* ------------------------------------------------------------- FIGURES
+     Images from OpenStax Astronomy 2e (CC BY 4.0), placed in the matching
+     sections via <div data-figure="N.N"></div>. Captions are the book's
+     own, with credit lines intact. Files in img/ (downscaled for web). */
+  CH.figures = {
+    "2.4": {
+      file: "fig-2-4.jpg",
+      title: "Circling the South Celestial Pole",
+      alt: "A time-exposure photograph in which stars appear as semi-circular arcs around the south celestial pole, with telescope domes silhouetted against the sky.",
+      caption: "This long-exposure photo shows trails left by stars as a result of the apparent rotation of the celestial sphere around the south celestial pole. (In reality, it is Earth that rotates.) (credit: ESO/Iztok Bončina)"
+    },
+    "2.8": {
+      file: "fig-2-8.jpg",
+      title: "Orion",
+      alt: "Left: a 17th-century Hevelius engraving of Orion the hunter with the constellation's stars overlaid. Right: a photograph of the same patch of sky, with the three belt stars circled.",
+      caption: "(a) The winter constellation of Orion, the hunter, is surrounded by neighboring constellations, as illustrated in the seventeenth-century atlas by Hevelius. (b) A photograph shows the Orion region in the sky. Note the three blue stars that make up the belt of the hunter. The bright red star above the belt denotes his armpit and is called Betelgeuse (pronounced “Beetel-juice”). The bright blue star below the belt is his foot and is called Rigel. (credit a: modification of work by Johannes Hevelius; b: modification of work by Matthew Spinelli)"
+    },
+    "2.9": {
+      file: "fig-2-9.jpg",
+      title: "Earth’s Round Shadow",
+      alt: "A multiple-exposure photo of a lunar eclipse: Earth's curved shadow sweeps across the full Moon from one side to the other, the Moon glowing dull red at mid-eclipse.",
+      caption: "A lunar eclipse occurs when the Moon moves into and out of Earth’s shadow. Note the curved shape of the shadow—evidence for a spherical Earth that has been recognized since antiquity. (credit: modification of work by Brian Paczkowski)"
+    },
+    "2.15": {
+      file: "fig-2-15.jpg",
+      title: "Zodiac Signs",
+      alt: "A medieval woodcut showing artistic renderings of the twelve zodiac constellations, each labelled with its name and astrological symbol.",
+      caption: "The signs of the zodiac are shown in a medieval woodcut."
+    },
+    "2.16": {
+      file: "fig-2-16.jpg",
+      title: "Nicolaus Copernicus (1473–1543)",
+      alt: "A painted portrait of Nicolaus Copernicus.",
+      caption: "Copernicus was a cleric and scientist who played a leading role in the emergence of modern science. Although he could not prove that Earth revolves about the Sun, he presented such compelling arguments for this idea that he turned the tide of cosmological thought and laid the foundations upon which Galileo and Kepler so effectively built in the following century."
+    },
+    "2.19": {
+      file: "fig-2-19.jpg",
+      title: "Galileo Galilei (1564–1642)",
+      alt: "A painted portrait of Galileo Galilei.",
+      caption: "Galileo advocated that we perform experiments or make observations to ask nature its ways. When Galileo turned the telescope to the sky, he found things were not the way philosophers had supposed."
+    },
+    "2.20": {
+      file: "fig-2-20.jpg",
+      title: "Telescope Used by Galileo",
+      alt: "A photograph of one of Galileo's telescopes: a long, slender, decorated wooden tube.",
+      caption: "The telescope has a wooden tube covered with paper and a lens 26 millimeters across."
+    }
+  };
+
   /* --------------------------------------------------------------- SECTIONS */
   CH.sections = [
     {
@@ -120,6 +169,7 @@
         '<em>south</em> celestial pole never come up at all. Right now there happens to be a star, ' +
         '<span class="term">Polaris</span>, sitting almost exactly on the north celestial pole, so it barely ' +
         'moves while everything else wheels around it.</p>' +
+        '<div data-figure="2.4"></div>' +
         '<p class="callout-inline"><strong>Measuring the sky with angles.</strong> A full circle is ' +
         '360&deg;. The dome of the sky, from one horizon up over your head to the opposite horizon, is half ' +
         'of that: 180&deg;. The full Moon is about <strong>half a degree</strong> wide &mdash; roughly the ' +
@@ -158,6 +208,7 @@
         '<p>Under a really dark sky you can see about <strong>3,000 stars</strong>. To find their way ' +
         'around, people in every culture connected the dots into pictures &mdash; you probably know the Big ' +
         'Dipper and Orion the hunter with his three-star belt. Different cultures saw different pictures.</p>' +
+        '<div data-figure="2.8"></div>' +
         '<p>In the early 1900s, astronomers made it official. Today a <span class="term">constellation</span> ' +
         'is not really a picture at all &mdash; it is <strong>one of 88 boxes that carve up the entire ' +
         'sky</strong>, with straight borders running north&ndash;south and east&ndash;west, so that every ' +
@@ -222,6 +273,7 @@
         'before, and the North Star sinks closer to the horizon. On a flat Earth everyone would see the same ' +
         'stars overhead. This only works if the ground curves.</li>' +
         '</ul>' +
+        '<div data-figure="2.9"></div>' +
         '<p>Aristotle also worked out that the Sun is farther away than the Moon, because now and then the ' +
         'Moon slides right in front of the Sun and blocks it &mdash; a <span class="term">solar ' +
         'eclipse</span>.</p>' +
@@ -346,6 +398,7 @@
         '30&deg; wide, and each named after the constellation that used to sit in that slice. When someone ' +
         'asks &ldquo;what&rsquo;s your sign?&rdquo;, they mean your <strong>sun sign</strong> &mdash; the ' +
         'slice the Sun was in on your birthday.</p>' +
+        '<div data-figure="2.15"></div>' +
         '<p>But there is a problem. It has been more than <strong>2,000 years</strong> since those slices ' +
         'got their names, and in that time <span class="term">precession</span> &mdash; Earth&rsquo;s slow ' +
         'wobble &mdash; has dragged the real star pictures <strong>almost a whole slice to the west</strong>. ' +
@@ -424,6 +477,7 @@
         'planets circle the Sun, and only the Moon circles Earth. He laid it all out in a book, ' +
         '<em>De Revolutionibus Orbium Coelestium</em> (&ldquo;On the Revolutions of the Heavenly ' +
         'Spheres&rdquo;), published in <strong>1543</strong> &mdash; the year he died.</p>' +
+        '<div data-figure="2.16"></div>' +
         '<p>He kept one old idea &mdash; that everything moves in perfect circles &mdash; but he threw out ' +
         'the idea that Earth had to be the center. People argued: <em>if Earth were moving, wouldn&rsquo;t ' +
         'we feel it? Wouldn&rsquo;t things fly off, and a dropped ball land off to the side?</em> Copernicus ' +
@@ -464,6 +518,7 @@
         'taught at the universities of Pisa and Padua, then became mathematician to the Grand Duke of ' +
         'Tuscany in Florence. He was one of the first people to really <strong>do experiments and careful ' +
         'measurements</strong> instead of just reasoning things out.</p>' +
+        '<div data-figure="2.19"></div>' +
         '<p>His biggest work was about <strong>motion</strong>. Everyone assumed that sitting still was the ' +
         '&ldquo;natural&rdquo; state of things, and that anything moving would naturally stop. Galileo ' +
         'showed that is backwards. Slide a block across a rough floor and it stops &mdash; but that is ' +
@@ -482,6 +537,7 @@
         '<strong>1616</strong> the Church formally declared the Sun-centered idea &ldquo;false and ' +
         'absurd&rdquo; and not to be taught or defended.</p>' +
         '<h4>Galileo points a telescope at the sky</h4>' +
+        '<div data-figure="2.20"></div>' +
         '<p>Nobody is sure who first thought of putting two pieces of glass together to make far things look ' +
         'near. The first &ldquo;spyglasses&rdquo; people noticed were made in <strong>1608</strong> by a ' +
         'Dutch eyeglass-maker, <strong>Hans Lippershey</strong>. Galileo heard about it and &mdash; without ' +

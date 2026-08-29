@@ -26,6 +26,68 @@
   // interactive study tools available for this chapter
   ASTRO.tools = ["sci", "round", "light", "calendar", "scale", "elements"];
 
+  /* ------------------------------------------------------------- FIGURES
+     Photographs from OpenStax Astronomy 2e (CC BY 4.0), placed in the
+     matching sections via <div data-figure="N.N"></div>. Each caption is
+     the book's own caption and keeps its credit line. Image files live
+     in img/ (downscaled from openstax.org for web use). */
+  ASTRO.figures = {
+    "1.3": {
+      file: "fig-1-3.jpg",
+      title: "Stellar Corpse",
+      alt: "The Crab Nebula supernova remnant: an oblong region of diffuse light with delicate wisps and tendrils of gas expanding into the blackness of space.",
+      caption: "We observe the remains of a star that was seen to explode in our skies in 1054 (and was, briefly, bright enough to be visible during the daytime). Today, the remnant is called the Crab Nebula and its central region is seen here. Such exploding stars are crucial to the development of life in the universe. (credit: NASA, ESA, J. Hester (Arizona State University))"
+    },
+    "1.4": {
+      file: "fig-1-4.jpg",
+      title: "Orion Nebula",
+      alt: "Photograph of the Orion Nebula: large areas and bright swirls of glowing gas clouds crisscrossed by dark bands of dust.",
+      caption: "This beautiful cloud of cosmic raw material (gas and dust from which new stars and planets are being made) called the Orion Nebula is about 1400 light-years away. That’s a distance of roughly 1.34×10¹⁶ kilometers—a pretty big number. The gas and dust in this region are illuminated by the intense light from a few extremely energetic adolescent stars. (credit: NASA, ESA, M. Robberto (Space Telescope Science Institute/ESA) and the Hubble Space Telescope Orion Treasury Project Team)"
+    },
+    "1.6": {
+      file: "fig-1-6.jpg",
+      title: "Humanity’s Home Base",
+      alt: "Composite satellite image of Earth showing North and South America, the Atlantic and Pacific Oceans, and scattered cloud formations.",
+      caption: "This image shows the Western hemisphere as viewed from space 35,400 kilometers (about 22,000 miles) above Earth. Data about the land surface from one satellite was combined with another satellite’s data about the clouds to create the image. (credit: modification of work by R. Stockli, A. Nelson, F. Hasler, NASA/ GSFC/ NOAA/ USGS)"
+    },
+    "1.9": {
+      file: "fig-1-9.jpg",
+      title: "Spiral Galaxy",
+      alt: "A barred-spiral galaxy: an elongated central bar of stars with spiral arms twisting outward from each end.",
+      caption: "This galaxy of billions of stars, called by its catalog number NGC 1073, is thought to be similar to our own Milky Way Galaxy. Here we see the giant wheel-shaped system with a bar of stars across its middle. (credit: NASA, ESA)"
+    },
+    "1.10": {
+      file: "fig-1-10.jpg",
+      title: "Milky Way Galaxy",
+      alt: "The night sky showing the Milky Way as a dense band of stars, with the silhouette of a person standing beneath it.",
+      caption: "Because we are inside the Milky Way Galaxy, we see its disk in cross-section flung across the sky like a great milky white avenue of stars with dark “rifts” of dust. In this dramatic image, part of it is seen above Trona Pinnacles in the California desert. (credit: Ian Norman)"
+    },
+    "1.11": {
+      file: "fig-1-11.jpg",
+      title: "Star Cluster",
+      alt: "A Hubble image of the globular star cluster M9: a dense circular grouping of stars that thins dramatically toward the edges.",
+      caption: "This large star cluster is known by its catalog number, M9. It contains some 250,000 stars and is seen more clearly from space using the Hubble Space Telescope. It is located roughly 25,000 light-years away. (credit: NASA, ESA)"
+    },
+    "1.12": {
+      file: "fig-1-12.jpg",
+      title: "Neighbor Galaxies",
+      alt: "The ALMA radio-telescope array at night, with the Large and Small Magellanic Clouds as two diffuse patches of light above the horizon.",
+      caption: "This image shows both the Large Magellanic Cloud and the Small Magellanic Cloud above the telescopes of the Atacama Large Millimeter/Submillimeter Array (ALMA) in the Atacama Desert of northern Chile. (credit: ESO, C. Malin)"
+    },
+    "1.13": {
+      file: "fig-1-13.jpg",
+      title: "Closest Spiral Galaxy",
+      alt: "The Andromeda Galaxy seen almost edge-on: an oval patch of light with a bright nucleus and dark dust bands along its edges.",
+      caption: "The Andromeda galaxy (M31) is a spiral-shaped collection of stars similar to our own Milky Way. (credit: Adam Evans)"
+    },
+    "1.14": {
+      file: "fig-1-14.jpg",
+      title: "Cluster of Galaxies",
+      alt: "A rich cluster of galaxies, with many elliptical and spiral galaxies scattered across the frame.",
+      caption: "This image shows part of a rich cluster of galaxies some 4 billion light-years away. Nicknamed Pandora's Cluster, the grouping consists of many galaxies, each with billions of stars in them. (credit: NASA, ESA, and J. Lotz, M. Mountain, A. Koekemoer, and the HFF Team (STScI))"
+    }
+  };
+
   /* ---------------------------------------------------------------------------
      SECTIONS
      Each: id, title, minutes (approx read time), html (study text),
@@ -50,6 +112,7 @@
         'The universe manufactured the carbon, calcium, and oxygen needed to build something as ' +
         'complicated as you. Tracing those evolutionary processes is one of the central tasks of modern ' +
         'astronomy.</p>' +
+        '<div data-figure="1.3"></div>' +
         '<p>We learn about the cosmos almost entirely from the &ldquo;messages&rdquo; it sends us &mdash; ' +
         'chiefly <strong>starlight</strong>. Decoding the message of starlight has been a central ' +
         'challenge and triumph of the field.</p>',
@@ -182,6 +245,7 @@
         'kilometers. Even the nearest star beyond the Sun, Proxima Centauri, is 4.25 light-years away ' +
         '(more than 40 trillion km). Naked-eye stars are hundreds to thousands of light-years away; the ' +
         'Orion Nebula is about 1400 light-years away.</p>' +
+        '<div data-figure="1.4"></div>' +
         '<p class="callout-inline"><strong>Worked example.</strong> A net worth of $79.2 billion = ' +
         '$79,200,000,000 = <strong>$7.92&nbsp;&times;&nbsp;10<sup>10</sup></strong>. And a light-year ' +
         '&asymp; 9.46&nbsp;&times;&nbsp;10<sup>12</sup> km &mdash; a string that long could wrap ' +
@@ -243,6 +307,7 @@
         '<p>A nearly spherical planet about 13,000 km in diameter, distinguished from its neighbors by ' +
         'abundant liquid water covering roughly two-thirds of its crust. Radio and TV signals, and city ' +
         'lights at night, would reveal sentient life to a passing traveler.</p>' +
+        '<div data-figure="1.6"></div>' +
         '<h4>The Moon</h4>' +
         '<p>Earth&rsquo;s satellite and nearest neighbor. Distance about 384,000 km &mdash; roughly 30 ' +
         'Earth diameters &mdash; and it takes about a month to orbit. Its diameter is 3476 km, about ' +
@@ -275,6 +340,7 @@
         'others). The Sun is one of <strong>hundreds of billions</strong> of its stars. Star counts by ' +
         'radius from the Sun: ~10 stars within 10 light-years; ~10,000 within 100 light-years; ~10 million ' +
         'within 1000 light-years; the whole Galaxy within 100,000 light-years.</p>' +
+        '<div data-figure="1.10"></div>' +
         '<p>The Galaxy is a giant disk with a central bulge; from outside it would look like a spiral, its ' +
         'arms traced by blue light from hot young stars. The Sun sits somewhat less than 30,000 ' +
         'light-years from the center, in an undistinguished spot. We cannot see across the Galaxy in ' +
@@ -282,12 +348,14 @@
         '<span class="term">interstellar dust</span>; built up over thousands of light-years, the dust ' +
         'blocks distant starlight like smog. These gas-and-dust clouds are the raw material for future ' +
         'stars.</p>' +
+        '<div data-figure="1.9"></div>' +
         '<h4>Dark matter</h4>' +
         '<p>Much of the Galaxy is <span class="term">dark matter</span> &mdash; material we cannot ' +
         'observe directly. We know it is there from the gravitational pull it exerts on visible stars and ' +
         'gas; its composition and total amount remain a mystery, and it is part of other star groupings ' +
         'too.</p>' +
         '<h4>Multiple stars, clusters, and star death</h4>' +
+        '<div data-figure="1.11"></div>' +
         '<p>Many stars are born in double or triple systems orbiting each other, which lets us measure ' +
         'properties single stars cannot reveal. Where many stars form together we see ' +
         '<span class="term">star clusters</span> &mdash; the largest hold hundreds of thousands of stars ' +
@@ -332,15 +400,18 @@
         'three are gravitationally bound satellites of the Milky Way and may eventually be swallowed by ' +
         'it. (A <span class="term">constellation</span> is one of the 88 sections into which astronomers ' +
         'divide the sky, each named for a star pattern.)</p>' +
+        '<div data-figure="1.12"></div>' +
         '<p>The <strong>nearest large galaxy</strong> is the <span class="term">Andromeda galaxy ' +
         '(M31)</span>, a spiral like ours, a little more than 2 million light-years away. With the Milky ' +
         'Way it belongs to the <span class="term">Local Group</span> &mdash; a cluster of more than 50 ' +
         'galaxies.</p>' +
+        '<div data-figure="1.13"></div>' +
         '<p>Farther out: small galaxy groups at 10&ndash;15 million light-years; at about 50 million ' +
         'light-years, systems with thousands of members. Galaxies occur mostly in ' +
         '<span class="term">clusters</span>. Some clusters gather into ' +
         '<span class="term">superclusters</span>; the Local Group belongs to the ' +
         '<strong>Virgo Supercluster</strong>, about 110 million light-years across.</p>' +
+        '<div data-figure="1.14"></div>' +
         '<p>At still greater distances, ordinary galaxies fade and we find <span class="term">quasars ' +
         '</span> &mdash; brilliant galaxy centers powered by gas heated to millions of degrees as it falls ' +
         'toward a massive <strong>black hole</strong>. Quasars are the most distant beacons we can see, ' +

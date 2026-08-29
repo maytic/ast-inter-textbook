@@ -652,6 +652,21 @@
       });
     }
 
+    // swap in any textbook figures the section HTML asks for (OpenStax, CC BY 4.0)
+    qsa("[data-figure]", prose).forEach(function (el) {
+      var num = el.getAttribute("data-figure");
+      var fig = (D.figures || {})[num];
+      if (!fig) { el.parentNode && el.parentNode.removeChild(el); return; }
+      var fc = h("figure", { class: "tb-figure" }, [
+        h("img", { src: "img/" + fig.file, alt: fig.alt || fig.title, loading: "lazy" }),
+        h("figcaption", {}, [
+          h("b", { text: "Figure " + num + " · " + fig.title + ". " }),
+          document.createTextNode(fig.caption)
+        ])
+      ]);
+      el.parentNode.replaceChild(fc, el);
+    });
+
     v.appendChild(h("div", { class: "key-ideas" }, [
       h("h3", { text: "Key ideas" }),
       h("ul", {}, s.keyIdeas.map(function (k) { return h("li", { text: k }); }))
@@ -2104,7 +2119,8 @@
     mainEl.appendChild(viewNode);
     mainEl.appendChild(h("div", { class: "attribution", html:
       "Content adapted from <a href=\"https://openstax.org/books/astronomy-2e\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, " +
-      "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use.<br>" +
+      "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use. " +
+      "Photographs are from the same book (downscaled for the web); each keeps its original caption and credit line.<br>" +
       "Page numbers cite the printed book (shown at the foot of each PDF page). In " +
       "<span class=\"mono\">astronomy-2e_-_WEB (1).pdf</span>, the PDF file-page number = book page + 18." }));
     // every view starts at the top — otherwise a short view (e.g. a study tool)

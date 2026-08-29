@@ -1133,6 +1133,29 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 }
 .scrim.show { display: block; }
 
+/* ----- Textbook figures (OpenStax photos) -------------------------- */
+.tb-figure {
+  margin: 22px 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.tb-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #05070d;
+}
+.tb-figure figcaption {
+  padding: 10px 14px 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+.tb-figure figcaption b { color: var(--text); font-weight: 600; }
+
 /* ----- Inline interactive diagrams ---------------------------------- */
 .diagram {
   margin: 20px 0;
