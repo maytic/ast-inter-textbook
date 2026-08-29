@@ -1,8 +1,8 @@
 /* =============================================================================
    Astronomy 2e — Chapter 2: Observing the Sky: The Birth of Astronomy
-   Study content. Text adapted from OpenStax "Astronomy 2e" (Chapter 2),
-   licensed CC BY 4.0.  https://openstax.org/books/astronomy-2e
-   Registers into window.ASTRO_CHAPTERS[2].
+   Study content, reworded in plain language (every fact, name, date, and number
+   kept). Text adapted from OpenStax "Astronomy 2e" (Chapter 2), CC BY 4.0.
+   https://openstax.org/books/astronomy-2e   Registers into window.ASTRO_CHAPTERS[2].
    ============================================================================= */
 (function () {
   "use strict";
@@ -17,7 +17,6 @@
     sourceUrl: "https://openstax.org/books/astronomy-2e/pages/2-introduction"
   };
 
-  // no chapter-specific interactive tools yet
   CH.tools = [];
 
   /* --------------------------------------------------------------- SECTIONS */
@@ -27,97 +26,126 @@
       title: "The Sky Above",
       minutes: 8,
       html:
-        '<p>Our senses suggest that Earth sits at the center of the universe, with the heavens turning ' +
-        'around it. This <span class="term">geocentric</span> (Earth-centered) view seemed simple and ' +
-        'self-evident, and almost everyone believed it until the European Renaissance. It is also wrong. ' +
-        'Overthrowing it is one of the great themes of our intellectual history.</p>' +
-        '<h4>The celestial sphere</h4>' +
-        '<p>On a clear night far from city lights, the sky looks like a great hollow dome with you at the ' +
-        'center and every star the same distance away on its surface. The point straight overhead is your ' +
-        '<span class="term">zenith</span>; where the dome meets the ground is your ' +
-        '<span class="term">horizon</span>. Stars rise in the east, arc across the dome, and set in the ' +
-        'west. Watching night after night, you might conclude that the sky is a giant ' +
-        '<span class="term">celestial sphere</span> turning around you &mdash; which is exactly what the ' +
-        'early Greeks thought (some imagined a real crystal sphere with the stars set into it like jewels).</p>' +
-        '<p>Today we know it is <strong>Earth that turns</strong>, once every 24 hours, on an ' +
-        '<strong>axis</strong> through its North and South Poles. The stars are not on a dome at all but at ' +
-        'wildly different distances. Still, the celestial sphere is a handy bookkeeping device. As it ' +
-        '&ldquo;turns,&rdquo; star patterns keep their shapes (the Big Dipper looks the same all night), and ' +
-        'even the planets seem fixed against the stars over a single night. Only ' +
-        '<strong>meteors</strong> &mdash; brief &ldquo;shooting stars,&rdquo; actually bits of cosmic dust ' +
-        'burning up in the atmosphere &mdash; move noticeably.</p>' +
-        '<h4>Celestial poles and celestial equator</h4>' +
-        '<p>Extend Earth&rsquo;s axis outward and the points where it pierces the sky are the ' +
-        '<span class="term">north celestial pole</span> and <span class="term">south celestial pole</span>; ' +
-        'the sky appears to pivot around them. Throw Earth&rsquo;s equator onto the sky and you get the ' +
-        '<span class="term">celestial equator</span>, halfway between the poles.</p>' +
-        '<p>What you see depends on your <strong>latitude</strong>:</p>' +
+        '<p>Look up on a clear night and it really seems like Earth is sitting still in the middle of ' +
+        'everything, with the whole sky turning around us. That idea is called the ' +
+        '<span class="term">geocentric</span> model &mdash; &ldquo;geocentric&rdquo; just means ' +
+        '&ldquo;Earth in the center.&rdquo; It felt obvious, and almost everyone believed it until about ' +
+        '500 years ago (the period in Europe called the Renaissance). But it is <strong>wrong</strong>, and ' +
+        'working out why is one of the great stories in science. Let&rsquo;s build the sky up the way the ' +
+        'ancients saw it.</p>' +
+        '<h4>The sky looks like a giant dome</h4>' +
+        '<p>Far from city lights, the stars look like they are stuck to the inside of a huge dark dome, with ' +
+        'you standing right in the middle. The spot <strong>straight above your head</strong> is your ' +
+        '<span class="term">zenith</span>. The circle all around you <strong>where the sky meets the ' +
+        'ground</strong> is your <span class="term">horizon</span>.</p>' +
+        '<p>Watch for a while and the stars rise in the east, slide across the dome, and set in the west &mdash; ' +
+        'all together, keeping their patterns. Night after night it looks like the whole dome is one big ' +
+        'turning ball. The early Greeks called it the <span class="term">celestial sphere</span> &mdash; a ' +
+        'giant imaginary ball with the stars fixed on it. (Some of them thought it was a real ball of crystal ' +
+        'with the stars set in like tiny jewels.)</p>' +
+        '<p>We now know the sky is not really turning &mdash; <strong>Earth is</strong>. Earth spins all the ' +
+        'way around once every <strong>24 hours</strong>, like a top, around a line through the North and ' +
+        'South Poles called its <strong>axis</strong>. That spin is what makes the Sun, Moon, and stars rise ' +
+        'and set. The stars are not on a dome either; they sit at wildly different distances. But the ' +
+        '&ldquo;sphere&rdquo; is still a handy way to talk about where things are in the sky. As it ' +
+        '&ldquo;turns,&rdquo; the star patterns hold their shape (the Big Dipper looks the same all night, ' +
+        'it just rotates), and even the planets barely move against the stars over one night. The only ' +
+        'things that really streak across the sky are <strong>meteors</strong> &mdash; quick ' +
+        '&ldquo;shooting stars.&rdquo; They are not stars at all; they are tiny specks of space dust burning ' +
+        'up in our air.</p>' +
+        '<h4>The spin points and the middle line</h4>' +
+        '<p>Stretch Earth&rsquo;s axis out into space. The two spots where it pokes through the sky are the ' +
+        '<span class="term">north celestial pole</span> and <span class="term">south celestial pole</span> ' +
+        '&mdash; the two points the whole sky seems to spin around. Now take Earth&rsquo;s equator and blow ' +
+        'it up onto the sky too: that circle is the <span class="term">celestial equator</span>, sitting ' +
+        'exactly halfway between the two poles.</p>' +
+        '<p>What you see in the sky depends on <strong>where you stand on Earth</strong> &mdash; how far you ' +
+        'are from the equator (your <strong>latitude</strong>):</p>' +
         '<ul>' +
-        '<li><strong>At the North Pole:</strong> the north celestial pole is at your zenith, the celestial ' +
-        'equator lies on your horizon, and every star simply circles the pole &mdash; nothing rises or sets. ' +
-        'You only ever see the northern half of the sky.</li>' +
-        '<li><strong>At the equator:</strong> the celestial equator passes through your zenith, the celestial ' +
-        'poles sit on your north and south horizon, and all stars rise straight up in the east and set ' +
-        'straight down in the west, each spending half its time above the horizon.</li>' +
-        '<li><strong>In between (the US or Europe):</strong> the north celestial pole stands above the ' +
-        'northern horizon at an <strong>altitude equal to your latitude</strong>. In San Francisco (38&deg; N) ' +
-        'it is 38&deg; up.</li>' +
+        '<li><strong>Standing at the North Pole:</strong> the north celestial pole is straight overhead, at ' +
+        'your zenith. The celestial equator runs right along your horizon. Every star just circles around ' +
+        'and around &mdash; <strong>nothing rises or sets</strong>. You can only ever see the northern half ' +
+        'of the whole sky.</li>' +
+        '<li><strong>Standing on the equator:</strong> the celestial equator passes straight over your head. ' +
+        'The two celestial poles sit on your horizon, due north and due south. Every star rises straight up ' +
+        'in the east and drops straight down in the west, and each one is above the horizon for exactly half ' +
+        'the day.</li>' +
+        '<li><strong>Standing in between</strong> (like most of the US or Europe): the north celestial pole ' +
+        'is partway up &mdash; and <strong>its height above the northern horizon is exactly equal to your ' +
+        'latitude</strong>. In San Francisco, which is 38&deg; from the equator, the pole sits 38&deg; up.</li>' +
         '</ul>' +
         '<div data-diagram="sky-latitude"></div>' +
-        '<p>For that 38&deg; observer, stars within 38&deg; of the north celestial pole never set &mdash; the ' +
-        '<span class="term">north circumpolar zone</span> (the Big and Little Dippers, Cassiopeia). Stars ' +
-        'within 38&deg; of the south celestial pole never rise (the south circumpolar zone). Right now a ' +
-        'star called <span class="term">Polaris</span> sits very close to the north celestial pole, so it ' +
-        'barely moves as the sky turns.</p>' +
-        '<p class="callout-inline"><strong>Angles in the sky.</strong> A full circle is 360&deg;; the dome ' +
-        'of the sky spans 180&deg; from horizon to opposite horizon. The full Moon is about 0.5&deg; ' +
-        'across &mdash; roughly the width of your pinkie at arm&rsquo;s length.</p>' +
-        '<h4>The Sun and the ecliptic</h4>' +
-        '<p>The stars are still up there in daytime, hidden by scattered sunlight. The Sun also sits at ' +
-        'some point on the celestial sphere &mdash; and it drifts about <strong>1&deg; east per day</strong> ' +
-        'relative to the stars, taking one year to circle all the way around. (Really Earth orbits the Sun, ' +
-        'but the effect is the same.) That yearly path is the <span class="term">ecliptic</span>. Because of ' +
-        'this drift, the Sun rises about 4 minutes later each day with respect to the stars.</p>' +
-        '<p>The ecliptic is tilted about <strong>23.5&deg;</strong> to the celestial equator, because ' +
-        'Earth&rsquo;s rotation axis is tilted about 23.5&deg; from straight up out of its orbit. That tilt ' +
-        'is why the Sun climbs high in summer and stays low in winter &mdash; the cause of the seasons.</p>' +
+        '<p>For that person in San Francisco, any star closer than 38&deg; to the north celestial pole ' +
+        '<strong>never sets</strong> &mdash; it just goes in circles up there, night after night. That ring ' +
+        'of always-visible sky is the <span class="term">north circumpolar zone</span> (it holds the Big ' +
+        'Dipper, the Little Dipper, and Cassiopeia). In the same way, stars within 38&deg; of the ' +
+        '<em>south</em> celestial pole never come up at all. Right now there happens to be a star, ' +
+        '<span class="term">Polaris</span>, sitting almost exactly on the north celestial pole, so it barely ' +
+        'moves while everything else wheels around it.</p>' +
+        '<p class="callout-inline"><strong>Measuring the sky with angles.</strong> A full circle is ' +
+        '360&deg;. The dome of the sky, from one horizon up over your head to the opposite horizon, is half ' +
+        'of that: 180&deg;. The full Moon is about <strong>half a degree</strong> wide &mdash; roughly the ' +
+        'width of your little finger held out at arm&rsquo;s length.</p>' +
+        '<h4>The Sun&rsquo;s slow walk: the ecliptic</h4>' +
+        '<p>The stars are still up there in the daytime; you just cannot see them, because sunlight ' +
+        'scattering in our air makes the sky too bright. The Sun sits at some spot on the celestial sphere ' +
+        'too &mdash; and here is the key thing: <strong>the Sun creeps about 1&deg; eastward against the ' +
+        'stars every day</strong>. After a whole year it has gone all the way around and back. (Really it is ' +
+        'Earth going around the Sun, but from here it looks like the Sun moving.) That yearly loop the Sun ' +
+        'traces is called the <span class="term">ecliptic</span>. Because the Sun drifts a little each day, ' +
+        'it comes up about <strong>4 minutes later</strong> each day compared with the stars.</p>' +
+        '<p>The ecliptic does not line up with the celestial equator &mdash; it is tilted by about ' +
+        '<strong>23.5&deg;</strong>. That is because Earth&rsquo;s spin axis is tipped about 23.5&deg; from ' +
+        'straight up-and-down compared with its path around the Sun. This tilt is why the Sun climbs high in ' +
+        'the sky in summer and stays low in winter &mdash; <strong>it is what gives us the seasons</strong>.</p>' +
         '<div data-diagram="seasons"></div>' +
-        '<h4>Fixed stars and wandering stars</h4>' +
-        '<p>The Moon and the naked-eye planets (Mercury, Venus, Mars, Jupiter, Saturn, and barely Uranus) ' +
-        'also drift among the stars, on top of the daily turning of the sky. The Greeks split the sky into ' +
-        'the <strong>fixed stars</strong>, which hold their patterns for generations, and the ' +
-        '<strong>wandering stars</strong>, or <span class="term">planets</span> &mdash; &ldquo;planet&rdquo; ' +
-        'is Greek for &ldquo;wanderer.&rdquo; The ancients counted seven wanderers (Sun, Moon, five planets) ' +
-        'and gave us the seven-day week. The Moon is fastest, lapping the sky in about a month, moving ' +
-        'roughly 12&deg; per day.</p>' +
-        '<p>All of these bodies stay near the ecliptic, because their orbits share nearly one plane. They ' +
-        'are always found within an 18&deg;-wide belt centered on the ecliptic called the ' +
-        '<span class="term">zodiac</span> (&ldquo;zodiac&rdquo; shares a root with &ldquo;zoo&rdquo; &mdash; ' +
-        'a circle of animals).</p>' +
-        '<h4>Constellations</h4>' +
-        '<p>Under an ideal dark sky you can see about 3000 stars. Every culture grouped them into patterns; ' +
-        'you probably know the Big Dipper and Orion. In the early 20th century astronomers made it formal. ' +
-        'Today a <span class="term">constellation</span> is one of <strong>88 sectors</strong> that divide ' +
-        'up the whole sky, with imaginary north&ndash;south and east&ndash;west boundaries, so every point ' +
-        'of sky falls in exactly one (like US states &mdash; and, like states, not all the same size). A ' +
-        'noticeable star pattern within or across constellations is an <span class="term">asterism</span> ' +
-        '(the Big Dipper is an asterism in Ursa Major). The figures rarely look like their namesakes; the ' +
-        'Greeks named sky regions after mythological characters and fit the stars to them as best they could.</p>',
+        '<h4>Stars that stay put, and stars that wander</h4>' +
+        '<p>The Sun is not the only thing that drifts against the stars. The Moon does, and so do the ' +
+        'planets you can see without a telescope: Mercury, Venus, Mars, Jupiter, and Saturn (plus Uranus, if ' +
+        'your eyes are very sharp). Each night they rise and set with everything else, but over days and ' +
+        'weeks they slowly slide among the star patterns. The Greeks split the sky into the ' +
+        '<strong>fixed stars</strong>, which keep their patterns for lifetimes, and the ' +
+        '<strong>wandering stars</strong>, which move &mdash; and their word for &ldquo;wanderer&rdquo; is ' +
+        'where we get <span class="term">planet</span>.</p>' +
+        '<p>The ancients counted <strong>seven</strong> wanderers in all: the Sun, the Moon, and five ' +
+        'planets. That is why a week has seven days &mdash; one for each. The Moon is the fastest of them, ' +
+        'going all the way around the sky in about a month and shifting roughly 12&deg; per day (about 24 ' +
+        'Moon-widths).</p>' +
+        '<p>All these wanderers stay close to the ecliptic, because their orbits are all nearly in the same ' +
+        'flat plane. You will always find the Moon and planets inside a band about <strong>18&deg; ' +
+        'wide</strong> centered on the ecliptic, called the <span class="term">zodiac</span>. ' +
+        '(&ldquo;Zodiac&rdquo; comes from the same root as &ldquo;zoo&rdquo; &mdash; a circle of animals ' +
+        '&mdash; because a lot of the star patterns in that band looked like animals to the ancients.)</p>' +
+        '<h4>Constellations: dividing up the whole sky</h4>' +
+        '<p>Under a really dark sky you can see about <strong>3,000 stars</strong>. To find their way ' +
+        'around, people in every culture connected the dots into pictures &mdash; you probably know the Big ' +
+        'Dipper and Orion the hunter with his three-star belt. Different cultures saw different pictures.</p>' +
+        '<p>In the early 1900s, astronomers made it official. Today a <span class="term">constellation</span> ' +
+        'is not really a picture at all &mdash; it is <strong>one of 88 boxes that carve up the entire ' +
+        'sky</strong>, with straight borders running north&ndash;south and east&ndash;west, so that every ' +
+        'single point in the sky belongs to exactly one constellation. It is like the way the 50 US states ' +
+        'cover the whole map (and, like states, the constellations are not all the same size). Each one is ' +
+        'mostly named after the old Greek star picture inside it.</p>' +
+        '<p>A smaller, eye-catching star pattern &mdash; one that is not a whole constellation, or that ' +
+        'spills across a few of them &mdash; is called an <span class="term">asterism</span>. The Big Dipper ' +
+        'is an asterism inside the constellation Ursa Major, the Great Bear. And do not worry that the ' +
+        'constellations do not look like their names: the Greeks named regions of sky after their myths ' +
+        'first, then fit the stars to the stories as best they could.</p>',
       keyIdeas: [
-        "The sky looks like a rotating celestial sphere; really Earth turns on its axis once every 24 hours. Zenith = overhead; horizon = where sky meets ground.",
-        "Extending Earth's poles and equator into the sky gives the celestial poles and celestial equator; the sky appears to pivot around the celestial poles.",
-        "What you see depends on latitude: the north celestial pole sits above the northern horizon at an altitude equal to your latitude, and nearby stars are circumpolar (never set).",
-        "The Sun drifts ~1° east per day against the stars, tracing the ecliptic over a year; the ecliptic is tilted 23.5° to the celestial equator (Earth's axial tilt), which drives the seasons.",
-        "The Moon and planets (\"wanderers\") also drift among the fixed stars, staying within the ~18°-wide zodiac band around the ecliptic.",
-        "A modern constellation is one of 88 sectors that tile the entire sky — not just a picture made of stars."
+        "The sky looks like a giant ball of stars turning around you, but it's really Earth spinning once every 24 hours. Straight up = your zenith; where sky meets ground = your horizon.",
+        "Stretch Earth's poles and equator into space and you get the celestial poles and the celestial equator. The sky seems to spin around the celestial poles.",
+        "What you can see depends on your latitude: the north celestial pole sits as high above your northern horizon as your latitude number, and stars close to it never set (they're \"circumpolar\").",
+        "The Sun slides about 1° east against the stars each day, tracing a yearly path called the ecliptic. The ecliptic is tilted 23.5° — that's Earth's tilt — and that tilt makes the seasons.",
+        "The Moon and planets (\"wanderers\") also drift against the stars, always staying inside the ~18°-wide zodiac band around the ecliptic.",
+        "A modern constellation is one of 88 boxes that cover the whole sky — not just a star picture."
       ],
       selfCheck: [
         { q: "At latitude 40° N, how high is the north celestial pole, and what does “circumpolar” mean?",
           a: "About 40° above the northern horizon. Circumpolar stars lie within 40° of that pole and never set — they circle it all night, every night." },
         { q: "What is the ecliptic, and why is it tilted relative to the celestial equator?",
-          a: "The Sun's apparent yearly path around the celestial sphere. It is tilted about 23.5° because Earth's rotation axis is tilted about 23.5° from perpendicular to its orbit." },
+          a: "The Sun's apparent yearly path around the celestial sphere. It is tilted about 23.5° because Earth's spin axis is tilted about 23.5° from straight up out of its orbit." },
         { q: "In modern usage, what is a constellation?",
-          a: "One of the 88 sectors that completely divide up the sky (every point of sky is in exactly one) — not merely a star picture." },
+          a: "One of the 88 boxes that completely divide up the sky (every point of sky is in exactly one) — not merely a star picture." },
         { q: "Why did the ancient Greeks call the planets “wanderers”?",
           a: "Unlike the fixed stars, the planets slowly change position among the star patterns from night to night." }
       ]
@@ -125,90 +153,128 @@
     {
       id: "2.2",
       title: "Ancient Astronomy",
-      minutes: 9,
+      minutes: 10,
       html:
-        '<h4>Astronomy around the world</h4>' +
-        '<p>Long before the Greeks, many cultures watched the sky for calendars and navigation. Babylonian, ' +
-        'Assyrian, and Egyptian astronomers knew the year&rsquo;s length; the Egyptians of 3000 years ago ' +
-        'used a 365-day calendar and tracked the predawn rising of the star <strong>Sirius</strong>, which ' +
-        'signaled the Nile flood. Chinese astronomers kept a calendar and recorded comets, meteors, ' +
-        'sunspots, and &ldquo;guest stars&rdquo; (exploding stars) &mdash; records still used today. The Maya ' +
-        'built a calendar around the planet Venus. Polynesian navigators crossed open ocean by the stars. ' +
-        'In Britain, stone circles such as Stonehenge (from about 2800 BCE) tracked the Sun and Moon.</p>' +
-        '<h4>Greek cosmology and a spherical Earth</h4>' +
-        '<p>Our picture of the structure and origin of the universe is called <span class="term">cosmology' +
-        '</span>. At least 2000 years before Columbus, educated people around the eastern Mediterranean ' +
-        'knew Earth is round &mdash; an idea perhaps going back to <strong>Pythagoras</strong>, who prized ' +
-        'the sphere as a &ldquo;perfect&rdquo; form.</p>' +
-        '<p><strong>Aristotle</strong> (384&ndash;322 BCE) gave two solid arguments that Earth is a sphere: ' +
-        '(1) during a <span class="term">lunar eclipse</span>, Earth&rsquo;s shadow on the Moon is always a ' +
-        'round arc, and only a sphere always casts a round shadow; (2) travelers heading south see new ' +
-        'stars, and the North Star sinks toward the horizon &mdash; impossible on a flat Earth. Aristotle ' +
-        'also knew the Sun is farther than the Moon, because the Moon can pass in front of the Sun in a ' +
-        '<span class="term">solar eclipse</span>.</p>' +
-        '<p><strong>Aristarchus of Samos</strong> (310&ndash;230 BCE) proposed that Earth moves around the ' +
-        'Sun, but the Greeks rejected it. Their main objection was <span class="term">parallax</span>: if ' +
-        'Earth orbited the Sun, nearby stars should shift against distant ones over the year, the way ' +
-        'trackside trees shift against far hills as your train moves. This yearly shift is ' +
-        '<span class="term">stellar parallax</span>. The Greeks searched hard and saw none &mdash; so either ' +
-        'Earth stands still, or the stars are unimaginably far away. They chose a motionless Earth, and that ' +
-        'view ruled Western thought for nearly two millennia.</p>' +
-        '<h4>Eratosthenes measures the Earth</h4>' +
-        '<p>Around 200 BCE, <span class="term">Eratosthenes</span> (276&ndash;194 BCE), working in ' +
-        'Alexandria, measured Earth&rsquo;s size with sunlight and geometry. The Sun is so far that its rays ' +
-        'arrive essentially <strong>parallel</strong>. On the first day of summer, sunlight reached the ' +
-        'bottom of a vertical well at <strong>Syene</strong> &mdash; the Sun was straight overhead. At the ' +
-        'same moment in <strong>Alexandria</strong>, the Sun was about <strong>7&deg;</strong> (1/50 of a ' +
-        'circle) from vertical. Since the rays are parallel, that 7&deg; comes entirely from Earth&rsquo;s ' +
-        'curvature, so Alexandria is 1/50 of the way around the planet from Syene. The two cities are about ' +
-        '5000 stadia apart, giving a circumference of 250,000 stadia &mdash; within roughly 1&ndash;20% of ' +
-        'the true 40,000 km, depending on which &ldquo;stadium&rdquo; he used. A stunning result from ' +
-        'shadows, sunlight, and thought alone.</p>' +
+        '<h4>Sky-watchers all over the world</h4>' +
+        '<p>Long before the Greeks, people everywhere were watching the sky to keep a calendar and to find ' +
+        'their way. Astronomers in Babylon, Assyria, and Egypt knew roughly how long a year is. The ' +
+        'Egyptians 3,000 years ago used a <strong>365-day calendar</strong>, and they watched for the ' +
+        'morning when the bright star <strong>Sirius</strong> first popped up before dawn &mdash; that was ' +
+        'their signal that the Nile River was about to flood. Chinese astronomers kept a calendar too, and ' +
+        'wrote down comets, bright meteors, spots on the Sun, and &ldquo;guest stars&rdquo; (stars that ' +
+        'suddenly flared up bright for a few weeks &mdash; we now know those were <em>exploding</em> stars, ' +
+        'and their records still help us today). The Maya in Central America built a calendar around the ' +
+        'planet Venus. Polynesian sailors crossed huge stretches of open ocean steering by the stars. And in ' +
+        'Britain, people stacked giant stones &mdash; like Stonehenge, from about <strong>2800 BCE</strong> ' +
+        '&mdash; to track the Sun and Moon.</p>' +
+        '<h4>How the Greeks knew Earth is a ball</h4>' +
+        '<p>How the universe is put together and where it came from is called ' +
+        '<span class="term">cosmology</span>. Educated people around the eastern Mediterranean knew Earth ' +
+        'was round <strong>more than 2,000 years before Columbus</strong>. The idea may go back to ' +
+        '<strong>Pythagoras</strong> about 2,500 years ago, who loved the sphere as a &ldquo;perfect&rdquo; ' +
+        'shape.</p>' +
+        '<p><strong>Aristotle</strong> (who lived 384&ndash;322 BCE) gave two very good reasons Earth must be ' +
+        'a ball:</p>' +
+        '<ul>' +
+        '<li>During a <span class="term">lunar eclipse</span>, Earth&rsquo;s shadow falls on the Moon &mdash; ' +
+        'and the edge of that shadow is <strong>always a curve</strong>. Only a ball casts a round shadow no ' +
+        'matter which way it is turned; a flat disk would sometimes cast a straight-line shadow.</li>' +
+        '<li>When you travel a long way south, you start seeing <strong>new stars</strong> that were hidden ' +
+        'before, and the North Star sinks closer to the horizon. On a flat Earth everyone would see the same ' +
+        'stars overhead. This only works if the ground curves.</li>' +
+        '</ul>' +
+        '<p>Aristotle also worked out that the Sun is farther away than the Moon, because now and then the ' +
+        'Moon slides right in front of the Sun and blocks it &mdash; a <span class="term">solar ' +
+        'eclipse</span>.</p>' +
+        '<p>One Greek, <strong>Aristarchus of Samos</strong> (310&ndash;230 BCE), even said Earth goes ' +
+        'around the Sun. But Aristotle and most Greeks said no. Their big reason was something called ' +
+        '<span class="term">parallax</span>: if Earth were really swinging around the Sun, then over the ' +
+        'year the <strong>nearby stars should appear to shift</strong> back and forth against the farther ' +
+        'stars &mdash; the same way trees by the train track seem to slide past the distant hills as your ' +
+        'train rolls along. That yearly star-shift is called <span class="term">stellar parallax</span>. The ' +
+        'Greeks looked hard for it (they even used soldiers with the sharpest eyes) and <strong>saw ' +
+        'nothing</strong>. So either Earth was not moving, or the stars were unbelievably far away. They were ' +
+        'not ready to believe the universe was that huge, so they stuck with an Earth-in-the-center picture ' +
+        '&mdash; and it ruled Western thinking for almost 2,000 years.</p>' +
+        '<h4>Eratosthenes measures the whole planet with a shadow</h4>' +
+        '<p>Around 200 BCE, a Greek named <span class="term">Eratosthenes</span> (276&ndash;194 BCE), ' +
+        'working in Alexandria in Egypt, figured out how <em>big</em> Earth is &mdash; using only sunlight ' +
+        'and geometry.</p>' +
+        '<p>The Sun is so far away that its rays reach Earth almost perfectly <strong>parallel</strong>, ' +
+        'like they are all coming straight down together. Eratosthenes knew that on the first day of summer, ' +
+        'at noon in the town of <strong>Syene</strong>, sunlight shone all the way down to the bottom of a ' +
+        'deep well. That meant the Sun was <em>exactly</em> straight overhead there &mdash; a stick would ' +
+        'cast no shadow. At that same moment up in <strong>Alexandria</strong>, the Sun was about ' +
+        '<strong>7&deg;</strong> away from straight up, so a stick <em>did</em> cast a shadow.</p>' +
+        '<p>Here is the clever part. The Sun&rsquo;s rays are parallel, so that 7&deg; difference has to come ' +
+        'from the <strong>ground curving</strong> between the two towns. And 7&deg; is about ' +
+        '<strong>one-fiftieth</strong> of a full 360&deg; circle. So the distance from Syene to Alexandria ' +
+        'must be one-fiftieth of the way around the whole Earth. That distance was about <strong>5,000 ' +
+        '<em>stadia</em></strong> (a Greek unit of length), which made the whole Earth about ' +
+        '<strong>250,000 stadia</strong> around. Depending on exactly how long his &ldquo;stadium&rdquo; ' +
+        'was, his answer was somewhere between spot-on and about 20% too big &mdash; the real number is ' +
+        '40,000 km. Measuring the size of the planet with nothing but shadows, sunlight, and thinking is one ' +
+        'of the great feats in the history of science.</p>' +
         '<div data-diagram="eratosthenes"></div>' +
-        '<h4>Hipparchus and precession</h4>' +
-        '<p><span class="term">Hipparchus</span> (observatory on Rhodes, about 150 BCE) was the greatest ' +
-        'astronomer of antiquity. He compiled a star catalog of about 850 stars with celestial coordinates, ' +
-        'and ranked stars by <span class="term">apparent magnitude</span> &mdash; brightest = &ldquo;first ' +
-        'magnitude,&rdquo; fainter = larger numbers &mdash; a scheme still used in modified form. Comparing ' +
-        'his measurements with older ones, he discovered <span class="term">precession</span>: the north ' +
-        'celestial pole slowly and steadily shifts, which means <strong>Earth&rsquo;s axis itself wobbles</strong>, ' +
-        'like a spinning top. The Sun and Moon tug on Earth&rsquo;s equatorial bulge, and one full wobble ' +
-        'takes about <strong>26,000 years</strong>. Polaris is the pole star now; about 5000 years ago it ' +
-        'was Thuban, and in about 14,000 years it will be Vega.</p>' +
-        '<h4>Ptolemy&rsquo;s model</h4>' +
-        '<p><span class="term">Ptolemy</span> (about 140 CE, Alexandria) wrote the <em>Almagest</em> ' +
-        '(&ldquo;The Greatest&rdquo;), our chief source on Greek astronomy. His achievement was a geometric ' +
-        'model that predicted planet positions for any date.</p>' +
-        '<p>The hard part is that a planet&rsquo;s wandering in the sky combines its own motion with ' +
-        'Earth&rsquo;s orbital motion &mdash; like watching a race while driving in it. ' +
-        '<span class="term">Retrograde motion</span> is the temporary apparent <strong>westward</strong> ' +
-        'drift of a planet (planets normally drift east) when the faster Earth passes it. Simple for us, who ' +
-        'know Earth moves; very hard for Ptolemy, who assumed a fixed Earth and, like all Greeks, insisted ' +
-        'on <strong>circles only</strong>.</p>' +
+        '<h4>Hipparchus, and Earth&rsquo;s slow wobble</h4>' +
+        '<p><span class="term">Hipparchus</span>, working from an observatory on the island of Rhodes around ' +
+        '150 BCE, was probably the best astronomer of the ancient world. He made a catalog of about ' +
+        '<strong>850 stars</strong>, writing down the position of each one (like giving every star a ' +
+        'latitude and longitude). He also sorted stars by how bright they look, calling the brightest ones ' +
+        '&ldquo;first <span class="term">magnitude</span>,&rdquo; the next batch &ldquo;second ' +
+        'magnitude,&rdquo; and so on &mdash; a system we still use in a tweaked form today (smaller number = ' +
+        'brighter).</p>' +
+        '<p>Then he compared his measurements with much older ones and noticed something strange: the spot ' +
+        'in the sky that the stars turn around &mdash; the north celestial pole &mdash; had <strong>slowly ' +
+        'moved</strong>. He realized it is always moving. And if the pole in the sky is drifting, then ' +
+        '<strong>Earth&rsquo;s axis itself must be slowly wobbling</strong>. We call this wobble ' +
+        '<span class="term">precession</span>. It is just like a spinning top: while it spins fast, its axis ' +
+        'also traces a slow, lazy circle. Earth wobbles because it is not a perfect ball &mdash; it bulges a ' +
+        'little at the equator, and the Sun&rsquo;s and Moon&rsquo;s gravity tug on that bulge. One full ' +
+        'wobble takes about <strong>26,000 years</strong>. So the &ldquo;North Star&rdquo; changes over ' +
+        'time: it is Polaris now, it was a star called <strong>Thuban</strong> about 5,000 years ago, and ' +
+        'in about 14,000 years it will be the star <strong>Vega</strong>.</p>' +
+        '<h4>Ptolemy&rsquo;s clockwork universe</h4>' +
+        '<p>The last great astronomer of the Roman era was <span class="term">Ptolemy</span>, working in ' +
+        'Alexandria around the year 140. He wrote a huge summary of everything astronomers knew, a book we ' +
+        'now call the <em>Almagest</em> (&ldquo;The Greatest&rdquo;). It is our main source for the work of ' +
+        'Hipparchus and the other Greeks. Ptolemy&rsquo;s big achievement was a <strong>geometry machine ' +
+        'that could predict where each planet would be</strong> on any date.</p>' +
+        '<p>The hard part he had to explain is this: as the months go by, a planet usually drifts ' +
+        '<strong>eastward</strong> against the stars &mdash; but every so often it <strong>slows down, ' +
+        'stops, and drifts backward (westward)</strong> for a few weeks, then goes forward again. This ' +
+        'backward loop is called <span class="term">retrograde motion</span>. We now know it is an illusion: ' +
+        'it happens when the faster-moving Earth passes a slower outer planet, the way a car you are ' +
+        'overtaking seems to slide backward. But Ptolemy believed Earth stood <em>still</em>, so he had to ' +
+        'build the loop some other way &mdash; and the Greeks were sure all sky motion had to be made of ' +
+        'perfect <strong>circles</strong>.</p>' +
         '<div data-diagram="retrograde"></div>' +
-        '<p>His solution: each planet rides a small circle, the <span class="term">epicycle</span>, whose ' +
-        'center rides a big circle, the <span class="term">deferent</span>, around Earth. Tuning the sizes ' +
-        'and speeds reproduces retrograde motion. He also had to offset the deferent centers from Earth and ' +
-        'add motion about another point, the <span class="term">equant</span> &mdash; dozens of circles in ' +
-        'all. It was a mathematical triumph that stood for more than a thousand years.</p>' +
+        '<p>His solution: put each planet on a small circle, called an <span class="term">epicycle</span>, ' +
+        'and then have the <em>center</em> of that small circle ride around on a big circle, called the ' +
+        '<span class="term">deferent</span>, going around Earth. Spin the small circle at just the right ' +
+        'speed and the planet traces little backward loops &mdash; retrograde motion, faked with wheels on ' +
+        'wheels. To make the predictions really match, he also had to shift the big circles a bit ' +
+        'off-center from Earth and add motion around yet another point, the <span class="term">equant</span>. ' +
+        'It ended up being dozens of circles. It was a brilliant piece of math, and it stayed the official ' +
+        'picture of the heavens for more than <strong>a thousand years</strong>.</p>' +
         '<div data-diagram="epicycle"></div>',
       keyIdeas: [
-        "Many cultures (Babylonian, Egyptian, Chinese, Maya, Polynesian, Britain's stone circles) tracked the sky for calendars and navigation long before the Greeks.",
-        "The Greeks knew Earth is a sphere: its shadow on the Moon is always round, and the visible stars change with latitude.",
-        "Eratosthenes measured Earth's circumference from the different angles of the noon Sun at Syene and Alexandria.",
-        "The Greeks rejected a moving Earth because they could not detect stellar parallax — the stars were simply too far away for the shift to be seen.",
-        "Hipparchus built a star catalog, defined the magnitude scale, and discovered precession — Earth's axis wobbles over ~26,000 years, so the pole star changes.",
-        "Ptolemy's geocentric model used epicycles on deferents to reproduce retrograde motion; it predicted planet positions well and was authoritative for over a thousand years."
+        "Lots of cultures — Babylonian, Egyptian, Chinese, Maya, Polynesian, and the stone-circle builders of Britain — watched the sky for calendars and navigation long before the Greeks.",
+        "The Greeks knew Earth is a ball: its shadow on the Moon is always curved, and you see different stars as you travel north or south.",
+        "Eratosthenes measured how big Earth is from the different noon-Sun angles at two towns a known distance apart (a 7° shadow means the towns are 1/50 of the way around the planet).",
+        "The Greeks rejected a moving Earth because they couldn't see stellar parallax — and they wouldn't believe the stars were far enough away to hide it.",
+        "Hipparchus made a star catalog, invented the brightness (magnitude) scale, and discovered precession — Earth's axis wobbles once every 26,000 years, so the North Star slowly changes.",
+        "Ptolemy explained the planets, including retrograde loops, with circles-on-circles (epicycles riding deferents) around a still Earth. It predicted positions well and lasted over 1,000 years."
       ],
       selfCheck: [
-        { q: "What single eclipse observation shows that Earth is a sphere?",
-          a: "During a lunar eclipse, Earth's shadow on the Moon is always a circular arc — and only a sphere always casts a round shadow." },
-        { q: "What did Eratosthenes measure, and what did he calculate from it?",
-          a: "He measured the angle of the noon Sun from vertical at Alexandria (about 7°) while it was straight overhead at Syene. Because sunlight arrives parallel, that 7° is 1/50 of a circle, so the Syene–Alexandria distance is 1/50 of Earth's circumference." },
-        { q: "Why did the failure to see stellar parallax convince the Greeks that Earth stands still?",
-          a: "If Earth orbited the Sun, nearby stars should shift against distant ones over the year. They saw no shift and would not accept that the stars were far enough away to hide it, so they concluded Earth does not move." },
-        { q: "What is retrograde motion, and how did Ptolemy reproduce it with a motionless Earth?",
-          a: "The temporary apparent westward drift of a planet against the stars. Ptolemy put each planet on a small circle (epicycle) whose center rode a larger circle (deferent) around Earth." }
+        { q: "What single eclipse observation shows that Earth is a ball?",
+          a: "During a lunar eclipse, Earth's shadow on the Moon is always a curved arc — and only a ball casts a round shadow no matter how it's turned." },
+        { q: "What did Eratosthenes measure, and what did he work out from it?",
+          a: "He measured how far the noon Sun was from straight up at Alexandria (about 7°) while it was exactly overhead at Syene. Because sunlight arrives parallel, that 7° is 1/50 of a circle, so the Syene–Alexandria distance is 1/50 of the way around Earth." },
+        { q: "Why did seeing no stellar parallax convince the Greeks that Earth stands still?",
+          a: "If Earth circled the Sun, nearby stars should shift against distant ones over the year. They saw no shift and wouldn't accept that the stars were far enough away to hide it, so they concluded Earth doesn't move." },
+        { q: "What is retrograde motion, and how did Ptolemy fake it with a still Earth?",
+          a: "The temporary backward (westward) drift of a planet against the stars. Ptolemy put each planet on a small circle (epicycle) whose center rode a larger circle (deferent) around Earth." }
       ]
     },
     {
@@ -216,145 +282,211 @@
       title: "Astrology and Astronomy",
       minutes: 6,
       html:
-        '<p>Many ancient cultures saw the planets and stars as gods or supernatural forces that steered ' +
-        'human life, so reading the sky meant reading the gods&rsquo; intentions. The seven ' +
-        '&ldquo;wanderers&rdquo; seemed especially important, and most cultures named the planets after gods ' +
-        'and credited them with those gods&rsquo; powers. From this grew <span class="term">astrology</span>: ' +
-        'the belief that the positions of the Sun, Moon, and planets among the ' +
-        '<span class="term">zodiac</span> stars hold the key to life.</p>' +
+        '<p>Lots of ancient people believed the planets and stars were gods, or stood for gods &mdash; ' +
+        'powerful beings who decided what happened in your life. So watching the sky was not just curiosity; ' +
+        'it was about reading what the gods were up to. The seven &ldquo;wanderers&rdquo; (the Sun, the ' +
+        'Moon, and five planets) seemed the most important of all, and most cultures named the planets after ' +
+        'gods and figured they had those gods&rsquo; powers. Out of this grew ' +
+        '<span class="term">astrology</span>: the belief that <strong>where the Sun, Moon, and planets sit ' +
+        'among the <span class="term">zodiac</span> stars tells you about your life</strong>.</p>' +
         '<h4>Where astrology came from</h4>' +
-        '<p>Astrology began in <strong>Babylonia</strong> about 2500 years ago, where the planets were ' +
-        'thought to sway the fortunes of kings and nations. Through the Greeks it spread across the Western ' +
-        'world and into Asia. By the 2nd century BCE the Greeks made it <strong>personal</strong>: the ' +
-        'arrangement of the sky at the <strong>moment of birth</strong> was said to shape a ' +
-        'person&rsquo;s character and fate &mdash; <span class="term">natal astrology</span>. It peaked with ' +
-        '<strong>Ptolemy</strong>, whose <em>Tetrabiblos</em> is still the &ldquo;bible&rdquo; of the ' +
-        'subject. Modern astrology is essentially this ancient religion.</p>' +
-        '<h4>The horoscope</h4>' +
-        '<p>A <span class="term">horoscope</span> is a chart of where the Sun, Moon, and planets were in ' +
-        'the sky at someone&rsquo;s birth (the word means &ldquo;marker of the hour&rdquo;). Astrology ' +
-        'divides the zodiac into <strong>12 signs of 30&deg; each</strong>, named after the constellation ' +
-        'each one contained when the system was set up. Your &ldquo;sign&rdquo; is your ' +
-        '<strong>sun sign</strong> &mdash; the sign the Sun was in when you were born.</p>' +
-        '<p>But more than 2000 years of <span class="term">precession</span> have slid the constellations ' +
-        'about <strong>one whole sign westward</strong> along the ecliptic. So the astrological signs and ' +
-        'the real constellations are now out of step: the sign Aries currently sits over the constellation ' +
-        'Pisces. The &ldquo;sun sign&rdquo; in a newspaper is no longer the constellation the Sun was ' +
-        'actually in on your birthday.</p>' +
+        '<p>Astrology started in <strong>Babylon</strong> about 2,500 years ago. Back then it was about ' +
+        'whole kingdoms &mdash; the planets were thought to steer the fortunes of kings and nations. The ' +
+        'Greeks picked it up and spread it across the Western world and into Asia. By the ' +
+        '<strong>2nd century BCE</strong>, the Greeks made it <strong>personal</strong>: the exact ' +
+        'arrangement of the sky <strong>at the moment you were born</strong> was supposed to shape your ' +
+        'personality and your future. That is called <span class="term">natal astrology</span> ' +
+        '(&ldquo;natal&rdquo; means &ldquo;birth&rdquo;). It hit its peak with <strong>Ptolemy</strong> ' +
+        '&mdash; the same Ptolemy &mdash; who wrote the <em>Tetrabiblos</em>, still the main rulebook of ' +
+        'astrology today. Modern astrology is basically this same ancient religion.</p>' +
+        '<h4>What a horoscope is</h4>' +
+        '<p>A <span class="term">horoscope</span> is a chart showing where the Sun, Moon, and planets were ' +
+        'in the sky at the moment (and place) someone was born. The word means &ldquo;marker of the ' +
+        'hour.&rdquo; Astrology chops the zodiac band into <strong>12 slices called signs</strong>, each ' +
+        '30&deg; wide, and each named after the constellation that used to sit in that slice. When someone ' +
+        'asks &ldquo;what&rsquo;s your sign?&rdquo;, they mean your <strong>sun sign</strong> &mdash; the ' +
+        'slice the Sun was in on your birthday.</p>' +
+        '<p>But there is a problem. It has been more than <strong>2,000 years</strong> since those slices ' +
+        'got their names, and in that time <span class="term">precession</span> &mdash; Earth&rsquo;s slow ' +
+        'wobble &mdash; has dragged the real star pictures <strong>almost a whole slice to the west</strong>. ' +
+        'So the signs and the actual constellations no longer match up. The slice called &ldquo;Aries&rdquo; ' +
+        'now sits in front of the constellation Pisces, for example. The sun sign in your newspaper is ' +
+        '<strong>not</strong> the constellation the Sun was really in when you were born.</p>' +
         '<div data-diagram="precession"></div>' +
+        '<p>A full horoscope also places the Moon and every planet in its sign, plus a &ldquo;house&rdquo; ' +
+        '(a position in the sky that shifts through the day as Earth turns). There are rulebooks &mdash; ' +
+        'mostly from Ptolemy&rsquo;s <em>Tetrabiblos</em> &mdash; that tie each sign, house, and planet to ' +
+        'parts of your life. But reading it all is complicated and full of judgment calls, which is why it ' +
+        'is hard to pin astrology down to a clear prediction, and why two astrologers will often tell you ' +
+        'different things. Newspaper &ldquo;sun sign&rdquo; astrology is a recent, stripped-down version ' +
+        'that tries to sort everyone into just 12 groups &mdash; and even professional astrologers do not ' +
+        'put much trust in it.</p>' +
         '<h4>Why astrology is not science</h4>' +
-        '<p>There is <strong>no known force</strong> &mdash; gravity or anything else &mdash; by which the ' +
-        'sky&rsquo;s arrangement at your birth could shape your personality or future. (The delivering ' +
-        'doctor&rsquo;s gravitational pull on a newborn is larger than that of Mars.) Astrologers must ' +
-        'appeal to unknown forces that depend on configuration rather than distance, for which there is no ' +
-        'evidence. It is also odd that astrology fixes on birth rather than conception or genetics.</p>' +
-        '<p>Astrology has been <strong>tested</strong> hundreds of times &mdash; comparing birth signs with ' +
-        'Olympic medals, corporate salaries, elected office, military rank, even U.S. Marine reenlistment. ' +
-        'Every test finds birth signs distributed <strong>randomly</strong>, with no predictive power, even ' +
-        'statistically. Studies using full horoscopes are also negative.</p>' +
-        '<p>So why do readings feel accurate? Because vague statements phrased as if written personally feel ' +
-        'true to almost anyone. In one study, a mass murderer&rsquo;s horoscope was sent to 150 people as a ' +
-        'personal reading and 94% recognized themselves; in another, subjects accepted ' +
-        '<strong>reversed</strong> readings just as often (95%). Astrology has no basis in scientific ' +
-        'fact &mdash; at best it is a <span class="term">pseudoscience</span>. Its lasting gift was ' +
-        'motivating people to learn the cycles of the sky, and from it grew the science of astronomy.</p>',
+        '<p>There is <strong>no known force</strong> &mdash; not gravity, not anything &mdash; that could ' +
+        'let the arrangement of the sky at your birth reach out and shape who you are. (Fun fact: the doctor ' +
+        'standing next to you when you are born pulls on you with more gravity than the planet Mars does.) ' +
+        'Astrologers have to imagine mystery forces that somehow depend on the <em>pattern</em> the planets ' +
+        'make but <em>not</em> on how far away they are &mdash; and there is zero evidence for any such ' +
+        'thing. It is also odd that astrology cares about the moment of <em>birth</em> rather than ' +
+        'conception, when your genes were actually set.</p>' +
+        '<p>Astrology has been <strong>tested</strong> hundreds of times. Scientists have checked whether ' +
+        'certain birth signs show up more often among Olympic medal winners, top executives, elected ' +
+        'officials, high-ranking military officers &mdash; even people who re-sign up for the U.S. Marines. ' +
+        'Every time, the birth signs come out <strong>evenly spread</strong>, with no pattern and no power ' +
+        'to predict anything, even a little. Studies using full horoscopes for thousands of people come out ' +
+        'just as blank.</p>' +
+        '<p>So why do readings so often feel spot-on? Because <strong>a vague statement that sounds personal ' +
+        'feels true to almost anyone</strong>. In one test, a researcher sent out the horoscope of one of ' +
+        'history&rsquo;s worst mass murderers to <strong>150 people</strong>, telling each person it was ' +
+        'written just for them &mdash; and <strong>94%</strong> said &ldquo;yes, that&rsquo;s me.&rdquo; In ' +
+        'another, a researcher <strong>flipped 22 readings around</strong> so they said the opposite of the ' +
+        'real thing, and people said those fit them just as well (95%). Astrology has no basis in fact ' +
+        '&mdash; at best it is a <span class="term">pseudoscience</span> (something dressed up like science ' +
+        'that is not). Its real gift to the world was getting people to learn the patterns of the sky in the ' +
+        'first place. Out of that grew the actual science: astronomy.</p>',
       keyIdeas: [
-        "Astrology — the belief that the positions of the Sun, Moon, and planets in the zodiac govern human affairs — began in Babylonia and peaked with Ptolemy's Tetrabiblos.",
-        "Natal astrology claims the sky at your birth sets your personality and fate; a horoscope charts those positions. The zodiac is split into 12 signs of 30° each.",
-        "Because of precession, the signs no longer line up with the constellations they were named for — your newspaper \"sun sign\" isn't the constellation the Sun was really in.",
-        "Astrology fails as science: there is no plausible force, and hundreds of statistical tests show birth signs are distributed randomly with no predictive power.",
-        "Vague, \"personalized\" readings feel accurate no matter what they say — people even accept reversed readings — which makes astrology a pseudoscience."
+        "Astrology — the belief that the sky's arrangement rules your life — started in Babylon and peaked with Ptolemy's Tetrabiblos.",
+        "Natal astrology says the sky at the moment of your birth sets your personality and fate. A horoscope is the chart of that sky. The zodiac is split into 12 signs, 30° each.",
+        "Because Earth wobbles (precession), the signs have drifted almost a whole slot away from the constellations they were named for — your newspaper sun sign isn't the constellation the Sun was really in.",
+        "Astrology fails as science: there's no force that could make it work, and hundreds of tests show birth signs spread evenly, with no power to predict anything.",
+        "Vague, \"made-just-for-you\" readings feel true to nearly everyone — people even accept readings that have been reversed. That makes astrology a pseudoscience."
       ],
       selfCheck: [
-        { q: "What does a horoscope chart, and what is natal astrology's core claim?",
-          a: "The positions of the Sun, Moon, and planets in the zodiac at the moment (and place) of a person's birth. Natal astrology claims those positions determine personality and fortune." },
-        { q: "How does precession undercut newspaper “sun signs”?",
-          a: "Over ~2000 years the constellations have slid about one sign west along the ecliptic, so the sign named for your birthday is no longer the constellation the Sun actually occupied then." },
-        { q: "Give one scientific reason astrology does not hold up.",
-          a: "There is no known force by which the sky's configuration at birth could affect a person (the delivering doctor's gravity outweighs Mars's), and statistical tests find birth signs randomly distributed among successful people." },
+        { q: "What does a horoscope chart, and what is natal astrology's main claim?",
+          a: "Where the Sun, Moon, and planets were in the zodiac at the moment (and place) a person was born. Natal astrology claims those positions set the person's personality and fortune." },
+        { q: "How does precession make newspaper “sun signs” wrong?",
+          a: "Over ~2,000 years the constellations have slid almost one whole sign west along the ecliptic, so the sign named for your birthday is no longer the constellation the Sun was actually in then." },
+        { q: "Give one scientific reason astrology doesn't hold up.",
+          a: "There's no known force by which the sky's arrangement at birth could affect a person (the delivering doctor's gravity outweighs Mars's), and statistical tests find birth signs spread evenly among successful people." },
         { q: "Why do people say a vague reading “really fit” them?",
-          a: "Vague statements presented as if written personally feel accurate to almost anyone — subjects even accept readings that have been reversed." }
+          a: "A vague statement that sounds personal feels true to almost anyone — subjects even accept readings that have been reversed to say the opposite." }
       ]
     },
     {
       id: "2.4",
       title: "The Birth of Modern Astronomy",
-      minutes: 9,
+      minutes: 10,
       html:
-        '<p>Medieval Europe made little astronomical progress. Islamic and Jewish scholars preserved, ' +
-        'translated, and extended Greek astronomy (many star names, and the word &ldquo;zenith,&rdquo; are ' +
-        'Arabic). As trade reopened, texts like the <em>Almagest</em> returned to Europe, and the ' +
-        'astronomical rebirth &mdash; the &ldquo;renaissance&rdquo; &mdash; began with Copernicus.</p>' +
-        '<h4>Copernicus</h4>' +
-        '<p><span class="term">Copernicus</span> (Nicolaus Copernicus, 1473&ndash;1543), a Polish cleric ' +
-        'trained in law and medicine, reappraised planetary theory and built a Sun-centered, or ' +
-        '<span class="term">heliocentric</span>, model: <strong>Earth is a planet</strong>, all the planets ' +
-        'circle the Sun, and only the Moon orbits Earth. He published it in <em>De Revolutionibus Orbium ' +
-        'Coelestium</em> in 1543, the year he died.</p>' +
-        '<p>He kept some old assumptions (motions built from uniform circular motions) but dropped Earth ' +
-        'from the center. To the objection that we would <em>feel</em> a moving Earth, he answered that a ' +
-        'moving observer need not sense the motion &mdash; like seeing an adjacent train appear to move. ' +
-        'The Sun&rsquo;s yearly path is equally well explained by Earth orbiting the Sun; the daily turning ' +
-        'of the sky by Earth rotating. And if spinning would tear Earth apart, the far faster spin the ' +
-        'geocentric view demands of the huge celestial sphere would be worse.</p>' +
-        '<h4>The heliocentric model</h4>' +
-        '<p>Copernicus put the six then-known planets in the correct order out from the Sun &mdash; Mercury, ' +
-        'Venus, Earth, Mars, Jupiter, Saturn &mdash; with nearer planets moving faster. This explained ' +
-        '<strong>retrograde motion with no epicycles</strong> (Earth simply overtakes a slower outer ' +
-        'planet) and gave a roughly correct scale for the solar system.</p>' +
-        '<p>He could not <em>prove</em> it &mdash; an adjusted Ptolemaic model could also fit the data &mdash; ' +
-        'but his system was simpler and more symmetric. In his day, few thought experiments could settle ' +
-        'such questions: the tradition held that pure thought plus revelation, not the senses, revealed ' +
-        'truth. So heliocentrism was debated for over 50 years with no tests applied.</p>' +
-        '<p>Deciding between two models needs a prediction on which they <strong>disagree</strong>. One ' +
-        'example: if <strong>Venus circles the Sun</strong>, it must run through the full cycle of phases ' +
-        'like the Moon; if it circles Earth, it cannot. Before the telescope, no one could check.</p>' +
-        '<h4>Galileo and experimental science</h4>' +
-        '<p><span class="term">Galileo</span> (Galileo Galilei, 1564&ndash;1642) pioneered observation, ' +
-        'experiment, and quantitative measurement. In <strong>mechanics</strong> he overturned the old idea ' +
-        'that rest is matter&rsquo;s natural state: a sliding object stops only because of friction, and on ' +
-        'ever-smoother surfaces it travels farther. With no resistance it would move steadily forever. A ' +
-        '<span class="term">force</span> is needed to <strong>start, stop, speed up, slow down, or turn</strong> ' +
-        'an object &mdash; not to keep it moving. He also showed that falling and rolling objects ' +
-        '<span class="term">accelerate</span> uniformly (equal speed gains in equal times), and wrote it in ' +
-        'precise mathematics. (In 1971, Apollo 15 dropped a hammer and a feather on the airless Moon; they ' +
-        'landed together.)</p>' +
-        '<h4>Galileo&rsquo;s telescope</h4>' +
-        '<p>The first noticed &ldquo;spyglasses&rdquo; were made by <strong>Hans Lippershey</strong> in ' +
-        '1608. Galileo built his own (3&times;), then 8&ndash;9&times; (which won him a doubled salary and ' +
-        'tenure in Venice), and eventually 30&times;. Turning it on the sky from late 1609, he found:</p>' +
-        '<ul>' +
-        '<li>The <strong>Milky Way</strong> and hazy patches resolve into countless individual stars too ' +
-        'faint for the eye.</li>' +
-        '<li><strong>Four moons orbiting Jupiter</strong> &mdash; proof that not everything circles Earth, ' +
-        'and that a moving body can carry its moons along (answering a standard objection to a moving Earth).</li>' +
-        '<li>The <strong>phases of Venus</strong> &mdash; Venus shows the full cycle of phases, so it must ' +
-        'orbit the Sun. Ptolemy&rsquo;s model predicts the wrong phases in the wrong order.</li>' +
-        '<li>The <strong>Moon</strong> has craters, mountains, and dark plains &mdash; a world somewhat ' +
-        'like Earth.</li>' +
-        '</ul>' +
+        '<p>Not much new happened in astronomy in Europe during the Middle Ages. But scholars in the Islamic ' +
+        'world, and Jewish scholars too, kept the old Greek astronomy alive &mdash; copying it, translating ' +
+        'it, and adding to it. (That is why lots of bright stars have Arabic names, and why the word ' +
+        '&ldquo;zenith&rdquo; is Arabic.) When Europe started trading with Arab countries again, books like ' +
+        'the <em>Almagest</em> came back, and people got curious about the sky again. This &ldquo;rebirth' +
+        '&rdquo; of astronomy &mdash; <em>renaissance</em> is French for &ldquo;rebirth&rdquo; &mdash; ' +
+        'really begins with Copernicus.</p>' +
+        '<h4>Copernicus moves Earth out of the center</h4>' +
+        '<p><span class="term">Copernicus</span> (full name Nicolaus Copernicus, 1473&ndash;1543) was a ' +
+        'churchman in Poland, trained in law and medicine, but his real love was astronomy and math. He took ' +
+        'a hard look at the old planet theories and built a new one with the <strong>Sun in the ' +
+        'middle</strong> instead of Earth. This is called the <span class="term">heliocentric</span> model ' +
+        '(&ldquo;helio&rdquo; means Sun). In it, <strong>Earth is just another planet</strong>, all the ' +
+        'planets circle the Sun, and only the Moon circles Earth. He laid it all out in a book, ' +
+        '<em>De Revolutionibus Orbium Coelestium</em> (&ldquo;On the Revolutions of the Heavenly ' +
+        'Spheres&rdquo;), published in <strong>1543</strong> &mdash; the year he died.</p>' +
+        '<p>He kept one old idea &mdash; that everything moves in perfect circles &mdash; but he threw out ' +
+        'the idea that Earth had to be the center. People argued: <em>if Earth were moving, wouldn&rsquo;t ' +
+        'we feel it? Wouldn&rsquo;t things fly off, and a dropped ball land off to the side?</em> Copernicus ' +
+        'answered that <strong>you do not feel smooth motion</strong> &mdash; like when the train next to ' +
+        'yours starts moving and for a second you cannot tell which one is going. The Sun&rsquo;s yearly ' +
+        'trip across our sky, he said, is just as easily explained by Earth going around the Sun. The sky ' +
+        'turning every day is just Earth spinning. And if spinning would tear Earth apart, then the ' +
+        'Earth-centered idea is worse &mdash; it needs the <em>giant</em> sphere of stars to whip around us ' +
+        'once a day, which would be far more violent.</p>' +
+        '<h4>The Sun-centered model</h4>' +
+        '<p>Copernicus put the six planets known then in the <strong>right order out from the Sun</strong> ' +
+        '&mdash; Mercury, Venus, Earth, Mars, Jupiter, Saturn &mdash; and worked out that <strong>closer ' +
+        'planets move faster</strong>. With the Sun in the middle, the weird backward loops of the planets ' +
+        '(retrograde motion) fall out naturally, <strong>with no epicycles needed</strong> &mdash; they are ' +
+        'just Earth passing the slower outer planets. He also got a roughly right sense of the ' +
+        '<strong>size</strong> of the solar system.</p>' +
+        '<p>He could not <em>prove</em> it, though. A patched-up version of Ptolemy&rsquo;s old system could ' +
+        'still match the observations. Copernicus&rsquo;s main argument was that his version was simpler and ' +
+        'more beautiful. And in his day, hardly anyone thought you could settle a question like this by ' +
+        '<strong>testing</strong> &mdash; the tradition, backed by the Church, was that truth comes from ' +
+        'careful thinking and religious teaching, not from poking at nature. (Aristotle had ' +
+        '&ldquo;reasoned&rdquo; that heavier things fall faster &mdash; which is just wrong, as anyone can ' +
+        'see by dropping two rocks &mdash; but his reasoning was trusted anyway.) So the Sun-centered idea ' +
+        'got argued about for more than <strong>50 years</strong> with nobody running a test. (Harvard was ' +
+        'still teaching the Earth-centered version in its first years after opening in 1636.) Compare that ' +
+        'with science today, where a new claim gets tested right away: when two researchers announced ' +
+        '&ldquo;cold fusion&rdquo; in 1989, more than 25 labs around the country tried to repeat it within ' +
+        'weeks &mdash; and it fell apart.</p>' +
+        '<p>To decide between two ideas, you need a spot where they <strong>disagree</strong>. Here is one: ' +
+        'if Venus goes around the <em>Sun</em>, then from Earth we should see it run through the ' +
+        '<strong>whole range of shapes</strong> &mdash; like the Moon&rsquo;s phases, from thin sliver to ' +
+        'full circle. If Venus goes around <em>Earth</em>, staying between us and the Sun, we could never ' +
+        'see it &ldquo;full.&rdquo; Before the telescope, nobody could check.</p>' +
         '<div data-diagram="venus-phases"></div>' +
-        '<p>Galileo&rsquo;s evidence tipped the balance to the Copernican view. The Church made an example ' +
-        'of him: tried by the <strong>Inquisition</strong> in 1633 and condemned to house arrest, with his ' +
-        'books banned until 1836. Only in 1992 did the Catholic Church publicly admit it had erred. The ' +
-        'Copernican&ndash;Galilean revolution left us with a vast universe in which Earth &mdash; and ' +
-        'humanity &mdash; is not the center.</p>',
+        '<h4>Galileo starts modern science</h4>' +
+        '<p><span class="term">Galileo</span> Galilei (1564&ndash;1642) was born in Pisa, started studying ' +
+        'medicine, got bored, and switched to math. (He was alive at the same time as Shakespeare.) He ' +
+        'taught at the universities of Pisa and Padua, then became mathematician to the Grand Duke of ' +
+        'Tuscany in Florence. He was one of the first people to really <strong>do experiments and careful ' +
+        'measurements</strong> instead of just reasoning things out.</p>' +
+        '<p>His biggest work was about <strong>motion</strong>. Everyone assumed that sitting still was the ' +
+        '&ldquo;natural&rdquo; state of things, and that anything moving would naturally stop. Galileo ' +
+        'showed that is backwards. Slide a block across a rough floor and it stops &mdash; but that is ' +
+        '<strong>friction</strong> slowing it down. Make the floor and block smoother and it slides farther. ' +
+        'Smoother still (like ice) and it goes farther yet. Take away <em>all</em> the rubbing and ' +
+        'resistance, he said, and the block would <strong>keep going forever</strong>. You need a ' +
+        '<span class="term">force</span> to <strong>start</strong> something moving, to <strong>speed it ' +
+        'up</strong>, to <strong>slow it down</strong>, to <strong>stop</strong> it, or to <strong>turn' +
+        '</strong> it &mdash; but not to <em>keep</em> it moving. He also showed that falling objects ' +
+        '<span class="term">accelerate</span> smoothly &mdash; they pick up the same amount of speed in ' +
+        'each equal chunk of time &mdash; and he wrote the rules down as math. (Centuries later, in ' +
+        '<strong>1971</strong>, an Apollo 15 astronaut on the airless Moon dropped a hammer and a feather ' +
+        'at the same time, and they hit the ground together &mdash; exactly as Galileo said.)</p>' +
+        '<p>Galileo came around to the Sun-centered idea in the 1590s. He backed it openly &mdash; he even ' +
+        'wrote in everyday Italian instead of scholarly Latin, and gave public lectures. In ' +
+        '<strong>1616</strong> the Church formally declared the Sun-centered idea &ldquo;false and ' +
+        'absurd&rdquo; and not to be taught or defended.</p>' +
+        '<h4>Galileo points a telescope at the sky</h4>' +
+        '<p>Nobody is sure who first thought of putting two pieces of glass together to make far things look ' +
+        'near. The first &ldquo;spyglasses&rdquo; people noticed were made in <strong>1608</strong> by a ' +
+        'Dutch eyeglass-maker, <strong>Hans Lippershey</strong>. Galileo heard about it and &mdash; without ' +
+        'ever seeing one &mdash; built his own that made things look 3 times closer, then 8 or 9 times (that ' +
+        'version got him a doubled salary and a job for life in Venice), and finally <strong>30 times' +
+        '</strong> closer. Then, in a move that changed everything, he pointed it <strong>up</strong>. ' +
+        'Starting in late 1609, he found:</p>' +
+        '<ul>' +
+        '<li>The <strong>Milky Way</strong> &mdash; that faint band across the night sky &mdash; and other ' +
+        'hazy smudges broke apart into <strong>countless separate stars</strong>, too faint for the eye ' +
+        'alone.</li>' +
+        '<li><strong>Four little moons going around Jupiter</strong> (with trips taking from under 2 days to ' +
+        'about 17 days). This was huge: it proved that <strong>not everything circles Earth</strong>, and ' +
+        'that a moving object (Jupiter) can carry its moons along with it &mdash; which knocked down a ' +
+        'favorite argument against a moving Earth (&ldquo;the Moon would get left behind&rdquo;).</li>' +
+        '<li>The <strong>phases of Venus</strong>. Venus runs through the full set of shapes, just like the ' +
+        'Moon &mdash; so it <strong>must go around the Sun</strong>. Ptolemy&rsquo;s Earth-centered model ' +
+        'predicts the wrong shapes in the wrong order.</li>' +
+        '<li>The <strong>Moon</strong> has craters, mountains, and flat dark plains &mdash; it is a ' +
+        '<strong>world</strong>, kind of like Earth. So maybe Earth belongs out there among the other ' +
+        'worlds.</li>' +
+        '</ul>' +
+        '<p>After Galileo&rsquo;s evidence, it got very hard to keep denying that the Sun is in the middle. ' +
+        'But the Catholic Church &mdash; under pressure from the Protestant Reformation and eager to show ' +
+        'its authority &mdash; decided to make an example of him. He was put on trial by the ' +
+        '<strong>Inquisition</strong> and sentenced to spend the rest of his life under house arrest. His ' +
+        'books stayed on the Church&rsquo;s banned list until <strong>1836</strong>. Not until ' +
+        '<strong>1992</strong> did the Church publicly admit it had been wrong about Galileo. The revolution ' +
+        'Copernicus and Galileo started left us with a universe that is huge, and with an Earth &mdash; and ' +
+        'a human race &mdash; that is <strong>not</strong> at the center of it all.</p>',
       keyIdeas: [
-        "Copernicus revived the heliocentric model in De Revolutionibus (1543): Earth is a planet and the planets circle the Sun (only the Moon orbits Earth). It explained retrograde motion without epicycles but could not be proven at the time.",
-        "Choosing between two models needs a prediction they disagree on — e.g. if Venus orbits the Sun it must show the full cycle of phases.",
-        "Galileo founded experimental physics: rest is not more natural than motion, a force changes motion rather than maintaining it, and falling objects accelerate uniformly.",
-        "With the telescope (from 1609) Galileo found the Milky Way is countless stars, four moons of Jupiter (not everything orbits Earth), the phases of Venus (it orbits the Sun), and a cratered, mountainous Moon.",
-        "Galileo's evidence tipped the balance to the Copernican view; the Church tried him and banned his books, admitting its error only in 1992."
+        "Copernicus (1543) put the Sun in the middle: Earth is a planet, the planets orbit the Sun, only the Moon orbits Earth. It explained the backward loops with no epicycles — but he couldn't prove it.",
+        "To choose between two models you need a prediction where they disagree — like: does Venus show the full set of phases, or only a sliver?",
+        "Galileo founded experimental science. His rule of motion: things keep moving on their own; a force is what starts, stops, speeds up, slows down, or turns them. Falling objects speed up smoothly.",
+        "With a telescope (from 1609) Galileo found the Milky Way is countless stars, four moons circling Jupiter (so not everything circles Earth), the phases of Venus (so Venus circles the Sun), and a cratered Moon that looks like a world.",
+        "Galileo's evidence tipped the scales toward the Sun-centered universe. The Church tried him and banned his books, and only admitted its mistake in 1992."
       ],
       selfCheck: [
         { q: "What was Copernicus's central idea, and what did it explain more simply than Ptolemy?",
-          a: "That the Sun, not Earth, is the center — Earth is just another planet orbiting it. This produced retrograde motion naturally, with no epicycles, and gave a roughly correct scale for the solar system." },
-        { q: "Why are the phases of Venus decisive between the two models?",
-          a: "If Venus orbits the Sun it must run through the full set of phases (including nearly \"full\" on the far side); if it orbits Earth between us and the Sun, it cannot. Galileo saw the full cycle." },
+          a: "That the Sun, not Earth, is in the middle — Earth is just another planet going around it. This made the planets' backward loops (retrograde motion) fall out naturally, with no epicycles, and gave a roughly right size for the solar system." },
+        { q: "Why are the phases of Venus the deciding test between the two models?",
+          a: "If Venus goes around the Sun, we should see it run through the full set of phases (including nearly \"full\" on the far side of the Sun). If it goes around Earth between us and the Sun, we never could. Galileo saw the full set." },
         { q: "State Galileo's key result about motion.",
-          a: "Rest is not the natural state of matter. A moving object keeps moving on its own; a force is required to start, stop, speed up, slow down, or turn it." },
-        { q: "Name two things Galileo discovered with his telescope and why each mattered.",
-          a: "Four moons of Jupiter (not everything orbits Earth) and the phases of Venus (Venus orbits the Sun). He also found the Milky Way is countless stars and the Moon is a cratered world." }
+          a: "Sitting still is not the natural state of things. A moving object keeps moving on its own; a force is needed to start it, stop it, speed it up, slow it down, or turn it." },
+        { q: "Name two things Galileo saw through his telescope and why each mattered.",
+          a: "Four moons circling Jupiter (shows not everything circles Earth) and the phases of Venus (shows Venus circles the Sun). He also found the Milky Way is countless faint stars and the Moon is a cratered world." }
       ]
     }
   ];
