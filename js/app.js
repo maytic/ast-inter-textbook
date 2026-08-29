@@ -2000,6 +2000,9 @@
     mainEl.appendChild(h("div", { class: "attribution", html:
       "Content adapted from <a href=\"https://openstax.org/books/astronomy-2e\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, " +
       "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use." }));
+    // every view starts at the top — otherwise a short view (e.g. a study tool)
+    // opened while scrolled down inside a long section looks "scrolled to the bottom"
+    window.scrollTo(0, 0);
     refreshSidebar();
   }
 
