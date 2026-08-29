@@ -1,0 +1,2126 @@
+/* =============================================================================
+   Astronomy 2e interactive study guide (multi-chapter)
+   Vanilla JS, no build step, no network. Runs from a local file:// in any
+   modern browser. All state is kept in localStorage.
+   Depends on: js/data.js, js/data-ch2.js, …  (window.ASTRO_CHAPTERS)
+   ============================================================================= */
+(function () {
+  "use strict";
+
+  var CHAPTERS = window.ASTRO_CHAPTERS || {};
+  var chapterNums = Object.keys(CHAPTERS).map(Number).sort(function (a, b) { return a - b; });
+  if (!chapterNums.length) { document.body.textContent = "Could not load chapter data."; return; }
+
+  var activeChapter = chapterNums[0];
+  var D = CHAPTERS[activeChapter];   // the active chapter's data (reassigned by setActiveChapter)
+
+  /* --------------------------------------------------------------- storage */
+  // progress keys are namespaced per chapter:  astro.ch<n>.<key>
+  function pfx() { return "astro.ch" + activeChapter + "."; }
+  var store = {
+    get: function (k, fallback) {
+      try {
+        var v = localStorage.getItem(pfx() + k);
+        return v == null ? fallback : JSON.parse(v);
+      } catch (e) { return fallback; }
+    },
+    set: function (k, v) {
+      try { localStorage.setItem(pfx() + k, JSON.stringify(v)); } catch (e) {}
+    },
+    del: function (k) { try { localStorage.removeItem(pfx() + k); } catch (e) {} }
+  };
+  function lsJSON(key, fallback) {   // read any localStorage key (used by the dashboard)
+    try { var v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
+    catch (e) { return fallback; }
+  }
+  var themeStore = {
+    get: function () { try { return localStorage.getItem("astro.theme"); } catch (e) { return null; } },
+    set: function (v) { try { localStorage.setItem("astro.theme", v); } catch (e) {} }
+  };
+
+  /* tool key -> [route, name, blurb] */
+  var TOOL_INFO = {
+    sci:      ["t/sci", "Scientific Notation", "Practice powers-of-ten both directions"],
+    round:    ["t/round", "Rounding Numbers", "Round to the nearest tidy number, on a number line"],
+    light:    ["t/light", "Light Travel Time", "Turn any distance into look-back time"],
+    calendar: ["t/calendar", "Cosmic Calendar", "13.8 billion years compressed into one year"],
+    scale:    ["t/scale", "Cosmic Scale", "Step from Earth to the most distant quasars"],
+    elements: ["t/elements", "Element Abundance", "The cosmic ‘greatest hits’ of the periodic table"]
+  };
+  function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
+
+  function setActiveChapter(n) {
+    n = Number(n);
+    if (!CHAPTERS[n]) return;
+    activeChapter = n;
+    D = CHAPTERS[n];
+    try { localStorage.setItem("astro.activeChapter", String(n)); } catch (e) {}
+    rebuildGlossaryIndex();
+  }
+
+  // one-time migration of the old single-chapter keys (astroCh1.* -> astro.ch1.*)
+  function migrateLegacy() {
+    try {
+      if (localStorage.getItem("astroCh1.read") != null && localStorage.getItem("astro.ch1.read") == null) {
+        var oldKeys = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf("astroCh1.") === 0) oldKeys.push(k);
+        }
+        oldKeys.forEach(function (k) {
+          var nk = "astro.ch1." + k.slice(9);
+          if (localStorage.getItem(nk) == null) localStorage.setItem(nk, localStorage.getItem(k));
+        });
+      }
+      if (!localStorage.getItem("astro.theme")) {
+        var t = localStorage.getItem("astroCh1.theme") || localStorage.getItem("astro.ch1.theme");
+        if (t) { try { localStorage.setItem("astro.theme", JSON.parse(t)); } catch (e2) { localStorage.setItem("astro.theme", t); } }
+      }
+    } catch (e) {}
+  }
+
+  /* --------------------------------------------------------------- helpers */
+  function h(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var val = attrs[k];
+        if (val == null) continue;
+        if (k === "class") e.className = val;
+        else if (k === "html") e.innerHTML = val;
+        else if (k === "text") e.textContent = val;
+        else if (k.slice(0, 2) === "on" && typeof val === "function") e.addEventListener(k.slice(2), val);
+        else e.setAttribute(k, val);
+      }
+    }
+    if (kids != null) {
+      if (!Array.isArray(kids)) kids = [kids];
+      kids.forEach(function (c) {
+        if (c == null || c === false) return;
+        e.appendChild(typeof c === "object" ? c : document.createTextNode(String(c)));
+      });
+    }
+    return e;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+  function qs(sel, root) { return (root || document).querySelector(sel); }
+  function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function shuffle(arr) {
+    arr = arr.slice();
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+  var SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³",
+    "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  function sup(n) { return String(n).split("").map(function (c) { return SUP[c] || c; }).join(""); }
+
+  /* ----- segmented control (mode switcher) ----- */
+  function segControl(labels, active, onChange) {
+    var wrap = h("div", { class: "seg" });
+    labels.forEach(function (lab, i) {
+      var b = h("button", { class: "seg-btn" + (i === active ? " on" : ""), text: lab, onclick: function () {
+        if (b.classList.contains("on")) return;
+        var all = wrap.querySelectorAll(".seg-btn");
+        for (var k = 0; k < all.length; k++) all[k].classList.remove("on");
+        b.classList.add("on");
+        onChange(i);
+      } });
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+
+  /* ----- shared two-column matching game -----
+     host: element to render into (cleared on each call)
+     pairs: [{ a: leftText, b: rightText }]
+     opts: { leftLabel, rightLabel, onRestart, onWin } */
+  var matchTimer = null;
+  function stopMatch() { if (matchTimer) { clearInterval(matchTimer); matchTimer = null; } }
+  function renderMatchGame(host, pairs, opts) {
+    opts = opts || {};
+    stopMatch();
+    clear(host);
+    var left = shuffle(pairs.map(function (p, i) { return { i: i, t: p.a }; }));
+    var right = shuffle(pairs.map(function (p, i) { return { i: i, t: p.b }; }));
+    var matched = {}, selL = null, selR = null, moves = 0, done = 0, t0 = Date.now();
+
+    var movesEl = h("b", { text: "0" });
+    var pairsEl = h("b", { text: "0/" + pairs.length });
+    var timeEl = h("b", { text: "0s" });
+    var head = h("div", { class: "match-head" }, [
+      h("span", {}, [document.createTextNode("Matched "), pairsEl]),
+      h("span", {}, [document.createTextNode("Moves "), movesEl]),
+      h("span", {}, [document.createTextNode("Time "), timeEl]),
+      h("button", { class: "btn small ghost", text: "New game",
+        onclick: function () { (opts.onRestart || function () { renderMatchGame(host, pairs, opts); })(); } })
+    ]);
+    matchTimer = setInterval(function () {
+      timeEl.textContent = Math.round((Date.now() - t0) / 1000) + "s";
+    }, 1000);
+
+    var leftCol = h("div", { class: "match-col" }, [h("h4", { text: opts.leftLabel || "" })]);
+    var rightCol = h("div", { class: "match-col" }, [h("h4", { text: opts.rightLabel || "" })]);
+    left.forEach(function (item) {
+      var b = h("button", { class: "match-item", text: item.t, onclick: function () { pick("L", item, b); } });
+      leftCol.appendChild(b);
+    });
+    right.forEach(function (item) {
+      var b = h("button", { class: "match-item", text: item.t, onclick: function () { pick("R", item, b); } });
+      rightCol.appendChild(b);
+    });
+    var winSlot = h("div");
+    host.appendChild(head);
+    host.appendChild(h("div", { class: "match-wrap" }, [leftCol, rightCol]));
+    host.appendChild(winSlot);
+
+    function pick(side, item, btn) {
+      if (matched[item.i]) return;
+      if (side === "L") { if (selL) selL.btn.classList.remove("sel"); selL = { item: item, btn: btn }; }
+      else { if (selR) selR.btn.classList.remove("sel"); selR = { item: item, btn: btn }; }
+      btn.classList.add("sel");
+      if (!selL || !selR) return;
+      moves++; movesEl.textContent = moves;
+      var a = selL, b = selR;
+      if (a.item.i === b.item.i) {
+        matched[a.item.i] = true; done++;
+        [a, b].forEach(function (x) {
+          x.btn.classList.remove("sel"); x.btn.classList.add("matched"); x.btn.disabled = true;
+        });
+        selL = selR = null;
+        pairsEl.textContent = done + "/" + pairs.length;
+        if (done === pairs.length) win();
+      } else {
+        a.btn.classList.add("wrong"); b.btn.classList.add("wrong");
+        a.btn.classList.remove("sel"); b.btn.classList.remove("sel");
+        var aa = a.btn, bb = b.btn;
+        setTimeout(function () { aa.classList.remove("wrong"); bb.classList.remove("wrong"); }, 350);
+        selL = selR = null;
+      }
+    }
+    function win() {
+      stopMatch();
+      var secs = Math.round((Date.now() - t0) / 1000);
+      winSlot.appendChild(h("div", { class: "match-win card" }, [
+        h("div", { class: "big", text: "Solved!" }),
+        h("p", { text: pairs.length + " pairs · " + moves + " moves · " + secs + " s" }),
+        h("button", { class: "btn primary", text: "Play again",
+          onclick: function () { (opts.onRestart || function () { renderMatchGame(host, pairs, opts); })(); } })
+      ]));
+      if (opts.onWin) opts.onWin({ moves: moves, seconds: secs });
+    }
+  }
+
+  // Expand coefficient + exponent to a plain decimal string (no float error).
+  function expand(coeff, exp) {
+    var s = String(coeff);
+    var neg = s.charAt(0) === "-";
+    if (neg) s = s.slice(1);
+    var parts = s.split(".");
+    var digits = parts[0] + (parts[1] || "");
+    var point = parts[0].length + exp;
+    var out;
+    if (point <= 0) out = "0." + Array(-point + 1).join("0") + digits;
+    else if (point >= digits.length) out = digits + Array(point - digits.length + 1).join("0");
+    else out = digits.slice(0, point) + "." + digits.slice(point);
+    if (out.indexOf(".") > -1) out = out.replace(/0+$/, "").replace(/\.$/, "");
+    return (neg ? "-" : "") + out;
+  }
+  function commas(numStr) {
+    var parts = String(numStr).split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+  // Format a number in scientific notation as "9.46 × 10¹²"
+  function fmtSci(n, sig) {
+    sig = sig || 3;
+    if (n === 0) return "0";
+    var neg = n < 0; n = Math.abs(n);
+    var exp = Math.floor(Math.log(n) / Math.LN10);
+    var coeff = n / Math.pow(10, exp);
+    // guard rounding pushing coeff to 10
+    coeff = Number(coeff.toPrecision(sig));
+    if (coeff >= 10) { coeff /= 10; exp += 1; }
+    var cs = String(coeff);
+    return (neg ? "-" : "") + cs + " × 10" + sup(exp);
+  }
+
+  var YEAR_SEC = 365.25 * 24 * 3600;
+  var DUR_UNITS = [
+    [1, "second", "seconds"],
+    [60, "minute", "minutes"],
+    [3600, "hour", "hours"],
+    [86400, "day", "days"],
+    [YEAR_SEC, "year", "years"],
+    [YEAR_SEC * 1e3, "thousand years", "thousand years"],
+    [YEAR_SEC * 1e6, "million years", "million years"],
+    [YEAR_SEC * 1e9, "billion years", "billion years"]
+  ];
+  function fmtDuration(seconds) {
+    if (seconds < 1) return (seconds).toPrecision(2) + " seconds";
+    var u = DUR_UNITS[0];
+    for (var i = 0; i < DUR_UNITS.length; i++) {
+      if (seconds >= DUR_UNITS[i][0]) u = DUR_UNITS[i];
+    }
+    var v = seconds / u[0];
+    var vs = v >= 100 ? Math.round(v).toLocaleString() :
+             v >= 10 ? v.toFixed(1) : v.toFixed(2);
+    vs = vs.replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
+    var label = (Math.abs(v - 1) < 1e-9) ? u[1] : u[2];
+    return vs + " " + label;
+  }
+
+  /* ---------------------------------------------------------- glossary map */
+  function normTerm(s) {
+    return s.toLowerCase()
+      .replace(/\([^)]*\)/g, "")        // drop parenthetical
+      .replace(/[^a-z ]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  var GLOSS_BY_NORM = {};
+  function rebuildGlossaryIndex() {
+    GLOSS_BY_NORM = {};
+    (D.glossary || []).forEach(function (g) { GLOSS_BY_NORM[normTerm(g.term)] = g; });
+  }
+  var ALIASES = {
+    "hypotheses": "hypothesis", "quasars": "quasar", "atoms": "atom",
+    "molecules": "molecule", "elements": "element", "galaxies": "galaxy",
+    "star clusters": "star cluster", "scientific laws": "scientific law",
+    "superclusters": "supercluster", "clusters": "cluster of galaxies",
+    "the galaxy": "milky way galaxy"
+  };
+  function lookupTerm(text) {
+    var n = normTerm(text);
+    if (GLOSS_BY_NORM[n]) return GLOSS_BY_NORM[n];
+    if (ALIASES[n] && GLOSS_BY_NORM[ALIASES[n]]) return GLOSS_BY_NORM[ALIASES[n]];
+    if (n.slice(-1) === "s" && GLOSS_BY_NORM[n.slice(0, -1)]) return GLOSS_BY_NORM[n.slice(0, -1)];
+    // prefix match
+    for (var key in GLOSS_BY_NORM) {
+      if (n.indexOf(key) === 0 || key.indexOf(n) === 0) return GLOSS_BY_NORM[key];
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------- section plain-text index */
+  var SCRATCH = document.createElement("div");
+  chapterNums.forEach(function (n) {
+    (CHAPTERS[n].sections || []).forEach(function (s) {
+      SCRATCH.innerHTML = s.html;
+      s._plain = (SCRATCH.textContent || "").replace(/\s+/g, " ").toLowerCase();
+    });
+  });
+
+  /* -------------------------------------------------------------- routing */
+  var ROUTES = {}; // hash -> {title, render}
+  function currentHash() { return location.hash.replace(/^#\/?/, "") || "dashboard"; }
+
+  /* ============================================================ SIDEBAR == */
+  var app = qs("#app");
+  var sidebarEl, mainEl, crumbEl, sideBarFill, sideBarText;
+
+  function navLink(hash, num, label) {
+    return h("button", {
+      class: "nav-link", "data-hash": hash,
+      onclick: function () { go(hash); closeSidebar(); }
+    }, [
+      num ? h("span", { class: "num", text: num }) : null,
+      h("span", { text: label }),
+      h("span", { class: "check", text: "✓" })
+    ]);
+  }
+
+  function rebuildNav() {
+    if (!sidebarEl) return;
+    var brand = qs("#brandBox", sidebarEl);
+    clear(brand);
+    brand.appendChild(h("div", { class: "ch", text: "Chapter " + D.meta.chapter }));
+    brand.appendChild(h("div", { class: "title", text: D.meta.chapterTitle }));
+    brand.appendChild(h("div", { class: "book", text: D.meta.book }));
+
+    var read = qs("#navRead", sidebarEl);
+    clear(read);
+    read.appendChild(navLink("overview", "", "Overview"));
+    D.sections.forEach(function (s) { read.appendChild(navLink("s/" + s.id, s.id, s.title)); });
+
+    var keys = D.tools || [];
+    var toolsLabel = qs("#navToolsLabel", sidebarEl);
+    var tools = qs("#navTools", sidebarEl);
+    clear(tools);
+    toolsLabel.style.display = keys.length ? "" : "none";
+    keys.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      if (info) tools.appendChild(navLink(info[0], "", info[1]));
+    });
+    refreshSidebar();
+  }
+
+  function buildShell() {
+    var sidebar = h("aside", { class: "sidebar", id: "sidebar" });
+    sidebarEl = sidebar;
+
+    sidebar.appendChild(h("button", {
+      class: "nav-link nav-back", "data-hash": "dashboard",
+      onclick: function () { go("dashboard"); closeSidebar(); }
+    }, h("span", { text: "← All chapters" })));
+    sidebar.appendChild(h("div", { class: "brand", id: "brandBox" }));
+
+    sidebar.appendChild(h("div", { class: "nav-group-label", text: "Read" }));
+    sidebar.appendChild(h("div", { id: "navRead" }));
+
+    sideBarText = h("div", {}, "0 sections reviewed");
+    sideBarFill = h("span");
+    sidebar.appendChild(h("div", { class: "sidebar-progress" }, [
+      sideBarText,
+      h("div", { class: "bar" }, sideBarFill)
+    ]));
+
+    sidebar.appendChild(h("div", { class: "nav-group-label", id: "navToolsLabel", text: "Study tools" }));
+    sidebar.appendChild(h("div", { id: "navTools" }));
+
+    sidebar.appendChild(h("div", { class: "nav-group-label", text: "Review" }));
+    sidebar.appendChild(navLink("flashcards", "", "Flashcards"));
+    sidebar.appendChild(navLink("quiz", "", "Self-Test Quiz"));
+    sidebar.appendChild(navLink("glossary", "", "Glossary"));
+    sidebar.appendChild(navLink("progress", "", "My Progress"));
+
+    /* top bar */
+    var searchInput = h("input", {
+      type: "text", placeholder: "Search…", "aria-label": "Search",
+      oninput: function () { runSearch(this.value); },
+      onfocus: function () { if (this.value) runSearch(this.value); }
+    });
+    var searchResults = h("div", { class: "search-results", id: "searchResults" });
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".search-wrap")) searchResults.classList.remove("open");
+    });
+
+    crumbEl = h("div", { class: "crumb" });
+
+    var themeBtn = h("button", {
+      class: "icon-btn", title: "Toggle light / dark theme", "aria-label": "Toggle theme",
+      onclick: toggleTheme
+    }, themeIcon());
+    themeBtn.id = "themeBtn";
+
+    var topbar = h("header", { class: "topbar" }, [
+      h("button", {
+        class: "icon-btn menu-btn", "aria-label": "Menu",
+        onclick: function () { sidebarEl.classList.toggle("open"); qs("#scrim").classList.toggle("show"); }
+      }, "☰"),
+      crumbEl,
+      h("div", { class: "spacer" }),
+      h("div", { class: "search-wrap" }, [searchInput, searchResults]),
+      themeBtn
+    ]);
+
+    mainEl = h("main", { class: "main", id: "main" });
+    var scrim = h("div", { class: "scrim", id: "scrim", onclick: closeSidebar });
+
+    app.appendChild(sidebar);
+    app.appendChild(topbar);
+    app.appendChild(mainEl);
+    app.appendChild(scrim);
+    document.body.appendChild(h("div", { class: "term-pop", id: "termPop" }));
+  }
+
+  function closeSidebar() {
+    sidebarEl.classList.remove("open");
+    var s = qs("#scrim"); if (s) s.classList.remove("show");
+  }
+
+  function themeIcon() {
+    return document.documentElement.getAttribute("data-theme") === "light" ? "☾" : "☀";
+  }
+  function toggleTheme() {
+    var cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    var next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    themeStore.set(next);
+    qs("#themeBtn").textContent = themeIcon();
+  }
+
+  /* ---------------------------------------------------------- read state */
+  function readSet() { return store.get("read", []); }
+  function isRead(id) { return readSet().indexOf(id) > -1; }
+  function setRead(id, on) {
+    var set = readSet();
+    var i = set.indexOf(id);
+    if (on && i < 0) set.push(id);
+    if (!on && i > -1) set.splice(i, 1);
+    store.set("read", set);
+    refreshSidebar();
+  }
+
+  function refreshSidebar() {
+    var cur = currentHash();
+    var links = sidebarEl.querySelectorAll(".nav-link");
+    for (var i = 0; i < links.length; i++) {
+      var lh = links[i].getAttribute("data-hash");
+      links[i].classList.toggle("active", lh === cur);
+      var m = lh.match(/^s\/(.+)$/);
+      links[i].classList.toggle("done", !!(m && isRead(m[1])));
+    }
+    var n = readSet().length, total = D.sections.length;
+    sideBarFill.style.width = Math.round((n / total) * 100) + "%";
+    sideBarText.textContent = n + " of " + total + " sections reviewed";
+  }
+
+  /* ================================================================ SEARCH */
+  function runSearch(qraw) {
+    var box = qs("#searchResults");
+    var q = qraw.trim().toLowerCase();
+    clear(box);
+    if (q.length < 2) { box.classList.remove("open"); return; }
+    var out = [];
+    chapterNums.forEach(function (n) {
+      var c = CHAPTERS[n];
+      var tag = chapterNums.length > 1 ? "Ch " + n + " · " : "";
+      c.sections.forEach(function (s) {
+        if (("section " + s.id + " " + s.title).toLowerCase().indexOf(q) > -1 || (s._plain || "").indexOf(q) > -1) {
+          out.push({ kind: tag + "Section", label: s.id + "  " + s.title, chapter: n, hash: "s/" + s.id });
+        }
+      });
+      (c.glossary || []).forEach(function (g) {
+        if (g.term.toLowerCase().indexOf(q) > -1 || g.def.toLowerCase().indexOf(q) > -1) {
+          out.push({ kind: tag + "Term", label: g.term, chapter: n, hash: "glossary", term: g.term });
+        }
+      });
+    });
+    (D.tools || []).forEach(function (key) {
+      var info = TOOL_INFO[key];
+      if (info && info[1].toLowerCase().indexOf(q) > -1) out.push({ kind: "Tool", label: info[1], hash: info[0] });
+    });
+    if ("dashboard chapters".indexOf(q) > -1) out.push({ kind: "Go", label: "All chapters", hash: "dashboard" });
+
+    if (!out.length) {
+      box.appendChild(h("div", { class: "sr-empty", text: "No matches for “" + qraw + "”" }));
+    } else {
+      out.slice(0, 30).forEach(function (r) {
+        box.appendChild(h("button", {
+          class: "sr-item",
+          onclick: function () {
+            box.classList.remove("open");
+            if (r.chapter && r.chapter !== activeChapter) { setActiveChapter(r.chapter); rebuildNav(); }
+            go(r.hash);
+            if (r.term) setTimeout(function () { highlightGlossary(r.term); }, 60);
+          }
+        }, [h("span", { class: "sr-kind", text: r.kind }), document.createTextNode(r.label)]));
+      });
+    }
+    box.classList.add("open");
+  }
+
+  /* ============================================================= RENDERERS */
+
+  function pageTitle(t) { crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Chapter " + D.meta.chapter + " &middot; " + t; }
+
+  /* ---- DASHBOARD (all chapters) ------------------------------------- */
+  function renderDashboard() {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; All chapters";
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Interactive study guide" }));
+    v.appendChild(h("h1", { text: "Astronomy 2e — Chapters" }));
+    v.appendChild(h("p", { class: "lede", text:
+      "Pick a chapter to study. Each has section-by-section reading, key ideas, self-checks, flashcards, " +
+      "and a self-test quiz. Your progress on every chapter is saved in this browser." }));
+
+    var grid = h("div", { class: "chapter-grid" });
+    chapterNums.forEach(function (n) {
+      var c = CHAPTERS[n];
+      var readArr = lsJSON("astro.ch" + n + ".read", []);
+      var flashMapN = lsJSON("astro.ch" + n + ".flash", {});
+      var knownN = 0; for (var t in flashMapN) if (flashMapN[t] === "known") knownN++;
+      var bestN = lsJSON("astro.ch" + n + ".quizBest", null);
+      var total = c.sections.length;
+      var pct = total ? Math.round(readArr.length / total * 100) : 0;
+      var started = readArr.length > 0 || bestN != null || knownN > 0;
+      var toolCount = (c.tools || []).length;
+
+      grid.appendChild(h("button", {
+        class: "chapter-card" + (n === activeChapter ? " current" : ""),
+        onclick: function () { setActiveChapter(n); rebuildNav(); go("overview"); }
+      }, [
+        h("div", { class: "ch-num", text: "Chapter " + n }),
+        h("div", { class: "ch-title", text: c.meta.chapterTitle }),
+        h("div", { class: "ch-meta", text:
+          total + " sections · " + (c.glossary ? c.glossary.length : 0) + " terms" +
+          (toolCount ? " · " + toolCount + " tools" : "") }),
+        h("div", { class: "bar" }, h("span", { style: "width:" + pct + "%" })),
+        h("div", { class: "ch-cta" }, [
+          h("span", { class: "ch-go", text: pct === 100 ? "Review ✓" : started ? "Continue" : "Start" }),
+          h("span", { class: "ch-pct", text: (started ? pct + "%" : "") +
+            (bestN != null ? "  ·  quiz " + bestN + "%" : "") })
+        ])
+      ]));
+    });
+    v.appendChild(grid);
+    mount(v);
+  }
+
+  /* ---- OVERVIEW (one chapter) -------------------------------------- */
+  function renderOverview() {
+    pageTitle("Overview");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("dashboard"); },
+      text: "← All chapters" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Chapter " + D.meta.chapter }));
+    v.appendChild(h("h1", { text: D.meta.chapterTitle }));
+    v.appendChild(h("p", { class: "lede", text:
+      "Work through the " + D.sections.length + " sections, review the key ideas and self-checks, then " +
+      "test yourself with flashcards and the quiz." }));
+
+    var read = readSet().length;
+    var flash = flashKnownCount();
+    var best = store.get("quizBest", null);
+    v.appendChild(h("div", { class: "overview-stats" }, [
+      stat(read + " / " + D.sections.length, "sections reviewed"),
+      stat(flash + " / " + D.glossary.length, "terms learned"),
+      stat(best == null ? "—" : best + "%", "best quiz score")
+    ]));
+
+    v.appendChild(h("h2", { text: "Sections" }));
+    var tiles = h("div", { class: "tiles" });
+    D.sections.forEach(function (s) {
+      tiles.appendChild(h("button", { class: "tile", onclick: function () { go("s/" + s.id); } }, [
+        h("div", { class: "t-num", text: "SECTION " + s.id }),
+        h("div", { class: "t-title", text: s.title }),
+        h("div", { class: "t-meta", text: "~" + s.minutes + " min read · " + s.keyIdeas.length + " key ideas" }),
+        isRead(s.id) ? h("div", { class: "t-check", text: "✓ reviewed" }) : null
+      ]));
+    });
+    v.appendChild(tiles);
+
+    if ((D.tools || []).length) {
+      v.appendChild(h("h2", { text: "Study tools" }));
+      var ttiles = h("div", { class: "tiles" });
+      D.tools.forEach(function (key) {
+        var info = TOOL_INFO[key];
+        if (!info) return;
+        ttiles.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+          h("div", { class: "t-title", text: info[1] }),
+          h("div", { class: "t-meta", text: info[2] })
+        ]));
+      });
+      v.appendChild(ttiles);
+    }
+
+    mount(v);
+  }
+  function stat(n, l) { return h("div", { class: "stat" }, [h("div", { class: "n", text: n }), h("div", { class: "l", text: l })]); }
+
+  /* ---- SECTION ------------------------------------------------------ */
+  function renderSection(id) {
+    var idx = D.sections.map(function (s) { return s.id; }).indexOf(id);
+    var s = D.sections[idx];
+    if (!s) return renderOverview();
+    pageTitle("Section " + s.id + " — " + s.title);
+
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Section " + s.id + " · ~" + s.minutes + " min" }));
+    v.appendChild(h("h1", { text: s.title }));
+
+    var prose = h("div", { class: "prose", html: s.html });
+    v.appendChild(prose);
+
+    // mount any inline interactive diagrams the section HTML asks for
+    if (window.ASTRO_DIAGRAMS) {
+      qsa("[data-diagram]", prose).forEach(function (el) {
+        var fn = window.ASTRO_DIAGRAMS[el.getAttribute("data-diagram")];
+        if (!fn) { el.parentNode && el.parentNode.removeChild(el); return; }
+        try { fn(el); } catch (err) { el.parentNode && el.parentNode.removeChild(el); }
+      });
+    }
+
+    v.appendChild(h("div", { class: "key-ideas" }, [
+      h("h3", { text: "Key ideas" }),
+      h("ul", {}, s.keyIdeas.map(function (k) { return h("li", { text: k }); }))
+    ]));
+
+    if (s.selfCheck && s.selfCheck.length) {
+      var sc = h("div", { class: "selfcheck" }, [h("h3", { text: "Check yourself" })]);
+      s.selfCheck.forEach(function (qa) {
+        sc.appendChild(h("details", { class: "qa" }, [
+          h("summary", { text: qa.q }),
+          h("div", { class: "answer", text: qa.a })
+        ]));
+      });
+      v.appendChild(sc);
+    }
+
+    /* section tools: mark read + notes */
+    var readBtn = h("button", { class: "btn" });
+    function paintReadBtn() {
+      var r = isRead(s.id);
+      readBtn.textContent = r ? "✓ Reviewed" : "Mark section as reviewed";
+      readBtn.className = "btn" + (r ? " done" : " primary");
+    }
+    readBtn.addEventListener("click", function () { setRead(s.id, !isRead(s.id)); paintReadBtn(); });
+    paintReadBtn();
+
+    var noteKey = "notes." + s.id;
+    var savedMsg = h("span", { class: "notes-saved", text: "saved" });
+    var ta = h("textarea", {
+      class: "notes", placeholder: "Your notes on section " + s.id + "… (saved automatically in this browser)"
+    });
+    ta.value = store.get(noteKey, "");
+    var saveTimer;
+    ta.addEventListener("input", function () {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        store.set(noteKey, ta.value);
+        savedMsg.classList.add("show");
+        setTimeout(function () { savedMsg.classList.remove("show"); }, 1200);
+      }, 400);
+    });
+
+    v.appendChild(h("div", { class: "section-tools" }, [
+      readBtn,
+      h("label", { class: "notes-label" }, ["My notes", savedMsg]),
+      ta
+    ]));
+
+    /* prev / next */
+    var prev = D.sections[idx - 1], next = D.sections[idx + 1];
+    var nav = h("div", { class: "section-nav" });
+    nav.appendChild(prev
+      ? h("button", { class: "btn", onclick: function () { go("s/" + prev.id); } },
+          [h("small", { text: "← Previous" }), document.createTextNode(prev.id + "  " + prev.title)])
+      : h("button", { class: "btn", onclick: function () { go("overview"); } },
+          [h("small", { text: "← Back" }), document.createTextNode("Overview")]));
+    nav.appendChild(next
+      ? h("button", { class: "btn next", onclick: function () { setRead(s.id, true); go("s/" + next.id); } },
+          [h("small", { text: "Next →" }), document.createTextNode(next.id + "  " + next.title)])
+      : h("button", { class: "btn next primary", onclick: function () { setRead(s.id, true); go("quiz"); } },
+          [h("small", { text: "Finish →" }), document.createTextNode("Take the quiz")]));
+    v.appendChild(nav);
+
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
+  /* ---- TOOL: Scientific notation ---------------------------------- */
+  function makeSciTask() {
+    // random coefficient 1..9.99 with 1-3 sig digits, exponent -9..15
+    var digits = 1 + Math.floor(Math.random() * 3);
+    var coeff = (1 + Math.random() * 8.999);
+    coeff = Number(coeff.toFixed(digits - 1));
+    if (coeff < 1) coeff = 1;
+    if (coeff >= 10) coeff = 9.9;
+    var exp = Math.floor(Math.random() * 25) - 9; // -9 .. 15
+    var toSci = Math.random() < 0.5;
+    return { coeff: coeff, exp: exp, toSci: toSci, plain: expand(coeff, exp) };
+  }
+  // Move the decimal point k places (k>0 = right, k<0 = left); return a clean string.
+  function shiftDecimal(numStr, k) {
+    var s = String(numStr);
+    var neg = s.charAt(0) === "-"; if (neg) s = s.slice(1);
+    var parts = s.split(".");
+    var intp = parts[0], frac = parts[1] || "";
+    var digits = intp + frac;
+    var point = intp.length + k;
+    var out;
+    if (point <= 0) out = "0." + new Array(-point + 1).join("0") + digits;
+    else if (point >= digits.length) out = digits + new Array(point - digits.length + 1).join("0");
+    else out = digits.slice(0, point) + "." + digits.slice(point);
+    if (out.indexOf(".") > -1) out = out.replace(/0+$/, "").replace(/\.$/, "");
+    out = out.replace(/^0+(?=\d)/, "");
+    if (out.charAt(0) === ".") out = "0" + out;
+    if (out === "" || out === "-") out = "0";
+    return (neg ? "-" : "") + out;
+  }
+  // Describe a number for the "hop the dot" widget.
+  function fieldFor(plain) {
+    var neg = String(plain).charAt(0) === "-";
+    var s = neg ? String(plain).slice(1) : String(plain);
+    if (s.indexOf(".") === -1) {
+      var d = s.replace(/^0+/, "") || "0";
+      return { neg: neg, digits: d, dot: d.length, dir: "left", target: Math.max(0, d.length - 1) };
+    }
+    var parts = s.split(".");
+    var intp = parts[0].replace(/^0+/, "");
+    if (intp) {
+      return { neg: neg, digits: intp + parts[1], dot: intp.length, dir: "left", target: intp.length - 1 };
+    }
+    var frac = parts[1];
+    var lead = (frac.match(/^0*/) || [""])[0].length;
+    return { neg: neg, digits: frac, dot: 0, dir: "right", target: lead + 1 };
+  }
+  // HTML for the number with a highlighted dot at the current hop position.
+  function hopHTML(f, hd) {
+    var pos = f.dir === "left" ? f.dot - hd : f.dot + hd;
+    var ds = f.digits, body;
+    var DOT = "<span class='dot' aria-hidden='true'></span>";
+    if (pos <= 0) body = "0" + DOT + ds;
+    else if (pos >= ds.length) body = ds + DOT;
+    else body = ds.slice(0, pos) + DOT + ds.slice(pos);
+    return (f.neg ? "-" : "") + body;
+  }
+
+  /* ---- rounding helpers (shared by the Rounding tool) ---- */
+  function roundPlaceLabel(place) {
+    if (place === "whole") return "the nearest whole number";
+    if (place === "tenth") return "the nearest tenth";
+    if (place === "hundredth") return "the nearest hundredth";
+    if (place >= 1e6) return "the nearest million";
+    if (place >= 1000) return "the nearest thousand";
+    if (place >= 100) return "the nearest hundred";
+    return "the nearest ten";
+  }
+  function fmtNum(n, d) {
+    if (d && d > 0) return commas(Number(n).toFixed(d));
+    return commas(String(Math.round(Number(n))));
+  }
+  function roundInfo(n, place) {
+    var decimals = 0, step;
+    if (place === "whole") { decimals = 0; step = 1; }
+    else if (place === "tenth") { decimals = 1; step = 0.1; }
+    else if (place === "hundredth") { decimals = 2; step = 0.01; }
+    else { step = place; decimals = 0; }
+    var lower = Math.round(Math.floor(n / step) * step * 1e6) / 1e6;
+    var upper = Math.round((lower + step) * 1e6) / 1e6;
+    var probe = step / 10;
+    var digit = Math.floor((n / probe) % 10 + 1e-9) % 10;
+    var roundUp = (n - lower) >= step / 2 - 1e-12;
+    return {
+      step: step, decimals: decimals, lower: lower, upper: upper,
+      half: lower + step / 2, digit: digit, roundUp: roundUp,
+      result: roundUp ? upper : lower,
+      frac: Math.max(0, Math.min(1, (n - lower) / step))
+    };
+  }
+  function numberLine(info, opts) {
+    var reveal = !opts || opts.reveal !== false;   // default: show the winning side
+    var winLow = reveal && !info.roundUp, winHigh = reveal && info.roundUp;
+    var track = h("div", { class: "rl-track" }, [
+      h("span", { class: "rl-side low" + (winLow ? " win" : "") }),
+      h("span", { class: "rl-side high" + (winHigh ? " win" : "") }),
+      h("span", { class: "rl-half" }),
+      h("span", { class: "rl-mark", style: "left:" + (info.frac * 100) + "%" })
+    ]);
+    var ends = h("div", { class: "rl-ends" }, [
+      h("span", { class: "rl-post" + (winLow ? " win" : ""), text: fmtNum(info.lower, info.decimals) }),
+      h("span", { class: "rl-mid", text: "halfway" }),
+      h("span", { class: "rl-post" + (winHigh ? " win" : ""), text: fmtNum(info.upper, info.decimals) })
+    ]);
+    return h("div", { class: "rl-wrap" }, [track, ends]);
+  }
+  // index (within the digit sequence, ignoring "." ) of the deciding digit
+  function decidingDigitIndex(intLen, place) {
+    if (place === "whole") return intLen;
+    if (place === "tenth") return intLen + 1;
+    if (place === "hundredth") return intLen + 2;
+    var trailing = Math.round(Math.log(place) / Math.LN10) - 1;   // digits right of it
+    return intLen - 1 - trailing;
+  }
+  // render a number as digit chips, optionally highlighting the deciding digit
+  function bigNumber(plain, place, highlight) {
+    var wrap = h("span", { class: "rn-digits" });
+    var s = String(plain), neg = s.charAt(0) === "-"; if (neg) s = s.slice(1);
+    var parts = s.split("."), intP = parts[0], fracP = parts[1] || "";
+    var di = highlight ? decidingDigitIndex(intP.length, place) : -1;
+    var idx = 0;
+    if (neg) wrap.appendChild(h("span", { text: "−" }));
+    for (var i = 0; i < intP.length; i++) {
+      if (i > 0 && (intP.length - i) % 3 === 0) wrap.appendChild(h("span", { class: "rn-comma", text: "," }));
+      wrap.appendChild(h("span", { class: "rn-d" + (idx === di ? " hi" : ""), text: intP.charAt(i) }));
+      idx++;
+    }
+    if (fracP) {
+      wrap.appendChild(h("span", { class: "rn-dot", text: "." }));
+      for (var j = 0; j < fracP.length; j++) {
+        wrap.appendChild(h("span", { class: "rn-d" + (idx === di ? " hi" : ""), text: fracP.charAt(j) }));
+        idx++;
+      }
+    }
+    return wrap;
+  }
+
+  /* ---- TOOL: Rounding numbers ---- */
+  function renderRound() {
+    pageTitle("Rounding Numbers");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "Rounding — pick the nearest tidy number" }));
+    v.appendChild(h("p", { class: "tool-intro", text:
+      "Astronomers say “about 13,000 km” or “about 150 million km.” Rounding is how you get those tidy " +
+      "numbers: slide to the closest signpost." }));
+
+    var modeHost = h("div");
+    v.appendChild(segControl(["Show me how", "Practice", "Matching game"], 0, function (idx) {
+      stopMatch();
+      if (idx === 0) showExplainer();
+      else if (idx === 1) showPractice();
+      else showMatch();
+    }));
+    v.appendChild(modeHost);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "The rule (super short)", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p>Two <b>signposts</b> sit on either side of your number — the tidy number just below it and the " +
+        "tidy number just above it. Rounding means <b>walking to the closer signpost</b>.</p>" +
+        "<p>Quick way — look at the <b>next digit</b> (the one just after the spot you're rounding to):</p>" +
+        "<ul>" +
+        "<li><b>5, 6, 7, 8, 9</b> &rarr; jump <b>UP</b> to the bigger signpost.</li>" +
+        "<li><b>0, 1, 2, 3, 4</b> &rarr; stay <b>DOWN</b> at the smaller signpost.</li>" +
+        "</ul>" +
+        "<p style='margin:0'>A <b>5</b> is exactly halfway — everyone agrees to jump up.</p>" })
+    ]));
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "“hundreds” vs “hundredths” — the places", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p>Every digit sits in a <b>place</b>, and each place has a size. The <b>dot</b> splits " +
+        "<b>whole amounts</b> (on the left) from <b>little slices of one</b> (on the right).</p>" +
+        "<div class='pv-wrap'><table class='pv-table'><tbody>" +
+        "<tr>" +
+        "<th>thousands</th><th>hundreds</th><th>tens</th><th>ones</th>" +
+        "<th class='pv-dot'>•</th>" +
+        "<th>tenths</th><th>hundredths</th><th>thousandths</th>" +
+        "</tr><tr>" +
+        "<td>1000</td><td>100</td><td>10</td><td>1</td>" +
+        "<td class='pv-dot'></td>" +
+        "<td>0.1</td><td>0.01</td><td>0.001</td>" +
+        "</tr><tr>" +
+        "<td colspan='4' class='pv-side'>&larr; whole amounts &nbsp;(each step left = 10&times; <b>bigger</b>)</td>" +
+        "<td class='pv-dot'></td>" +
+        "<td colspan='3' class='pv-side'>slices of 1 &nbsp;(each step right = 10&times; <b>smaller</b>) &rarr;</td>" +
+        "</tr></tbody></table></div>" +
+        "<ul>" +
+        "<li>Left of the dot: <b>ones, tens, hundreds, thousands, millions…</b> — bigger and bigger whole numbers.</li>" +
+        "<li>Right of the dot: a <b>tenth</b> is 1 cut into 10, a <b>hundredth</b> is 1 cut into 100, a " +
+        "<b>thousandth</b> is 1 cut into 1000 — smaller and smaller pieces.</li>" +
+        "<li>Listen for the <b>&ldquo;-ths&rdquo;</b>: <i>hundreds</i> is big; <i>hundred<b>ths</b></i> is a tiny slice on the right.</li>" +
+        "</ul>" +
+        "<p style='margin:0'>So <b>round to the nearest hundred</b> = tidy up to the hundreds place (left). " +
+        "<b>Round to the nearest hundredth</b> = keep only as far as the hundredths place (right).</p>" })
+    ]));
+
+    showExplainer();
+    mount(v);
+
+    /* -------- MODE: Show me how (animated) -------- */
+    function showExplainer() {
+      clear(modeHost);
+      var EX = D.roundExamples;
+      var cur = EX[1] || EX[0];
+      var token = 0;   // cancels a running animation when the number changes
+
+      var picker = h("div", { class: "chip-row" });
+      EX.forEach(function (ex) {
+        picker.appendChild(h("button", { class: "chip",
+          text: fmtNum(ex.n, ex.place === "tenth" ? 3 : ex.place === "hundredth" ? 4 : 0) + " → " + roundPlaceLabel(ex.place),
+          onclick: function () { cur = ex; load(); } }));
+      });
+
+      var numEl = h("div", { class: "hop-num rn-num" });
+      var msg = h("div", { class: "hop-msg" });
+      var lineWrap = h("div");
+      var why = h("div", { class: "hop-why" });
+      var resultEl = h("div", { class: "hop-assembled" });
+      var playBtn = h("button", { class: "btn big primary" });
+
+      modeHost.appendChild(h("div", { class: "card" }, [
+        h("p", { class: "hop-msg", style: "margin-top:0", text: "Pick a number, then watch it round:" }),
+        picker,
+        h("div", { class: "hop-stage" }, [numEl, msg, lineWrap, why, resultEl]),
+        h("div", { class: "hop-controls" }, [playBtn])
+      ]));
+      load();
+
+      function plainOf(n, place) {
+        var dp = place === "tenth" ? 3 : place === "hundredth" ? 4 : 0;
+        return dp ? Number(n).toFixed(dp) : String(Math.round(n));
+      }
+
+      function load() {
+        token++;
+        var tok = token;
+        var info = roundInfo(cur.n, cur.place);
+        var startStr = plainOf(cur.n, cur.place);
+
+        clear(numEl); numEl.className = "hop-num rn-num";
+        numEl.appendChild(bigNumber(startStr, cur.place, false));
+        clear(lineWrap); lineWrap.appendChild(numberLine(info, { reveal: false }));
+        msg.textContent = "Round " + commas(cur.n) + " to " + roundPlaceLabel(cur.place) + "." +
+          (cur.note ? "  — " + cur.note : "");
+        why.innerHTML = "";
+        resultEl.innerHTML = "";
+        playBtn.textContent = "▶ Round it";
+        playBtn.disabled = false;
+        playBtn.onclick = function () { play(tok, info, startStr); };
+        setTimeout(function () { if (tok === token) play(tok, info, startStr); }, 600);
+      }
+
+      function play(tok, info, startStr) {
+        if (tok !== token) return;
+        playBtn.disabled = true;
+
+        var track = qs(".rl-track", lineWrap);
+        var mark = qs(".rl-mark", track);
+        var low = qs(".rl-side.low", track);
+        var high = qs(".rl-side.high", track);
+        var half = qs(".rl-half", track);
+        var mid = qs(".rl-mid", lineWrap);
+        var posts = qsa(".rl-post", lineWrap);   // [lower, upper]
+
+        // reset to "before"
+        low.classList.remove("win"); high.classList.remove("win");
+        posts.forEach(function (p) { p.classList.remove("win"); });
+        mark.style.left = (info.frac * 100) + "%";
+        clear(numEl); numEl.className = "hop-num rn-num";
+        numEl.appendChild(bigNumber(startStr, cur.place, false));
+        why.innerHTML = ""; resultEl.innerHTML = "";
+        msg.textContent = "Here's " + commas(cur.n) + " sitting between two signposts.";
+
+        function at(ms, fn) { setTimeout(function () { if (tok === token) fn(); }, ms); }
+
+        at(1000, function () {
+          clear(numEl); numEl.appendChild(bigNumber(startStr, cur.place, true));
+          msg.textContent = "Peek at the next digit…";
+          why.innerHTML = "the next digit is <b>" + info.digit + "</b>";
+        });
+        at(2200, function () {
+          mid.classList.add("pulse");
+          msg.textContent = info.roundUp
+            ? info.digit + " is 5 or more → we're past halfway."
+            : info.digit + " is 4 or less → we haven't reached halfway.";
+        });
+        at(3500, function () {
+          mid.classList.remove("pulse");
+          mark.style.left = (info.roundUp ? 100 : 0) + "%";
+          (info.roundUp ? high : low).classList.add("win");
+          msg.textContent = info.roundUp ? "So walk to the bigger signpost  →" : "←  So walk to the smaller signpost";
+        });
+        at(4700, function () {
+          var resStr = fmtNum(info.result, info.decimals).replace(/,/g, "");
+          clear(numEl); numEl.className = "hop-num rn-num done";
+          numEl.appendChild(bigNumber(resStr, cur.place, false));
+          posts[info.roundUp ? 1 : 0].classList.add("win");
+          resultEl.innerHTML = "&asymp; <b>" + fmtNum(info.result, info.decimals) + "</b>";
+          why.innerHTML = "";
+          msg.textContent = "Rounded! 🎉";
+        });
+        at(5200, function () {
+          playBtn.textContent = "↻ play again";
+          playBtn.disabled = false;
+          playBtn.onclick = function () { play(tok, info, startStr); };
+        });
+      }
+    }
+
+    /* -------- MODE: Practice -------- */
+    function showPractice() {
+      clear(modeHost);
+      var streak = 0;
+      var stars = h("div", { class: "star-row" });
+      var card = h("div", { class: "card" });
+      modeHost.appendChild(card);
+      modeHost.appendChild(stars);
+
+      function setStars() {
+        stars.textContent = streak ? new Array(streak + 1).join("⭐") + (streak >= 5 ? "  on fire!" : "") : "";
+      }
+      function makeQ() {
+        var places = [10, 100, 1000];
+        var place = places[Math.floor(Math.random() * places.length)];
+        var n = Math.floor(Math.random() * (place * 9)) + place;
+        if (n % place === 0) n += Math.floor(Math.random() * (place - 1)) + 1;
+        return { n: n, place: place };
+      }
+      function next() {
+        clear(card);
+        setStars();
+        var q = makeQ();
+        var info = roundInfo(q.n, q.place);
+        card.appendChild(h("p", { class: "hop-msg", style: "margin-top:0",
+          text: "Round " + commas(q.n) + " to " + roundPlaceLabel(q.place) + ". Which signpost?" }));
+        var lineSlot = h("div");
+        var fb = h("div", { class: "hop-msg" });
+        var btnRow = h("div", { class: "hop-controls" });
+        shuffle([info.lower, info.upper]).forEach(function (val) {
+          var b = h("button", { class: "btn big", text: commas(val), onclick: function () {
+            if (val === info.result) {
+              streak++; setStars();
+              b.classList.add("done-btn");
+              fb.innerHTML = "🎉 yes! next digit is <b>" + info.digit + "</b> &rarr; " +
+                (info.roundUp ? "UP" : "DOWN") + ". &asymp; <b>" + commas(info.result) + "</b>";
+              var all = btnRow.querySelectorAll("button");
+              for (var i = 0; i < all.length; i++) all[i].disabled = true;
+              clear(lineSlot); lineSlot.appendChild(numberLine(info));
+              card.appendChild(h("div", { class: "hop-controls" }, [
+                h("button", { class: "btn big primary", text: "next →", onclick: next })
+              ]));
+            } else {
+              streak = 0; setStars();
+              b.classList.add("wrong"); b.disabled = true;
+              fb.innerHTML = "not quite — the next digit is <b>" + info.digit + "</b> (" +
+                (info.digit >= 5 ? "5 or more, so UP" : "4 or less, so DOWN") + ").";
+            }
+          } });
+          btnRow.appendChild(b);
+        });
+        card.appendChild(btnRow);
+        card.appendChild(h("div", { class: "hop-controls" }, [
+          h("button", { class: "btn ghost", text: "show the number line 💡", onclick: function () {
+            clear(lineSlot); lineSlot.appendChild(numberLine(info));
+          } })
+        ]));
+        card.appendChild(lineSlot);
+        card.appendChild(fb);
+      }
+      next();
+    }
+
+    /* -------- MODE: Matching game -------- */
+    function showMatch() {
+      clear(modeHost);
+      var host = h("div", { class: "card" });
+      modeHost.appendChild(h("p", { class: "tool-intro", text: "Match each number to its nearest ten. Tap one on each side." }));
+      modeHost.appendChild(host);
+      (function spin() {
+        var pool = shuffle(D.roundMatchPool).slice(0, 6);
+        var pairs = pool.map(function (e) { return { a: String(e.n), b: "≈ " + e.rounded }; });
+        renderMatchGame(host, pairs, { leftLabel: "Number", rightLabel: "Nearest ten", onRestart: spin });
+      })();
+    }
+  }
+
+  function renderSci() {
+    pageTitle("Scientific Notation");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "Scientific notation — the dot-hopping trick" }));
+    v.appendChild(h("p", { class: "tool-intro", text:
+      "Space numbers have LOTS of zeros. The trick: keep ONE digit in front of the dot, then count how " +
+      "many times you hopped it. That count is the little raised number." }));
+
+    var modeHost = h("div");
+    v.appendChild(segControl(["Show me how", "Practice", "Matching game"], 0, function (idx) {
+      stopMatch();
+      if (idx === 0) showExplainer();
+      else if (idx === 1) showPractice();
+      else showMatch();
+    }));
+    v.appendChild(modeHost);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Cheat sheet", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<ul>" +
+        "<li><b>Big number</b> (like 300000): hop the dot <b>left</b> to <b>3</b> — 5 hops — so <b>3 &times; 10<sup>5</sup></b>.</li>" +
+        "<li><b>Tiny number</b> (like 0.004): hop the dot <b>right</b> to <b>4</b> — 3 hops — so <b>4 &times; 10<sup>-3</sup></b> (minus, because it was tiny).</li>" +
+        "<li>Reading it back: <b>3 &times; 10<sup>5</sup></b> means &ldquo;3, then hop the dot 5 times&rdquo; = 300000.</li>" +
+        "</ul>" +
+        "<p style='margin:0'>Real ones: light speed &asymp; 3 &times; 10<sup>5</sup> km/s &nbsp;&bull;&nbsp; " +
+        "one light-year &asymp; 9.46 &times; 10<sup>12</sup> km.</p>" })
+    ]));
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Why is the little number + or − ?", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p>The little number is a <b>&ldquo;put it back&rdquo; note</b>. It tells you how to turn your " +
+        "one-digit number back into the real one.</p>" +
+        "<p>🔵 <b>Big number &rarr; you hopped the dot LEFT.</b> Every hop left made the number 10 times " +
+        "<b>smaller</b> (300000 &rarr; 30000 &rarr; 3000&hellip;). To put it back you make it 10 times " +
+        "<b>bigger</b>, that many times. Bigger = <b>plus</b>. So <b>3 &times; 10<sup>+5</sup></b> means " +
+        "&ldquo;3, grown 5 times.&rdquo;</p>" +
+        "<p>🟡 <b>Tiny number &rarr; you hopped the dot RIGHT.</b> Every hop right made the number 10 " +
+        "times <b>bigger</b> (0.004 &rarr; 0.04 &rarr; 0.4&hellip;). To put it back you make it 10 times " +
+        "<b>smaller</b>, that many times. Smaller = <b>minus</b>. So <b>4 &times; 10<sup>&minus;3</sup></b> " +
+        "means &ldquo;4, shrunk 3 times.&rdquo;</p>" +
+        "<p style='margin-bottom:6px'>The sign is just an arrow: <b>plus = grow</b>, <b>minus = shrink</b>. " +
+        "Count up and each step multiplies by 10; count down and each step divides by 10:</p>" +
+        "<pre class='exp-ladder'>10^3  = 1000\n10^2  = 100\n10^1  = 10\n10^0  = 1\n" +
+        "10^-1 = 0.1     &larr; now it's tiny\n10^-2 = 0.01\n10^-3 = 0.001</pre>" })
+    ]));
+
+    showExplainer();
+    mount(v);
+
+    /* -------- MODE: Show me how -------- */
+    function showExplainer() {
+      clear(modeHost);
+      var EX = [
+        { plain: "384000",        label: "🌙 Moon · 384,000 km" },
+        { plain: "150000000",     label: "☀️ Sun · 150,000,000 km" },
+        { plain: "9460000000000", label: "✨ light-year · 9,460,000,000,000 km" },
+        { plain: "1400",          label: "☁️ Orion Nebula · 1,400 ly" },
+        { plain: "0.0000001",     label: "⚛️ an atom · 0.0000001 cm" }
+      ];
+      var cur = EX[0], hd = 0;
+
+      var picker = h("div", { class: "chip-row" });
+      EX.forEach(function (ex) {
+        picker.appendChild(h("button", { class: "chip", text: ex.label,
+          onclick: function () { cur = ex; hd = 0; paint(); } }));
+      });
+
+      var num = h("div", { class: "hop-num" });
+      var msg = h("div", { class: "hop-msg" });
+      var asm = h("div", { class: "hop-assembled" });
+      var why = h("div", { class: "hop-why" });
+      var hopBtn = h("button", { class: "btn big primary" });
+      var backBtn = h("button", { class: "btn ghost", text: "↶ back one hop" });
+      var autoBtn = h("button", { class: "btn big", text: "Do every hop ✨" });
+      var overBtn = h("button", { class: "btn ghost", text: "Start over" });
+
+      hopBtn.onclick = function () { var f = fieldFor(cur.plain); if (hd < f.target) hd++; paint(); };
+      backBtn.onclick = function () { if (hd > 0) hd--; paint(); };
+      overBtn.onclick = function () { hd = 0; paint(); };
+      autoBtn.onclick = function () {
+        var f = fieldFor(cur.plain);
+        (function step() { if (hd < f.target) { hd++; paint(); setTimeout(step, 420); } })();
+      };
+
+      modeHost.appendChild(h("div", { class: "card" }, [
+        h("p", { class: "hop-msg", style: "margin-top:0", text: "Pick a number, then tap to hop the dot:" }),
+        picker,
+        h("div", { class: "hop-stage" }, [num, msg, asm, why]),
+        h("div", { class: "hop-controls" }, [hopBtn, backBtn, autoBtn, overBtn])
+      ]));
+      paint();
+
+      function paint() {
+        var f = fieldFor(cur.plain);
+        hd = Math.max(0, Math.min(f.target, hd));
+        var done = hd === f.target;
+        var clean = shiftDecimal(cur.plain, f.dir === "left" ? -f.target : f.target);
+        var sign = f.dir === "left" ? "" : "-";
+
+        num.className = "hop-num" + (done ? " done" : "");
+        if (done) num.textContent = clean;
+        else num.innerHTML = hopHTML(f, hd);
+
+        hopBtn.textContent = f.dir === "left" ? "◀ hop the dot left" : "hop the dot right ▶";
+        hopBtn.disabled = done;
+        backBtn.disabled = hd === 0;
+        autoBtn.disabled = done;
+
+        if (hd === 0)
+          msg.textContent = f.dir === "left"
+            ? "Big number. Hop the dot LEFT until just one digit is in front."
+            : "Tiny number. Hop the dot RIGHT until one real digit is in front.";
+        else if (!done)
+          msg.textContent = "Hops so far: " + hd + " — keep going.";
+        else
+          msg.textContent = "🎉 One digit in front! You hopped " + f.target + " time" + (f.target === 1 ? "" : "s") + ".";
+
+        if (done)
+          asm.innerHTML = "<b>" + clean + " &times; 10<sup>" + sign + f.target + "</sup></b> &nbsp;=&nbsp; " +
+            "<span class='hop-plain'>" + commas(cur.plain) + "</span>";
+        else if (hd === 0)
+          asm.innerHTML = "";
+        else
+          asm.innerHTML = "<span class='muted'>so far: " +
+            shiftDecimal(cur.plain, f.dir === "left" ? -hd : hd) + " &times; 10<sup>" + sign + hd + "</sup></span>";
+
+        var times = hd + " time" + (hd === 1 ? "" : "s");
+        if (hd === 0)
+          why.innerHTML = "";
+        else if (f.dir === "left")
+          why.innerHTML = "Dot went <b>left</b> &rarr; number got smaller &rarr; little number is " +
+            "<b>+" + hd + "</b> &nbsp;(&ldquo;grow it back " + times + "&rdquo;).";
+        else
+          why.innerHTML = "Dot went <b>right</b> &rarr; number got bigger &rarr; little number is " +
+            "<b>&minus;" + hd + "</b> &nbsp;(&ldquo;shrink it back " + times + "&rdquo;).";
+      }
+    }
+
+    /* -------- MODE: Practice -------- */
+    function showPractice() {
+      clear(modeHost);
+      var streak = 0;
+      var stars = h("div", { class: "star-row" });
+      var card = h("div", { class: "card" });
+      modeHost.appendChild(card);
+      modeHost.appendChild(stars);
+
+      function setStars() {
+        stars.textContent = streak ? new Array(streak + 1).join("⭐") + (streak >= 5 ? "  on fire!" : "") : "";
+      }
+      function pickNumber() {
+        for (var i = 0; i < 8; i++) {
+          var t = makeSciTask();
+          var len = t.plain.replace(/[-.]/g, "").replace(/^0+/, "").length;
+          if (Math.abs(t.exp) >= 2 && Math.abs(t.exp) <= 6 && len <= 7) return t;
+        }
+        return { coeff: "3.6", exp: 4, plain: "36000" };
+      }
+      function next() {
+        clear(card);
+        setStars();
+        (Math.random() < 0.6 ? forward : read)(pickNumber());
+      }
+
+      function forward(t) {
+        var f = fieldFor(t.plain), hd = 0;
+        var num = h("div", { class: "hop-num" });
+        var fb = h("div", { class: "hop-msg" });
+        var hopBtn = h("button", { class: "btn big primary", text: f.dir === "left" ? "◀ hop" : "hop ▶" });
+        var backBtn = h("button", { class: "btn ghost", text: "↶" });
+        var hintBtn = h("button", { class: "btn ghost", text: "hint 💡" });
+        var checkBtn = h("button", { class: "btn big", text: "check ✓" });
+        card.appendChild(h("p", { class: "hop-msg", style: "margin-top:0",
+          text: "Turn this into the shortcut. Hop the dot until one digit is in front, then press check." }));
+        card.appendChild(num);
+        card.appendChild(h("div", { class: "hop-controls" }, [hopBtn, backBtn, hintBtn, checkBtn]));
+        card.appendChild(fb);
+        draw();
+
+        function draw() { num.className = "hop-num"; num.innerHTML = hopHTML(f, hd); }
+        hopBtn.onclick = function () { if (hd < f.digits.length) { hd++; draw(); fb.textContent = "hops: " + hd; } };
+        backBtn.onclick = function () { if (hd > 0) { hd--; draw(); fb.textContent = "hops: " + hd; } };
+        hintBtn.onclick = function () { fb.textContent = "you need " + f.target + " hops in total"; if (hd < f.target) { hd++; draw(); } };
+        checkBtn.onclick = function () {
+          if (hd === f.target) {
+            streak++; setStars();
+            num.className = "hop-num done";
+            var clean = shiftDecimal(t.plain, f.dir === "left" ? -f.target : f.target);
+            fb.innerHTML = "🎉 yes! <b>" + clean + " &times; 10<sup>" + (f.dir === "left" ? "" : "-") + f.target + "</sup></b>";
+            [hopBtn, backBtn, hintBtn, checkBtn].forEach(function (b) { b.disabled = true; });
+            card.appendChild(h("div", { class: "hop-controls" }, [
+              h("button", { class: "btn big primary", text: "next →", onclick: next })
+            ]));
+          } else if (hd < f.target) {
+            fb.textContent = "not yet — still more than one digit in front. keep hopping (or tap hint).";
+            streak = 0; setStars();
+          } else {
+            fb.textContent = "one hop too far — tap ↶ to step back.";
+            streak = 0; setStars();
+          }
+        };
+      }
+
+      function read(t) {
+        var correct = commas(t.plain);
+        var opts = shuffle([correct, commas(shiftDecimal(t.plain, 1)), commas(shiftDecimal(t.plain, -1))]);
+        var fb = h("div", { class: "hop-msg" });
+        card.appendChild(h("p", { class: "hop-msg", style: "margin-top:0", html:
+          "What is <b>" + t.coeff + " &times; 10<sup>" + t.exp + "</sup></b> written out?" }));
+        opts.forEach(function (o) {
+          var b = h("button", { class: "btn big", style: "display:block;width:100%;margin:6px 0", text: o,
+            onclick: function () {
+              if (o === correct) {
+                streak++; setStars();
+                b.classList.add("done-btn");
+                fb.textContent = "🎉 that's it!";
+                var all = card.querySelectorAll(".btn.big");
+                for (var i = 0; i < all.length; i++) all[i].disabled = true;
+                card.appendChild(h("div", { class: "hop-controls" }, [
+                  h("button", { class: "btn big primary", text: "next →", onclick: next })
+                ]));
+              } else {
+                b.disabled = true; b.classList.add("wrong");
+                fb.textContent = "not that one — try again!";
+                streak = 0; setStars();
+              }
+            } });
+          card.appendChild(b);
+        });
+        card.appendChild(fb);
+      }
+
+      next();
+    }
+
+    /* -------- MODE: Matching game -------- */
+    function showMatch() {
+      clear(modeHost);
+      var host = h("div", { class: "card" });
+      modeHost.appendChild(h("p", { class: "tool-intro", text: "Match each number to its shortcut. Tap one on each side." }));
+      modeHost.appendChild(host);
+      (function spin() {
+        var pool = shuffle(D.sciMatchPool).slice(0, 6);
+        var pairs = pool.map(function (e) { return { a: commas(e.plain), b: e.coeff + " × 10" + sup(e.exp) }; });
+        renderMatchGame(host, pairs, { leftLabel: "Number", rightLabel: "Shortcut", onRestart: spin });
+      })();
+    }
+  }
+
+  /* ---- TOOL: Light travel time ----------------------------------- */
+  function renderLight() {
+    pageTitle("Light Travel Time");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "Light travel time calculator" }));
+    v.appendChild(h("p", { class: "tool-intro", text:
+      "Information reaches us only as fast as light. Enter a distance and see how long its " +
+      "light takes to arrive — which is how far into the past you are looking." }));
+
+    var UNITS = {
+      "km": 1,
+      "AU": 149597870.7,
+      "light-seconds": D.C_KM_S,
+      "light-minutes": D.C_KM_S * 60,
+      "light-years": D.KM_PER_LY,
+      "million light-years": D.KM_PER_LY * 1e6
+    };
+    var valIn = h("input", { type: "number", value: "384000", min: "0", step: "any" });
+    var unitSel = h("select", {}, Object.keys(UNITS).map(function (u) { return h("option", { value: u, text: u }); }));
+
+    var result = h("div", { class: "result" });
+    var scale = h("div", { class: "lt-scale" }, [h("span", { class: "fill" }), h("span", { class: "dot" })]);
+    var ends = h("div", { class: "lt-ends" }, [h("span", { text: "the Moon (1.3 s)" }), h("span", { text: "quasars (~10 billion yr)" })]);
+    var noteEl = h("div", { class: "prose", style: "margin-top:12px;color:var(--text-dim)" });
+
+    var card = h("div", { class: "card" }, [
+      h("div", { class: "row" }, [
+        h("div", { class: "field" }, [h("label", { text: "Distance" }), valIn]),
+        h("div", { class: "field" }, [h("label", { text: "Unit" }), unitSel])
+      ]),
+      result, scale, ends, noteEl
+    ]);
+    v.appendChild(card);
+
+    var chips = h("div", { class: "chip-row" });
+    D.lightPresets.forEach(function (p) {
+      chips.appendChild(h("button", { class: "chip", text: p.label, onclick: function () {
+        valIn.value = String(Number((p.distanceKm).toPrecision(6)));
+        unitSel.value = "km";
+        p._note = p.note;
+        recompute(p.note);
+      } }));
+    });
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Jump to…", style: "margin-top:0" }), chips
+    ]));
+
+    var LOG_MIN = Math.log(1.3);                 // ~ Moon, seconds
+    var LOG_MAX = Math.log(10e9 * YEAR_SEC);     // ~ quasar, seconds
+
+    function recompute(presetNote) {
+      var val = parseFloat(valIn.value);
+      if (isNaN(val) || val < 0) { clear(result); result.appendChild(h("div", { class: "sub", text: "Enter a distance." })); return; }
+      var km = val * UNITS[unitSel.value];
+      var seconds = km / D.C_KM_S;
+      var ly = km / D.KM_PER_LY;
+
+      clear(result);
+      result.appendChild(h("div", { class: "big", text: "Light takes " + fmtDuration(seconds) }));
+      result.appendChild(h("div", { class: "sub", html:
+        "That is <b>" + fmtSci(km) + " km</b> = <b>" + (ly < 0.01 ? fmtSci(ly) : (ly < 1 ? ly.toPrecision(3) : commas(Math.round(ly).toString()))) +
+        " light-years</b>." }));
+      result.appendChild(h("div", { class: "sub", style: "margin-top:8px;color:var(--warn)", text:
+        "→ You see it as it was " + fmtDuration(seconds) + " ago." }));
+
+      var t = (Math.log(Math.max(seconds, 0.001)) - LOG_MIN) / (LOG_MAX - LOG_MIN);
+      t = Math.max(0, Math.min(1, t));
+      qs(".fill", scale).style.width = (t * 100) + "%";
+      qs(".dot", scale).style.left = (t * 100) + "%";
+
+      clear(noteEl);
+      if (presetNote) noteEl.appendChild(h("p", { html: "<b>Context:</b> " + presetNote }));
+    }
+
+    valIn.addEventListener("input", function () { recompute(); });
+    unitSel.addEventListener("change", function () { recompute(); });
+    recompute("Radio round-trip ≈ 2.6 s — the delay you hear in Apollo transmissions.");
+    mount(v);
+  }
+
+  /* ---- TOOL: Cosmic calendar ------------------------------------- */
+  function renderCalendar() {
+    pageTitle("Cosmic Calendar");
+    var C = D.cosmicCalendar;
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "The cosmic calendar" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Compress the whole history of the universe — about <b>13.8 billion years</b> — into a single " +
+      "calendar year. The Big Bang is the first instant of January 1; this moment is the last second of " +
+      "December 31. The calendar positions below are the ones stated in section 1.9 (idea from Carl " +
+      "Sagan’s <em>The Dragons of Eden</em>)." }));
+
+    var perSec = C.ageYears / (365 * 86400);
+    v.appendChild(h("div", { class: "card" }, [
+      h("div", { class: "cal-controls" }, [
+        h("div", {}, [h("strong", { text: "1 calendar month" }), document.createTextNode(" ≈ " + fmtDuration((C.ageYears / 12) * YEAR_SEC))]),
+        h("div", {}, [h("strong", { text: "1 day" }), document.createTextNode(" ≈ " + fmtDuration((C.ageYears / 365) * YEAR_SEC))]),
+        h("div", {}, [h("strong", { text: "1 second" }), document.createTextNode(" ≈ " + Math.round(perSec).toLocaleString() + " years")])
+      ])
+    ]));
+
+    var MON = ["January", "February", "March", "April", "May", "June", "July", "August",
+      "September", "October", "November", "December"];
+
+    // month grid — placed by each event's stated month
+    var grid = h("div", { class: "cal-grid" });
+    var byMonth = {};
+    C.events.forEach(function (ev) {
+      (byMonth[ev.monthIndex] = byMonth[ev.monthIndex] || []).push(ev);
+    });
+    for (var m = 0; m < 12; m++) {
+      var cell = h("div", { class: "cal-month" + (byMonth[m] ? " has-event" : "") }, [
+        h("div", { class: "m-name", text: MON[m].slice(0, 3) })
+      ]);
+      (byMonth[m] || []).forEach(function (ev) {
+        cell.appendChild(h("span", { class: "m-event", text: ev.label + (ev.inChapter ? "" : " *") }));
+      });
+      grid.appendChild(cell);
+    }
+    v.appendChild(grid);
+
+    // detailed list
+    var list = h("div", { class: "cal-list" });
+    list.appendChild(h("h2", { text: "Timeline", style: "margin-bottom:4px" }));
+    C.events.forEach(function (ev) {
+      list.appendChild(h("div", { class: "cal-row" }, [
+        h("div", { class: "when", text: ev.when }),
+        h("div", {}, [
+          document.createTextNode(ev.label + (ev.inChapter ? "" : "  *")),
+          h("span", { class: "book-note", text: ev.detail })
+        ])
+      ]));
+    });
+    v.appendChild(list);
+    v.appendChild(h("p", { class: "tool-intro", style: "font-size:12px;margin-top:10px" , text:
+      "*  Not mentioned in Chapter 1 — shown only for context, using the standard cosmic-calendar placement." }));
+
+    v.appendChild(h("div", { class: "card", style: "margin-top:18px" }, [
+      h("h2", { text: "The last minute of the year", style: "margin-top:0" }),
+      h("p", { class: "prose", html:
+        "Everything humans have ever recorded happens in the final seconds of December 31. The alphabet " +
+        "is invented at the 50th second of 11:59 p.m.; modern astronomy begins a mere fraction of a " +
+        "second before midnight; the amount of time we have had to study the stars is minute." })
+    ]));
+
+    mount(v);
+  }
+
+  /* ---- TOOL: Cosmic scale ladder ------------------------------- */
+  function renderScale() {
+    pageTitle("Cosmic Scale");
+    var L = D.scaleLadder;
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "The cosmic distance ladder" }));
+    v.appendChild(h("p", { class: "tool-intro", text:
+      "Step outward from Earth to the edge of the observable universe. The bar uses a logarithmic " +
+      "scale — each step is many times larger than the last." }));
+
+    var i = 0;
+    var LOGMIN = Math.log(L[0].sizeM) - 1;
+    var LOGMAX = Math.log(L[L.length - 1].sizeM) + 0.3;
+
+    var stage = h("div", { class: "ladder-stage" });
+    var meterFill = h("span");
+    var meter = h("div", { class: "ladder-meter" }, meterFill);
+    var dots = h("div", { class: "ladder-dots" });
+    L.forEach(function (_, k) {
+      dots.appendChild(h("button", { "aria-label": "Step " + (k + 1), onclick: function () { i = k; paint(); } }));
+    });
+
+    var prevBtn = h("button", { class: "btn", text: "← Zoom in", onclick: function () { if (i > 0) { i--; paint(); } } });
+    var nextBtn = h("button", { class: "btn primary", text: "Zoom out →", onclick: function () { if (i < L.length - 1) { i++; paint(); } } });
+    var counter = h("div", { class: "step-count" });
+
+    function paint() {
+      var r = L[i];
+      var km = r.sizeM / 1000;
+      var lightStr = fmtDuration(km / D.C_KM_S);
+      clear(stage);
+      stage.appendChild(h("div", { class: "rung-label", text: r.label }));
+      stage.appendChild(h("div", { class: "ladder-size", html:
+        (r.kind === "distance" ? "Distance: " : "Size: ") + fmtSci(km) + " km &nbsp;·&nbsp; light crosses it in " + lightStr }));
+      stage.appendChild(h("div", { class: "rung-detail", text: r.detail }));
+
+      var t = (Math.log(r.sizeM) - LOGMIN) / (LOGMAX - LOGMIN);
+      meterFill.style.width = Math.max(2, Math.min(100, t * 100)) + "%";
+      counter.textContent = "Step " + (i + 1) + " of " + L.length;
+      prevBtn.disabled = i === 0;
+      nextBtn.disabled = i === L.length - 1;
+      var db = dots.querySelectorAll("button");
+      for (var k = 0; k < db.length; k++) db[k].classList.toggle("on", k === i);
+    }
+
+    v.appendChild(h("div", { class: "card" }, [
+      stage,
+      meter,
+      h("div", { class: "ladder-scaleline" }, [h("span", { text: "~10,000 km" }), h("span", { text: "~10 billion light-years" })]),
+      dots,
+      h("div", { class: "ladder-nav" }, [prevBtn, counter, nextBtn])
+    ]));
+
+    document.addEventListener("keydown", scaleKeys);
+    function scaleKeys(e) {
+      if (currentHash() !== "t/scale") { document.removeEventListener("keydown", scaleKeys); return; }
+      if (e.key === "ArrowLeft" && i > 0) { i--; paint(); }
+      if (e.key === "ArrowRight" && i < L.length - 1) { i++; paint(); }
+    }
+
+    paint();
+    mount(v);
+  }
+
+  /* ---- TOOL: Element abundance --------------------------------- */
+  function renderElements() {
+    pageTitle("Element Abundance");
+    var els = D.elements.slice().sort(function (a, b) { return b.perMillionH - a.perMillionH; });
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "The cosmically abundant elements" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Atoms per <b>one million hydrogen atoms</b> (Table 1.1). Hydrogen and helium overwhelm everything " +
+      "else — a linear scale hides the rest, so a logarithmic view is more useful. " +
+      "The four elements most common in life (H, C, N, O) are marked ✦." }));
+
+    var logMode = true;
+    var toggle = h("div", { class: "elem-toggle" }, [
+      h("button", { class: "btn small primary", text: "Logarithmic", onclick: function () { logMode = true; paintToggle(); draw(); } }),
+      h("button", { class: "btn small", text: "Linear", onclick: function () { logMode = false; paintToggle(); draw(); } })
+    ]);
+    function paintToggle() {
+      var b = toggle.querySelectorAll("button");
+      b[0].className = "btn small" + (logMode ? " primary" : "");
+      b[1].className = "btn small" + (logMode ? "" : " primary");
+    }
+
+    var chart = h("div", { class: "elem-chart" });
+    var LIFE = { H: 1, C: 1, N: 1, O: 1 };
+    function draw() {
+      clear(chart);
+      els.forEach(function (e) {
+        var w;
+        if (logMode) w = (Math.log(e.perMillionH) / Math.LN10) / 6 * 100; // domain 1..1e6
+        else w = e.perMillionH / 1e6 * 100;
+        w = Math.max(0.4, Math.min(100, w));
+        var bar = h("div", { class: "elem-bar", style: "width:0" });
+        chart.appendChild(h("div", { class: "elem-row" }, [
+          h("div", { class: "e-name", html: "<b>" + e.symbol + "</b> " + e.name + (LIFE[e.symbol] ? " ✦" : "") +
+            " <span style='color:var(--text-faint)'>Z" + e.z + "</span>" }),
+          h("div", { class: "elem-bar-track" }, bar),
+          h("div", { class: "e-val", text: e.perMillionH.toLocaleString() })
+        ]));
+        requestAnimationFrame(function () { bar.style.width = w + "%"; });
+      });
+    }
+
+    v.appendChild(h("div", { class: "card" }, [toggle, chart]));
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Why it matters", style: "margin-top:0" }),
+      h("p", { class: "prose", html:
+        "The Big Bang made almost only hydrogen and helium. Every heavier element — the carbon in your " +
+        "cells, the oxygen you breathe, the iron in your blood — was built inside stars and scattered " +
+        "when they died. That is why those elements are thousands of times rarer than hydrogen." })
+    ]));
+
+    paintToggle();
+    draw();
+    mount(v);
+  }
+
+  /* ---- FLASHCARDS -------------------------------------------------- */
+  function flashMap() { return store.get("flash", {}); }
+  function flashKnownCount() {
+    var m = flashMap(), n = 0;
+    for (var k in m) if (m[k] === "known") n++;
+    return n;
+  }
+  function renderFlashcards() {
+    pageTitle("Flashcards");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
+    v.appendChild(h("h1", { text: "Glossary flashcards" }));
+
+    var sectionOpts = [["all", "All sections"]].concat(D.sections.map(function (s) { return ["s" + s.id, "Section " + s.id + " — " + s.title]; }));
+    var filterSel = h("select", {}, sectionOpts.map(function (o) { return h("option", { value: o[0], text: o[1] }); }));
+    var modeSel = h("select", {}, [
+      h("option", { value: "all", text: "All cards" }),
+      h("option", { value: "review", text: "Only ‘needs review’ + new" })
+    ]);
+
+    var deck = [], pos = 0, flipped = false;
+    var stageWrap = h("div");
+    var progEl = h("div", { class: "fc-progress" });
+
+    function buildDeck() {
+      var m = flashMap();
+      var list = D.glossary.filter(function (g) {
+        if (filterSel.value !== "all" && ("s" + g.section) !== filterSel.value) return false;
+        if (modeSel.value === "review" && m[g.term] === "known") return false;
+        return true;
+      });
+      deck = shuffle(list);
+      pos = 0; flipped = false;
+      render();
+    }
+
+    function mark(status) {
+      var m = flashMap();
+      m[deck[pos].term] = status;
+      store.set("flash", m);
+      pos++; flipped = false;
+      render();
+    }
+
+    function render() {
+      clear(stageWrap);
+      if (!deck.length) {
+        stageWrap.appendChild(h("div", { class: "card", text: "No cards match this filter." }));
+        progEl.textContent = "";
+        return;
+      }
+      if (pos >= deck.length) {
+        stageWrap.appendChild(h("div", { class: "card fc-done" }, [
+          h("div", { class: "big", text: "Deck complete — " + deck.length + " cards" }),
+          h("p", { text: flashKnownCount() + " of " + D.glossary.length + " glossary terms marked ‘got it’ overall." }),
+          h("div", { class: "fc-actions" }, [
+            h("button", { class: "btn primary", text: "Shuffle again", onclick: buildDeck }),
+            h("button", { class: "btn", text: "Go to quiz", onclick: function () { go("quiz"); } })
+          ])
+        ]));
+        progEl.textContent = "";
+        refreshSidebar();
+        return;
+      }
+      var card = deck[pos];
+      var fc = h("div", { class: "flashcard" + (flipped ? " flipped" : "") });
+      var inner = h("div", { class: "inner", onclick: function () { flipped = !flipped; fc.classList.toggle("flipped"); } }, [
+        h("div", { class: "face front" }, [
+          h("div", { class: "kicker", text: "Section " + card.section + " · term" }),
+          h("div", { class: "term-front", text: card.term }),
+          h("div", { class: "tap", text: "tap to flip" })
+        ]),
+        h("div", { class: "face back" }, [
+          h("div", { class: "kicker", text: card.term }),
+          h("div", { class: "def-back", text: card.def }),
+          h("div", { class: "tap", text: "tap to flip" })
+        ])
+      ]);
+      fc.appendChild(inner);
+      stageWrap.appendChild(fc);
+      stageWrap.appendChild(h("div", { class: "fc-actions" }, [
+        h("button", { class: "btn", text: "↺ Needs review", onclick: function () { mark("review"); } }),
+        h("button", { class: "btn primary", text: "Got it ✓", onclick: function () { mark("known"); } })
+      ]));
+      var known = flashMap();
+      var status = known[card.term];
+      progEl.textContent = "Card " + (pos + 1) + " of " + deck.length +
+        (status ? "  ·  previously: " + (status === "known" ? "got it" : "needs review") : "");
+    }
+
+    var cardMode = true;
+    var matchInner = h("div");
+    var matchWrap = h("div", { style: "display:none" }, [
+      h("p", { class: "tool-intro", text: "Match each term to its definition — the section filter still applies." }),
+      matchInner
+    ]);
+    function newTermMatch() {
+      var pool = D.glossary.filter(function (g) {
+        return filterSel.value === "all" || ("s" + g.section) === filterSel.value;
+      });
+      clear(matchInner);
+      if (pool.length < 3) {
+        matchInner.appendChild(h("div", { class: "card", text: "Choose a filter with at least 3 terms to play the matching game." }));
+        return;
+      }
+      var pairs = shuffle(pool).slice(0, Math.min(5, pool.length)).map(function (g) {
+        return { a: g.term, b: g.def };
+      });
+      renderMatchGame(matchInner, pairs, { leftLabel: "Term", rightLabel: "Definition", onRestart: newTermMatch });
+    }
+
+    filterSel.addEventListener("change", function () { cardMode ? buildDeck() : newTermMatch(); });
+    modeSel.addEventListener("change", buildDeck);
+
+    v.appendChild(segControl(["Study cards", "Match game"], 0, function (idx) {
+      stopMatch();
+      cardMode = idx === 0;
+      stageWrap.style.display = cardMode ? "" : "none";
+      progEl.style.display = cardMode ? "" : "none";
+      modeSel.style.display = cardMode ? "" : "none";
+      matchWrap.style.display = cardMode ? "none" : "";
+      if (!cardMode) newTermMatch();
+    }));
+    v.appendChild(h("div", { class: "fc-toolbar" }, [
+      filterSel, modeSel,
+      h("button", { class: "btn small", text: "Shuffle", onclick: function () { cardMode ? buildDeck() : newTermMatch(); } })
+    ]));
+    v.appendChild(stageWrap);
+    v.appendChild(matchWrap);
+    v.appendChild(progEl);
+
+    document.addEventListener("keydown", fcKeys);
+    function fcKeys(e) {
+      if (currentHash() !== "flashcards") { document.removeEventListener("keydown", fcKeys); return; }
+      if (!cardMode) return;
+      if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+      if (e.key === " " || e.key === "Enter") { e.preventDefault(); var fc = qs(".flashcard", stageWrap); if (fc) { flipped = !flipped; fc.classList.toggle("flipped"); } }
+      if (e.key === "1") mark("review");
+      if (e.key === "2") mark("known");
+    }
+
+    buildDeck();
+    mount(v);
+  }
+
+  /* ---- QUIZ ------------------------------------------------------ */
+  function renderQuiz() {
+    pageTitle("Self-Test Quiz");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
+    v.appendChild(h("h1", { text: "Chapter 1 self-test" }));
+
+    var best = store.get("quizBest", null);
+    var bestFrac = store.get("quizBestFrac", null);
+
+    var setup = h("div", { class: "card quiz-setup" }, [
+      h("p", { class: "tool-intro", text:
+        "Multiple choice with instant feedback and explanations. Your best score is saved in this browser." }),
+      h("div", {}, [
+        h("button", { class: "btn primary", text: "Quick quiz (10 questions)", onclick: function () { start(10); } }),
+        h("button", { class: "btn", text: "Full quiz (" + D.quiz.length + " questions)", style: "margin-left:10px", onclick: function () { start(D.quiz.length); } })
+      ]),
+      best != null ? h("div", { class: "best-badge", text: "★ Best so far: " + best + "%  (" + bestFrac + ")" }) : null
+    ]);
+    v.appendChild(setup);
+    var host = h("div");
+    v.appendChild(host);
+
+    function start(n) {
+      var qs2 = shuffle(D.quiz).slice(0, n).map(function (q) {
+        var choices = q.choices.map(function (c, i) { return { text: c, correct: i === q.answer }; });
+        return { q: q.q, section: q.section, explain: q.explain, choices: shuffle(choices) };
+      });
+      var idx = 0, score = 0, missed = [];
+      setup.style.display = "none";
+      showQ();
+
+      function showQ() {
+        clear(host);
+        var q = qs2[idx];
+        var card = h("div", { class: "card" });
+        card.appendChild(h("div", { class: "quiz-meta" }, [
+          h("span", { text: "Question " + (idx + 1) + " of " + qs2.length }),
+          h("span", { text: "Section " + q.section + "  ·  score " + score })
+        ]));
+        var pbar = h("span", { style: "width:" + (idx / qs2.length * 100) + "%" });
+        card.appendChild(h("div", { class: "quiz-progress-bar" }, pbar));
+        card.appendChild(h("div", { class: "q-text", text: q.q }));
+
+        var answered = false;
+        var explainBox = h("div");
+        var nextWrap = h("div", { class: "quiz-nav" });
+
+        q.choices.forEach(function (c, i) {
+          var letter = "ABCD"[i];
+          var btn = h("button", { class: "q-choice" }, [
+            h("span", { class: "letter", text: letter }),
+            document.createTextNode(c.text)
+          ]);
+          btn.addEventListener("click", function () {
+            if (answered) return;
+            answered = true;
+            var all = card.querySelectorAll(".q-choice");
+            for (var k = 0; k < all.length; k++) {
+              all[k].disabled = true;
+              if (q.choices[k].correct) all[k].classList.add("correct");
+            }
+            if (c.correct) { btn.classList.add("correct"); score++; }
+            else { btn.classList.add("wrong"); missed.push(q); }
+            explainBox.appendChild(h("div", { class: "q-explain " + (c.correct ? "ok" : "no") }, [
+              h("strong", { text: c.correct ? "Correct. " : "Not quite. " }),
+              document.createTextNode(q.explain)
+            ]));
+            var nb = h("button", { class: "btn primary", text: idx === qs2.length - 1 ? "See results →" : "Next question →" });
+            nb.addEventListener("click", function () {
+              idx++;
+              if (idx >= qs2.length) finish();
+              else showQ();
+            });
+            nextWrap.appendChild(nb);
+            nb.focus();
+          });
+          card.appendChild(btn);
+        });
+        card.appendChild(explainBox);
+        card.appendChild(nextWrap);
+        host.appendChild(card);
+        window.scrollTo(0, 0);
+      }
+
+      function finish() {
+        clear(host);
+        var pct = Math.round(score / qs2.length * 100);
+        var prevBest = store.get("quizBest", null);
+        var isBest = prevBest == null || pct > prevBest;
+        if (isBest) { store.set("quizBest", pct); store.set("quizBestFrac", score + "/" + qs2.length); }
+
+        var ring = h("div", { class: "score-ring", style: "--p:" + pct }, [
+          h("div", {}, [
+            h("div", { class: "pct", text: pct + "%" }),
+            h("div", { class: "frac", text: score + " / " + qs2.length })
+          ])
+        ]);
+        var res = h("div", { class: "card quiz-result" }, [
+          h("h2", { text: pct >= 80 ? "Strong work." : pct >= 60 ? "Good — review the misses." : "Keep going — revisit the sections.", style: "margin-top:0" }),
+          ring,
+          isBest ? h("div", { class: "best-badge", text: "★ New best score!" }) : h("div", { class: "best-badge", text: "Best so far: " + store.get("quizBest") + "%" }),
+          h("div", { style: "margin-top:14px" }, [
+            h("button", { class: "btn primary", text: "Retake quick quiz", onclick: function () { host && clear(host); setup.style.display = ""; start(10); } }),
+            h("button", { class: "btn", style: "margin-left:10px", text: "Back to setup", onclick: function () { clear(host); setup.style.display = ""; } })
+          ])
+        ]);
+        host.appendChild(res);
+
+        if (missed.length) {
+          var rev = h("div", { class: "card" }, [h("h2", { text: "Review: " + missed.length + " missed", style: "margin-top:0" })]);
+          missed.forEach(function (q) {
+            var correct = q.choices.filter(function (c) { return c.correct; })[0];
+            rev.appendChild(h("div", { class: "review-item" }, [
+              h("div", { class: "ri-q", text: q.q }),
+              h("div", { class: "ri-line ri-correct", text: "Answer: " + correct.text }),
+              h("div", { class: "ri-line", style: "color:var(--text-dim)", text: q.explain }),
+              h("button", { class: "btn small ghost", style: "margin-top:8px", text: "Go to section " + q.section, onclick: function () { go("s/" + q.section); } })
+            ]));
+          });
+          host.appendChild(rev);
+        }
+        refreshSidebar();
+        window.scrollTo(0, 0);
+      }
+    }
+
+    mount(v);
+  }
+
+  /* ---- GLOSSARY ------------------------------------------------- */
+  function renderGlossary() {
+    pageTitle("Glossary");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
+    v.appendChild(h("h1", { text: "Chapter 1 glossary" }));
+    v.appendChild(h("p", { class: "tool-intro", text: D.glossary.length + " terms, grouped by section. Use these as your flashcard deck too." }));
+
+    D.sections.forEach(function (s) {
+      var terms = D.glossary.filter(function (g) { return g.section === s.id; });
+      if (!terms.length) return;
+      var card = h("div", { class: "card", id: "gloss-" + s.id }, [
+        h("h2", { text: s.id + "  " + s.title, style: "margin-top:0" })
+      ]);
+      terms.forEach(function (g) {
+        card.appendChild(h("div", { class: "review-item", "data-term": g.term.toLowerCase() }, [
+          h("div", { class: "ri-q", text: g.term }),
+          h("div", { style: "color:var(--text-dim);margin-top:4px", text: g.def })
+        ]));
+      });
+      v.appendChild(card);
+    });
+    mount(v);
+  }
+  function highlightGlossary(term) {
+    if (currentHash() !== "glossary") return;
+    var nodes = mainEl.querySelectorAll("[data-term]");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].getAttribute("data-term") === term.toLowerCase()) {
+        nodes[i].scrollIntoView({ behavior: "smooth", block: "center" });
+        nodes[i].style.transition = "background .3s";
+        nodes[i].style.background = "color-mix(in srgb, var(--accent) 20%, transparent)";
+        setTimeout(function (n) { return function () { n.style.background = ""; }; }(nodes[i]), 1600);
+        break;
+      }
+    }
+  }
+
+  /* ---- PROGRESS ----------------------------------------------- */
+  function renderProgress() {
+    pageTitle("My Progress");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Review" }));
+    v.appendChild(h("h1", { text: "My progress" }));
+
+    var read = readSet().length;
+    var flashK = flashKnownCount();
+    var best = store.get("quizBest", null);
+    v.appendChild(h("div", { class: "overview-stats" }, [
+      stat(Math.round(read / D.sections.length * 100) + "%", "sections reviewed"),
+      stat(flashK + " / " + D.glossary.length, "terms mastered"),
+      stat(best == null ? "—" : best + "%", "best quiz score")
+    ]));
+
+    var listCard = h("div", { class: "card" }, [h("h2", { text: "Sections", style: "margin-top:0" })]);
+    var list = h("div", { class: "prog-section-list" });
+    D.sections.forEach(function (s) {
+      var row = h("div", { class: "prog-row" });
+      var cb = h("input", { type: "checkbox" });
+      cb.checked = isRead(s.id);
+      cb.addEventListener("change", function () { setRead(s.id, cb.checked); paintPct(); });
+      row.appendChild(cb);
+      row.appendChild(h("div", { class: "p-title" }, [
+        document.createTextNode(s.id + "  " + s.title),
+        h("small", { text: "~" + s.minutes + " min · " + s.keyIdeas.length + " key ideas" })
+      ]));
+      row.appendChild(h("button", { class: "btn small ghost", text: "Open", onclick: function () { go("s/" + s.id); } }));
+      list.appendChild(row);
+    });
+    listCard.appendChild(list);
+    v.appendChild(listCard);
+
+    var pctText = h("div", { class: "sidebar-progress", style: "margin:0" });
+    function paintPct() {
+      var n = readSet().length;
+      pctText.innerHTML = n + " of " + D.sections.length + " done";
+    }
+    paintPct();
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Reset", style: "margin-top:0" }),
+      h("p", { class: "tool-intro", text: "These clear data saved in this browser only." }),
+      h("button", { class: "btn small", text: "Reset section progress", onclick: function () {
+        if (confirm("Clear which sections are marked reviewed?")) { store.set("read", []); go("progress"); }
+      } }),
+      h("button", { class: "btn small", style: "margin-left:8px", text: "Reset flashcards", onclick: function () {
+        if (confirm("Clear all flashcard ‘got it / needs review’ marks?")) { store.del("flash"); go("progress"); }
+      } }),
+      h("button", { class: "btn small", style: "margin-left:8px", text: "Reset quiz best", onclick: function () {
+        if (confirm("Clear your best quiz score?")) { store.del("quizBest"); store.del("quizBestFrac"); go("progress"); }
+      } }),
+      h("button", { class: "btn small danger", style: "margin-left:8px", text: "Erase this chapter's data", onclick: function () {
+        if (confirm("Erase all saved data for Chapter " + D.meta.chapter + " (reviewed sections, notes, flashcards, quiz score)?")) {
+          var keys = [], p = pfx();
+          for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(p) === 0) keys.push(k); }
+          keys.forEach(function (k) { localStorage.removeItem(k); });
+          go("overview");
+        }
+      } })
+    ]));
+
+    mount(v);
+  }
+
+  /* -------------------------------------------------------- mount + route */
+  function mount(viewNode) {
+    clear(mainEl);
+    mainEl.appendChild(viewNode);
+    mainEl.appendChild(h("div", { class: "attribution", html:
+      "Content adapted from <a href=\"https://openstax.org/books/astronomy-2e\" target=\"_blank\" rel=\"noopener\">OpenStax Astronomy 2e</a>, " +
+      "licensed CC BY 4.0. This interactive guide adds study features and is for personal learning use." }));
+    refreshSidebar();
+  }
+
+  function go(hash) {
+    if (currentHash() === hash) route();
+    else location.hash = "#/" + hash;
+  }
+
+  var TOOL_ROUTES = {
+    "t/sci": ["sci", function () { renderSci(); }],
+    "t/round": ["round", function () { renderRound(); }],
+    "t/light": ["light", function () { renderLight(); }],
+    "t/calendar": ["calendar", function () { renderCalendar(); }],
+    "t/scale": ["scale", function () { renderScale(); }],
+    "t/elements": ["elements", function () { renderElements(); }]
+  };
+
+  function route() {
+    var hash = currentHash();
+    closeSidebar();
+    stopMatch();
+
+    if (hash === "dashboard") { renderDashboard(); refreshSidebar(); return; }
+
+    // keep the active chapter in sync with a section deep-link
+    var sm = hash.match(/^s\/(\d+)\./);
+    if (sm && Number(sm[1]) !== activeChapter && CHAPTERS[Number(sm[1])]) setActiveChapter(Number(sm[1]));
+    rebuildNav();
+
+    var m;
+    if (hash === "overview") renderOverview();
+    else if ((m = hash.match(/^s\/(.+)$/))) renderSection(m[1]);
+    else if (TOOL_ROUTES[hash]) {
+      var tr = TOOL_ROUTES[hash];
+      if (hasTool(tr[0])) tr[1](); else renderOverview();
+    }
+    else if (hash === "flashcards") renderFlashcards();
+    else if (hash === "quiz") renderQuiz();
+    else if (hash === "glossary") renderGlossary();
+    else if (hash === "progress") renderProgress();
+    else renderDashboard();
+    refreshSidebar();
+  }
+
+  /* --------------------------------------------------- glossary tooltips */
+  function initTermPop() {
+    var pop = qs("#termPop");
+    mainEl.addEventListener("mouseover", function (e) {
+      var t = e.target.closest && e.target.closest(".term");
+      if (!t) return;
+      var g = lookupTerm(t.textContent);
+      if (!g) return;
+      pop.innerHTML = "<b>" + g.term + "</b>" + g.def;
+      pop.classList.add("show");
+      movePop(e);
+    });
+    mainEl.addEventListener("mousemove", function (e) {
+      if (pop.classList.contains("show")) movePop(e);
+    });
+    mainEl.addEventListener("mouseout", function (e) {
+      if (e.target.closest && e.target.closest(".term")) pop.classList.remove("show");
+    });
+
+    // tap-to-define — the only way to see a term's meaning on a touch screen
+    mainEl.addEventListener("click", function (e) {
+      var t = e.target.closest && e.target.closest(".term");
+      if (!t) return;
+      var g = lookupTerm(t.textContent);
+      if (!g) return;
+      e.stopPropagation();
+      if (pop.classList.contains("show") && pop._anchor === t) {
+        pop.classList.remove("show"); pop._anchor = null; return;
+      }
+      pop._anchor = t;
+      pop.innerHTML = "<b>" + g.term + "</b>" + g.def;
+      pop.classList.add("show");
+      var r = t.getBoundingClientRect();
+      var pr = pop.getBoundingClientRect();
+      var x = Math.min(r.left, window.innerWidth - pr.width - 8);
+      var y = r.bottom + 8;
+      if (y + pr.height > window.innerHeight - 8) y = Math.max(8, r.top - pr.height - 8);
+      pop.style.left = Math.max(8, x) + "px";
+      pop.style.top = y + "px";
+    });
+    document.addEventListener("click", function () {
+      pop.classList.remove("show"); pop._anchor = null;
+    });
+    window.addEventListener("scroll", function () {
+      if (pop._anchor) { pop.classList.remove("show"); pop._anchor = null; }
+    }, true);
+
+    function movePop(e) {
+      var pad = 14;
+      var x = e.clientX + pad, y = e.clientY + pad;
+      var r = pop.getBoundingClientRect();
+      if (x + r.width > window.innerWidth - 8) x = e.clientX - r.width - pad;
+      if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - pad;
+      pop.style.left = x + "px";
+      pop.style.top = y + "px";
+    }
+  }
+
+  /* ------------------------------------------------------------- startup */
+  function init() {
+    migrateLegacy();
+
+    var savedTheme = themeStore.get();
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+    else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches)
+      document.documentElement.setAttribute("data-theme", "light");
+
+    var savedChapter = parseInt(localStorage.getItem("astro.activeChapter"), 10);
+    setActiveChapter(CHAPTERS[savedChapter] ? savedChapter : chapterNums[0]);
+
+    buildShell();
+    rebuildNav();
+    initTermPop();
+    window.addEventListener("hashchange", route);
+    route();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();

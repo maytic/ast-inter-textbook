@@ -1,0 +1,8 @@
+# self-hosting artifacts — not needed for GitHub Pages, and deploy/README.md
+# contains your local network details
+/deploy/
+/Caddyfile
+
+# editor / OS cruft
+.DS_Store
+*.swp
