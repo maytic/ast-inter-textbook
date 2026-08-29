@@ -206,6 +206,7 @@
     var dS = S("circle", { r: 3.5, "class": "dg-pole" }), dA = S("circle", { r: 3.5, "class": "dg-pole" });
     var lblS = T(0, 0, "town 1 (no shadow)", "dg-lbl"), lblA = T(0, 0, "town 2 (has a shadow)", "dg-lbl");
     var lblPhi = T(0, 0, "", "dg-lbl");
+    lblPhi.setAttribute("text-anchor", "middle");
     [chord, radS, radA, sunA, cArc, aArc, dS, dA, lblS, lblA, lblPhi].forEach(function (n) { s.appendChild(n); });
 
     function draw(phi, dist) {
@@ -221,12 +222,15 @@
       radA.setAttribute("x1", Cx); radA.setAttribute("y1", Cy);
       radA.setAttribute("x2", Cx + (R + 50) * Math.cos(aA)); radA.setAttribute("y2", Cy + (R + 50) * Math.sin(aA));
       sunA.setAttribute("x1", ax); sunA.setAttribute("y1", ay - 60); sunA.setAttribute("x2", ax); sunA.setAttribute("y2", ay);
-      cArc.setAttribute("d", arcPath(Cx, Cy, 34, aA, aS));
+      cArc.setAttribute("d", arcPath(Cx, Cy, 40, aA, aS));
       // angle at Alexandria: between local vertical (outward radius) and the up direction
       var vA = aA, up = -Math.PI / 2;
       aArc.setAttribute("d", arcPath(ax, ay, 18, Math.min(vA, up), Math.max(vA, up)));
-      lblPhi.setAttribute("x", ax - 4); lblPhi.setAttribute("y", ay - 24);
-      lblPhi.textContent = phi.toFixed(0) + "°";
+      // put the number in the open wedge near Earth's centre (well clear of the sun-ray arrows)
+      var mid = (aA + aS) / 2;
+      lblPhi.setAttribute("x", Cx + 56 * Math.cos(mid));
+      lblPhi.setAttribute("y", Cy + 56 * Math.sin(mid) + 4);
+      lblPhi.textContent = "same " + phi.toFixed(0) + "°";
       chord.setAttribute("d", arcPath(Cx, Cy, R, aA, aS));
       var times = Math.round(360 / phi);
       var circ = times * dist;
