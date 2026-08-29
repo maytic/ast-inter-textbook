@@ -32,13 +32,14 @@
   }
   function clr(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
-  function frame(host, title, caption) {
+  function frame(host, title, how, caption) {
     clr(host);
     var stage = E("div", { "class": "dg-stage" });
     var controls = E("div", { "class": "dg-controls" });
     var readout = E("div", { "class": "dg-readout" });
     var fig = E("figure", { "class": "diagram" }, [
       title ? E("div", { "class": "dg-title", text: title }) : null,
+      how ? E("p", { "class": "dg-how", text: "👉 " + how }) : null,
       stage, controls, readout,
       caption ? E("p", { "class": "dg-cap", text: caption }) : null
     ]);
@@ -86,8 +87,9 @@
 
   /* ---- 2.1  Your sky depends on your latitude ---------------------- */
   D["sky-latitude"] = function (host) {
-    var r = frame(host, "Your sky depends on your latitude",
-      "Drag your latitude. The north celestial pole sits above the northern horizon at an altitude equal to your latitude, and stars within that angle of it never set (the shaded cap).");
+    var r = frame(host, "What can you see from where you stand?",
+      "Drag the slider to walk yourself north from the equator toward the North Pole.",
+      "The dot marked ★ is the point the whole sky spins around. It sits higher in your sky the farther north you go. Stars inside the blue circle circle it forever and never touch the ground.");
     var Ox = 190, Oy = 190, R = 150;
     var s = svg(r.stage, 380, 235);
     var cap = S("circle", { "class": "dg-capzone" });
@@ -100,12 +102,13 @@
     var zen = S("line", { x1: Ox, y1: Oy, x2: Ox, y2: Oy - R, "class": "dg-dash" });
     var ray = S("line", { "class": "dg-ray" });
     var arc = S("path", { "class": "dg-anglearc" });
-    var pole = S("circle", { r: 4, "class": "dg-pole" });
-    var pLbl = T(0, 0, "NCP", "dg-lbl");
+    var pole = S("circle", { r: 4.5, "class": "dg-pole" });
+    var pLbl = T(0, 0, "★ spin point", "dg-lbl");
     var aLbl = T(0, 0, "", "dg-lbl");
     [cap, stars, ground, zen, ray, arc, pole,
-     T(24, Oy - 6, "N horizon", "dg-lbl"), T(300, Oy - 6, "S horizon", "dg-lbl"),
-     T(Ox + 5, Oy - R + 5, "zenith", "dg-lbl"), pLbl, aLbl].forEach(function (n) { s.appendChild(n); });
+     T(24, Oy - 6, "north", "dg-lbl"), T(322, Oy - 6, "south", "dg-lbl"),
+     T(Ox + 5, Oy - R + 5, "straight up", "dg-lbl"),
+     T(Ox - 30, Oy + 13, "you are here", "dg-lbl"), pLbl, aLbl].forEach(function (n) { s.appendChild(n); });
 
     function draw(L) {
       var rad = L * Math.PI / 180;
@@ -113,28 +116,30 @@
       ray.setAttribute("x1", Ox); ray.setAttribute("y1", Oy);
       ray.setAttribute("x2", px); ray.setAttribute("y2", py);
       pole.setAttribute("cx", px); pole.setAttribute("cy", py);
-      pLbl.setAttribute("x", px + (L > 70 ? -26 : 6)); pLbl.setAttribute("y", py - 5);
+      pLbl.setAttribute("x", px + (L > 60 ? -64 : 8)); pLbl.setAttribute("y", py - 5);
       var capR = Math.max(0, Oy - py);
       cap.setAttribute("cx", px); cap.setAttribute("cy", py); cap.setAttribute("r", capR);
       var aR = 30;
       arc.setAttribute("d", "M " + (Ox - aR) + " " + Oy + " A " + aR + " " + aR + " 0 0 1 " +
         (Ox - aR * Math.cos(rad)) + " " + (Oy - aR * Math.sin(rad)));
       aLbl.setAttribute("x", Ox - aR - 6); aLbl.setAttribute("y", Oy - 10);
-      aLbl.textContent = Math.round(L) + "°";
-      r.readout.innerHTML = "<b>Latitude " + Math.round(L) + "°N</b> &nbsp;·&nbsp; north celestial pole <b>" +
-        Math.round(L) + "°</b> above the horizon &nbsp;·&nbsp; " +
-        (L <= 0.5 ? "no circumpolar stars — every star rises and sets"
-          : L >= 89.5 ? "the whole visible sky is circumpolar — nothing rises or sets"
-          : "stars within <b>" + Math.round(L) + "°</b> of the pole never set");
+      aLbl.textContent = Math.round(L) + "° up";
+      var L2 = Math.round(L);
+      r.readout.innerHTML = L <= 0.5
+        ? "You're at the <b>equator</b>. The spin point is on the ground, so <b>every</b> star rises and sets — nothing stays up all night."
+        : L >= 89.5
+        ? "You're at the <b>North Pole</b>! The spin point is straight up, and <b>every star you can see</b> just goes round and round — none rise or set."
+        : "You're <b>" + L2 + "°</b> from the equator. The spin point is <b>" + L2 + "°</b> up in your sky, and the stars in the <b>blue circle</b> never dip below the ground — they're up every single night.";
     }
-    slider(r.controls, "Latitude (°N)", 0, 90, 38, 1, function (v) { draw(v); });
+    slider(r.controls, "How far north (°)", 0, 90, 38, 1, function (v) { draw(v); });
     draw(38);
   };
 
   /* ---- 2.1  The axial tilt makes the seasons --------------------- */
   D["seasons"] = function (host) {
-    var r = frame(host, "The tilt of Earth’s axis makes the seasons",
-      "Earth’s axis keeps pointing the same way in space (up-right here). As Earth orbits, first the Northern and then the Southern Hemisphere leans toward the Sun.");
+    var r = frame(host, "Why summer is warm and winter is cold",
+      "Press Play, or jump to a month. Watch which half of Earth leans toward the Sun.",
+      "Earth is tipped over a little, and it stays tipped the same way all year. When your half leans toward the Sun, you get summer. When it leans away, you get winter.");
     var Sx = 180, Sy = 105;
     var s = svg(r.stage, 360, 210);
     s.appendChild(S("ellipse", { cx: Sx, cy: Sy, rx: 150, ry: 66, "class": "dg-orbit" }));
@@ -142,7 +147,8 @@
     var sun = S("circle", { cx: Sx, cy: Sy, r: 15, "class": "dg-sun" });
     var earth = S("circle", { r: 12, "class": "dg-earth" });
     var axis = S("line", { "class": "dg-axis" });
-    [ray, sun, earth, axis, T(Sx - 8, Sy + 4, "Sun", "dg-lbl")].forEach(function (n) { s.appendChild(n); });
+    var topLbl = T(0, 0, "top half", "dg-lbl");
+    [ray, sun, earth, axis, topLbl, T(Sx - 8, Sy + 4, "Sun", "dg-lbl")].forEach(function (n) { s.appendChild(n); });
     var td = [Math.sin(23.5 * Math.PI / 180), -Math.cos(23.5 * Math.PI / 180)];
     var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     function draw(day) {
@@ -151,28 +157,38 @@
       earth.setAttribute("cx", ex); earth.setAttribute("cy", ey);
       axis.setAttribute("x1", ex - td[0] * 20); axis.setAttribute("y1", ey - td[1] * 20);
       axis.setAttribute("x2", ex + td[0] * 20); axis.setAttribute("y2", ey + td[1] * 20);
+      topLbl.setAttribute("x", ex + td[0] * 20 + 4); topLbl.setAttribute("y", ey + td[1] * 20 - 3);
       ray.setAttribute("x1", Sx); ray.setAttribute("y1", Sy); ray.setAttribute("x2", ex); ray.setAttribute("y2", ey);
       var d = [Sx - ex, Sy - ey], dl = Math.hypot(d[0], d[1]); d = [d[0] / dl, d[1] / dl];
       var lean = td[0] * d[0] + td[1] * d[1];
-      var season = lean > 0.15 ? "Northern summer · Southern winter"
-        : lean < -0.15 ? "Northern winter · Southern summer"
-        : "Equinox — neither hemisphere leans toward the Sun";
-      r.readout.innerHTML = "<b>" + MON[Math.min(11, Math.floor(day / 30.44))] + "</b> &nbsp;·&nbsp; " + season +
-        ". The noon Sun is " +
-        (lean > 0.15 ? "<b>high</b> in Northern skies" : lean < -0.15 ? "<b>low</b> in Northern skies" : "on the celestial equator") + ".";
+      var mon = MON[Math.min(11, Math.floor(day / 30.44))];
+      r.readout.innerHTML = lean > 0.15
+        ? "<b>" + mon + "</b> ☀️ — the <b>top half</b> of Earth leans toward the Sun. Up north it's <b>summer</b> (and winter down south)."
+        : lean < -0.15
+        ? "<b>" + mon + "</b> ❄️ — the top half leans <b>away</b> from the Sun. Up north it's <b>winter</b> (and summer down south)."
+        : "<b>" + mon + "</b> — Earth leans <b>sideways</b> now, so day and night are about equal everywhere.";
     }
-    var sl = slider(r.controls, "Day of year", 0, 364, 172, 1, function (v) { draw(v); });
+    var sl = slider(r.controls, "Month", 0, 364, 172, 1, function (v) { draw(v); });
     var pb = playBtn(r.controls, function () {
       var v = (parseFloat(sl.input.value) + 2) % 365; sl.input.value = v; draw(v);
     });
     sl.input.addEventListener("input", function () { pb.stop(); });
+    var quick = E("div", { "class": "dg-chips" });
+    [["Mar", 80], ["Jun", 172], ["Sep", 264], ["Dec", 355]].forEach(function (m) {
+      quick.appendChild(E("button", { type: "button", text: m[0], "class": "dg-chip" }));
+    });
+    quick.querySelectorAll("button").forEach(function (b, i) {
+      b.addEventListener("click", function () { pb.stop(); var d = [80, 172, 264, 355][i]; sl.input.value = d; draw(d); });
+    });
+    r.controls.appendChild(quick);
     draw(172);
   };
 
   /* ---- 2.2  Eratosthenes measures the Earth --------------------- */
   D["eratosthenes"] = function (host) {
-    var r = frame(host, "How Eratosthenes measured the Earth",
-      "The Sun is straight overhead at Syene but hits Alexandria at an angle. That shadow angle is the same fraction of 360° as the city-to-city distance is of Earth’s whole circumference.");
+    var r = frame(host, "Measuring the whole Earth with a shadow",
+      "Drag the sliders. A bigger shadow means the ground curves more between the two towns — so the Earth is smaller.",
+      "At noon in one town the Sun is straight up and a stick makes no shadow. In another town, far away, the same Sun leans over and the stick DOES cast a shadow. The size of that lean tells you how big the whole Earth is.");
     var Cx = 170, Cy = 185, R = 116;
     var s = svg(r.stage, 340, 285);
     var rays = S("g", { "class": "dg-sunrays" });
@@ -188,7 +204,7 @@
     var cArc = S("path", { "class": "dg-anglearc" }), aArc = S("path", { "class": "dg-anglearc" });
     var chord = S("path", { "class": "dg-track" });
     var dS = S("circle", { r: 3.5, "class": "dg-pole" }), dA = S("circle", { r: 3.5, "class": "dg-pole" });
-    var lblS = T(0, 0, "Syene", "dg-lbl"), lblA = T(0, 0, "Alexandria", "dg-lbl");
+    var lblS = T(0, 0, "town 1 (no shadow)", "dg-lbl"), lblA = T(0, 0, "town 2 (has a shadow)", "dg-lbl");
     var lblPhi = T(0, 0, "", "dg-lbl");
     [chord, radS, radA, sunA, cArc, aArc, dS, dA, lblS, lblA, lblPhi].forEach(function (n) { s.appendChild(n); });
 
@@ -198,8 +214,8 @@
       var ax = Cx + R * Math.cos(aA), ay = Cy + R * Math.sin(aA);
       dS.setAttribute("cx", sx); dS.setAttribute("cy", sy);
       dA.setAttribute("cx", ax); dA.setAttribute("cy", ay);
-      lblS.setAttribute("x", sx + 6); lblS.setAttribute("y", sy - 6);
-      lblA.setAttribute("x", ax - 62); lblA.setAttribute("y", ay - 4);
+      lblS.setAttribute("x", sx + 8); lblS.setAttribute("y", sy - 8);
+      lblA.setAttribute("x", ax - 108); lblA.setAttribute("y", ay - 6);
       radS.setAttribute("x1", Cx); radS.setAttribute("y1", Cy);
       radS.setAttribute("x2", Cx + (R + 46) * Math.cos(aS)); radS.setAttribute("y2", Cy + (R + 46) * Math.sin(aS));
       radA.setAttribute("x1", Cx); radA.setAttribute("y1", Cy);
@@ -212,14 +228,15 @@
       lblPhi.setAttribute("x", ax - 4); lblPhi.setAttribute("y", ay - 24);
       lblPhi.textContent = phi.toFixed(0) + "°";
       chord.setAttribute("d", arcPath(Cx, Cy, R, aA, aS));
-      var circ = dist * 360 / phi;
+      var times = Math.round(360 / phi);
+      var circ = times * dist;
       r.readout.innerHTML =
-        "shadow angle <b>" + phi.toFixed(0) + "°</b> &nbsp;·&nbsp; Syene→Alexandria <b>" + dist + " km</b><br>" +
-        "circumference = " + dist + " × 360 ÷ " + phi.toFixed(0) + " = <b>" +
-        (Math.round(circ / 100) * 100).toLocaleString() + " km</b> &nbsp;(true value 40,075 km)";
+        "The shadow leans <b>" + phi.toFixed(0) + "°</b>. A full circle is 360°, so the two towns are <b>1 slice out of about " +
+        times + "</b>. The whole Earth is that many town-hops around: <b>" + times + " × " + dist +
+        " km ≈ " + circ.toLocaleString() + " km</b>.<br>Real answer: 40,075 km — pretty close! 🌍";
     }
-    slider(r.controls, "shadow angle (°)", 2, 20, 7, 1, function (v) { draw(v, distA.input ? parseFloat(distA.input.value) : 800); });
-    var distA = slider(r.controls, "city distance (km)", 400, 1200, 800, 20, function () { redraw(); });
+    slider(r.controls, "size of the shadow lean (°)", 2, 20, 7, 1, function (v) { draw(v, distA.input ? parseFloat(distA.input.value) : 800); });
+    var distA = slider(r.controls, "distance between the towns (km)", 400, 1200, 800, 20, function () { redraw(); });
     var angA;
     function redraw() {
       var phi = parseFloat(r.controls.querySelector("input").value);
@@ -231,15 +248,16 @@
 
   /* ---- 2.2  Retrograde motion --------------------------------- */
   D["retrograde"] = function (host) {
-    var r = frame(host, "Why planets seem to move backward",
-      "Earth (inner, faster) periodically overtakes Mars (outer, slower). While it passes, Mars appears to drift backward — westward — against the background stars.");
+    var r = frame(host, "Why Mars sometimes looks like it goes backward",
+      "Press Play. Blue Earth is on the fast inside track; red Mars is on the slow outside track. Watch the wiggly line at the bottom — that's how Mars looks from Earth.",
+      "Mars never really goes backward. But when speedy Earth zooms past slow Mars, Mars looks like it slides backward for a while — the same way a slower car looks like it's going backward when you overtake it.");
     var Sx = 150, Sy = 148;
     var s = svg(r.stage, 360, 320);
     s.appendChild(S("circle", { cx: Sx, cy: Sy, r: 100, "class": "dg-orbit" }));
     s.appendChild(S("circle", { cx: Sx, cy: Sy, r: 46, "class": "dg-orbit" }));
     s.appendChild(S("circle", { cx: Sx, cy: Sy, r: 9, "class": "dg-sun" }));
     s.appendChild(S("line", { x1: 18, y1: 270, x2: 342, y2: 270, "class": "dg-ground" }));
-    s.appendChild(T(20, 262, "Mars’s apparent path against the stars", "dg-lbl"));
+    s.appendChild(T(20, 262, "← how Mars looks from Earth →", "dg-lbl"));
     var track = S("polyline", { points: "", "class": "dg-track" });
     var sight = S("line", { "class": "dg-sight" });
     var eDot = S("circle", { r: 6, "class": "dg-earth" });
@@ -276,10 +294,10 @@
       var d1 = ang(Math.max(0, t - 0.012)), d2 = ang(Math.min(tMax, t + 0.012));
       var dd = d2 - d1; while (dd > Math.PI) dd -= 2 * Math.PI; while (dd < -Math.PI) dd += 2 * Math.PI;
       r.readout.innerHTML = dd >= 0
-        ? "Mars drifts <b>eastward</b> against the stars — ordinary (prograde) motion."
-        : "Mars drifts <b>westward</b> — <b>retrograde!</b> The faster Earth is overtaking it.";
+        ? "Earth is still <b>catching up</b> to Mars. Mars slides along the normal way. ➡️"
+        : "Earth is <b>passing</b> Mars right now — so Mars looks like it's going <b>backward!</b> 🔄 (It isn't really.)";
     }
-    var sl = slider(r.controls, "time (years)", 0, tMax, 0.3, 0.01, function (v) { draw(v); });
+    var sl = slider(r.controls, "time", 0, tMax, 0.3, 0.01, function (v) { draw(v); });
     var pb = playBtn(r.controls, function () {
       var v = parseFloat(sl.input.value) + 0.007; if (v > tMax) v = 0; sl.input.value = v; draw(v);
     });
@@ -289,8 +307,9 @@
 
   /* ---- 2.2  Ptolemy's epicycles ------------------------------ */
   D["epicycle"] = function (host) {
-    var r = frame(host, "Ptolemy’s fix: circles on circles",
-      "To keep Earth still, Ptolemy put each planet on a small circle (the epicycle) whose centre rides a big circle (the deferent). Tuned right, the planet traces backward loops — mimicking retrograde motion.");
+    var r = frame(host, "The old “wheels on wheels” trick",
+      "Press Play. The planet rides a little wheel, and the little wheel rides a big wheel. Watch the red line it draws.",
+      "Long ago, people thought Earth stood still. To explain Mars's backward loops without moving Earth, they had the planet ride a small spinning wheel stuck to a big spinning wheel. It worked — but it was really complicated!");
     var Ex = 160, Ey = 165, defR = 96, epiR = 34;
     var s = svg(r.stage, 320, 300);
     s.appendChild(S("circle", { cx: Ex, cy: Ey, r: defR, "class": "dg-orbit" }));
@@ -300,7 +319,7 @@
     var cDot = S("circle", { r: 3, "class": "dg-pole" }), pDot = S("circle", { r: 5, "class": "dg-mars" });
     var eDot = S("circle", { cx: Ex, cy: Ey, r: 6, "class": "dg-earth" });
     [trail, epi, arm1, arm2, eDot, cDot, pDot, T(Ex - 12, Ey + 18, "Earth", "dg-lbl"),
-     T(Ex + 8, Ey - defR - 6, "deferent", "dg-lbl")].forEach(function (n) { s.appendChild(n); });
+     T(Ex + 8, Ey - defR - 6, "big wheel", "dg-lbl")].forEach(function (n) { s.appendChild(n); });
     function P(t) {
       var A = t * 2 * Math.PI - Math.PI / 2, B = t * 2 * Math.PI * 3.6 - Math.PI / 2;
       var cx = Ex + defR * Math.cos(A), cy = Ey + defR * Math.sin(A);
@@ -317,8 +336,8 @@
       arm1.setAttribute("x1", Ex); arm1.setAttribute("y1", Ey); arm1.setAttribute("x2", q.c[0]); arm1.setAttribute("y2", q.c[1]);
       arm2.setAttribute("x1", q.c[0]); arm2.setAttribute("y1", q.c[1]); arm2.setAttribute("x2", q.p[0]); arm2.setAttribute("y2", q.p[1]);
     }
-    r.readout.innerHTML = "The planet (red) makes little backward loops as it circles — those loops are the retrograde motion.";
-    var sl = slider(r.controls, "turn", 0, 1, 0, 0.002, function (v) { draw(v); });
+    r.readout.innerHTML = "See the little <b>loops</b> in the red line? Those are the “backward” bits. All those wheels were just to draw those loops without letting Earth move.";
+    var sl = slider(r.controls, "spin the wheels", 0, 1, 0, 0.002, function (v) { draw(v); });
     var pb = playBtn(r.controls, function () {
       var v = parseFloat(sl.input.value) + 0.0016; if (v > 1) v = 0; sl.input.value = v; draw(v);
     });
@@ -328,8 +347,9 @@
 
   /* ---- 2.3  Precession: your sign vs the real sky ------------- */
   D["precession"] = function (host) {
-    var r = frame(host, "Precession: your “sign” vs the real sky",
-      "Astrological signs stay locked to the calendar (outer ring). Earth’s slow wobble drags the real constellations westward — about 1° every 72 years (inner ring). After ~2000 years they are a whole sign out of step.");
+    var r = frame(host, "Why your star sign is “wrong”",
+      "Drag the slider forward in time. The outer ring (the signs on your birthday) stays still. The inner ring (the real star pictures) slowly slides around.",
+      "Earth wobbles like a slow spinning top — one full wobble takes 26,000 years. That slowly slides the real star pictures. After 2,000 years they've moved over by almost a whole sign, so the sign in the newspaper isn't the star picture the Sun was really in when you were born.");
     var Cx = 150, Cy = 150, Ro = 122, Ri = 88;
     var s = svg(r.stage, 300, 300);
     var NAMES = ["Ari", "Tau", "Gem", "Cnc", "Leo", "Vir", "Lib", "Sco", "Sgr", "Cap", "Aqr", "Psc"];
@@ -341,8 +361,8 @@
       t.setAttribute("text-anchor", "middle"); s.appendChild(t);
     }
     s.appendChild(S("path", { d: "M " + Cx + " " + (Cy - Ro - 3) + " l -6 -12 l 12 0 z", "class": "dg-mars" }));
-    s.appendChild(T(Cx, Cy - 4, "signs (fixed)", "dg-lbl-mid"));
-    s.appendChild(T(Cx, Cy + 12, "constellations", "dg-lbl-mid"));
+    s.appendChild(T(Cx, Cy - 4, "your signs", "dg-lbl-mid"));
+    s.appendChild(T(Cx, Cy + 12, "real star pictures", "dg-lbl-mid"));
     var inG = S("g", {});
     s.appendChild(inG);
     function draw(years) {
@@ -353,13 +373,13 @@
         var t = T(Cx + (Ri - 12) * Math.cos(a), Cy + (Ri - 12) * Math.sin(a) + 3, NAMES[i], "dg-constel");
         t.setAttribute("text-anchor", "middle"); inG.appendChild(t);
       }
-      r.readout.innerHTML = "<b>" + years.toLocaleString() + " years</b> of precession → constellations shifted <b>" +
-        Math.round(off) + "°</b> west (" + (off / 30).toFixed(1) + " signs)." +
+      r.readout.innerHTML = "After <b>" + years.toLocaleString() + " years</b>, the real star pictures have slid over by <b>" +
+        (off / 30).toFixed(1) + " signs</b>." +
         (years >= 1800 && years <= 2400
-          ? " Today the spring-equinox Sun is in the <b>sign Aries</b> but the <b>constellation Pisces</b>."
+          ? " So if the newspaper says you're an <b>Aries</b>, the Sun was really in <b>Pisces</b> when you were born."
           : "");
     }
-    slider(r.controls, "years of precession", 0, 4000, 2100, 100, function (v) { draw(v); });
+    slider(r.controls, "years into the future", 0, 4000, 2100, 100, function (v) { draw(v); });
     draw(2100);
   };
 
@@ -375,19 +395,20 @@
       " A " + rx + " " + R + " 0 0 " + termSweep + " " + cx + " " + (cy - R) + " Z";
   }
   D["venus-phases"] = function (host) {
-    var r = frame(host, "The phases of Venus — the deciding test",
-      "In the Sun-centred model Venus runs through the full cycle of phases. In Ptolemy’s model it is stuck between us and the Sun and can only ever be a thin crescent. Galileo saw the full cycle.");
+    var r = frame(host, "The test that showed the Sun is in the middle",
+      "Try both buttons. Drag Venus around its path. Watch the little circle on the right — that's how Venus looks through a telescope from Earth.",
+      "Like the Moon, Venus shows different shapes (thin sliver, half, full circle) depending on where the Sun lights it. If the Sun is in the middle, we can see ALL the shapes. If Earth is in the middle, Venus stays stuck near the Sun and we only ever see a sliver. Galileo saw the full circle — so the Sun must be in the middle.");
     var s = svg(r.stage, 360, 240);
     var gOrb = S("g", {}), gPh = S("g", {});
     s.appendChild(gOrb); s.appendChild(gPh);
     var model = "helio", cur = 45;
     var tog = E("div", { "class": "dg-toggle" });
-    var bH = E("button", { type: "button", "class": "on", text: "Sun-centred" });
-    var bG = E("button", { type: "button", text: "Ptolemy" });
+    var bH = E("button", { type: "button", "class": "on", text: "Sun in the middle" });
+    var bG = E("button", { type: "button", text: "Earth in the middle" });
     tog.appendChild(bH); tog.appendChild(bG); r.controls.appendChild(tog);
     bH.onclick = function () { model = "helio"; bH.className = "on"; bG.className = ""; render(cur); };
     bG.onclick = function () { model = "geo"; bG.className = "on"; bH.className = ""; render(cur); };
-    var sl = slider(r.controls, "Venus in its orbit (°)", 0, 360, 45, 1, function (v) { cur = v; render(v); });
+    var sl = slider(r.controls, "move Venus around", 0, 360, 45, 1, function (v) { cur = v; render(v); });
     var pb = playBtn(r.controls, function () {
       cur = (cur + 2) % 360; sl.input.value = cur; render(cur);
     });
@@ -431,12 +452,11 @@
       gPh.appendChild(S("circle", { cx: Px, cy: Py, r: PR, style: "fill:var(--panel-2);stroke:var(--border)" }));
       gPh.appendChild(S("path", { d: phasePath(Px, Py, PR, k, litRight), style: "fill:#f2dca6" }));
       gPh.appendChild(S("circle", { cx: Px, cy: Py, r: PR, style: "fill:none;stroke:var(--border)" }));
-      gPh.appendChild(T(Px, Py + PR + 16, "what Earth sees", "dg-lbl-mid"));
-      r.readout.innerHTML = (model === "helio" ? "Sun-centred" : "Ptolemy") + ": Venus looks <b>" + name(k) +
-        "</b> (" + Math.round(k * 100) + "% lit). " +
-        (model === "helio"
-          ? "Over one orbit it cycles new → crescent → quarter → gibbous → <b>full</b>."
-          : "Trapped between Earth and Sun, it never gets past a thin crescent — never gibbous, never full.");
+      gPh.appendChild(T(Px, Py + PR + 16, "how Venus looks", "dg-lbl-mid"));
+      var shape = k < 0.42 ? "a thin sliver 🌙" : k < 0.6 ? "half lit" : k < 0.96 ? "mostly lit" : "a full bright circle ⚪";
+      r.readout.innerHTML = model === "helio"
+        ? "<b>Sun in the middle:</b> right now Venus looks like <b>" + shape + "</b>. Drag it all the way around and you'll see <b>every</b> shape, from a sliver to a full circle."
+        : "<b>Earth in the middle:</b> Venus is stuck between us and the Sun, so it can <b>only ever be a sliver</b> — you can never make it a full circle. But Galileo <b>did</b> see a full circle… so this picture is wrong!";
     }
     render(45);
   };

@@ -1108,7 +1108,14 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
   background: var(--panel);
   padding: 14px 16px 12px;
 }
-.diagram .dg-title { font-weight: 700; font-size: 14px; margin: 0 0 8px; color: var(--accent); }
+.diagram .dg-title { font-weight: 700; font-size: 14.5px; margin: 0 0 4px; color: var(--accent); }
+.diagram .dg-how { font-size: 12.5px; color: var(--text-dim); margin: 0 0 10px; line-height: 1.5; }
+.diagram .dg-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.diagram .dg-chip {
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--text-dim);
+  border-radius: 999px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+}
+.diagram .dg-chip:hover { border-color: var(--accent); color: var(--text); }
 .diagram .dg-stage { display: flex; justify-content: center; }
 .diagram .dg-svg { width: 100%; max-width: 420px; height: auto; display: block; }
 .diagram .dg-controls {
