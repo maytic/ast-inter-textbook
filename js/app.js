@@ -1784,7 +1784,9 @@
 
     function start(n) {
       var qs2 = shuffle(D.quiz).slice(0, n).map(function (q) {
-        var choices = q.choices.map(function (c, i) { return { text: c, correct: i === q.answer }; });
+        var choices = q.choices.map(function (c, i) {
+          return { text: c, correct: i === q.answer, why: (q.whyWrong && q.whyWrong[i]) || "" };
+        });
         return { q: q.q, section: q.section, explain: q.explain, choices: shuffle(choices) };
       });
       var idx = 0, score = 0, missed = [];
@@ -1821,12 +1823,25 @@
               all[k].disabled = true;
               if (q.choices[k].correct) all[k].classList.add("correct");
             }
-            if (c.correct) { btn.classList.add("correct"); score++; }
-            else { btn.classList.add("wrong"); missed.push(q); }
-            explainBox.appendChild(h("div", { class: "q-explain " + (c.correct ? "ok" : "no") }, [
-              h("strong", { text: c.correct ? "Correct. " : "Not quite. " }),
-              document.createTextNode(q.explain)
-            ]));
+            var correctChoice = q.choices.filter(function (x) { return x.correct; })[0];
+            if (c.correct) {
+              btn.classList.add("correct"); score++;
+              explainBox.appendChild(h("div", { class: "q-explain ok" }, [
+                h("strong", { text: "Correct. " }), document.createTextNode(q.explain)
+              ]));
+            } else {
+              btn.classList.add("wrong");
+              q._picked = c;
+              missed.push(q);
+              explainBox.appendChild(h("div", { class: "q-explain no" }, [
+                h("strong", { text: "Not quite. " }),
+                document.createTextNode(c.why || ("“" + c.text + "” isn't right here."))
+              ]));
+              explainBox.appendChild(h("div", { class: "q-explain ok" }, [
+                h("strong", { text: "The answer: " }),
+                document.createTextNode((correctChoice ? correctChoice.text + " — " : "") + q.explain)
+              ]));
+            }
             var nb = h("button", { class: "btn primary", text: idx === qs2.length - 1 ? "See results →" : "Next question →" });
             nb.addEventListener("click", function () {
               idx++;
@@ -1874,6 +1889,8 @@
             var correct = q.choices.filter(function (c) { return c.correct; })[0];
             rev.appendChild(h("div", { class: "review-item" }, [
               h("div", { class: "ri-q", text: q.q }),
+              q._picked ? h("div", { class: "ri-line ri-yours", text:
+                "You picked: " + q._picked.text + (q._picked.why ? " — " + q._picked.why : "") }) : null,
               h("div", { class: "ri-line ri-correct", text: "Answer: " + correct.text }),
               h("div", { class: "ri-line", style: "color:var(--text-dim)", text: q.explain }),
               h("button", { class: "btn small ghost", style: "margin-top:8px", text: "Go to section " + q.section, onclick: function () { go("s/" + q.section); } })
