@@ -46,7 +46,15 @@
     calendar: ["t/calendar", "Cosmic Calendar", "13.8 billion years compressed into one year"],
     scale:    ["t/scale", "Cosmic Scale", "Step from Earth to the most distant quasars"],
     elements: ["t/elements", "Element Abundance", "The cosmic ‘greatest hits’ of the periodic table"],
-    astronomers: ["t/astronomers", "Match the Astronomers", "Pair each sky-watcher with what they did"]
+    astronomers: ["t/astronomers", "Match the Astronomers", "Pair each sky-watcher with what they did"],
+    kepler1:  ["t/kepler1", "Kepler’s 1st Law", "Orbits are ellipses, with the Sun at one focus"],
+    kepler2:  ["t/kepler2", "Kepler’s 2nd Law", "Equal areas — fast near the Sun, slow far away"],
+    kepler3:  ["t/kepler3", "Kepler’s 3rd Law", "Farther out means a longer year (P² = a³)"],
+    newton1:  ["t/newton1", "Newton’s 1st Law", "Inertia — motion keeps going on its own"],
+    newton2:  ["t/newton2", "Newton’s 2nd Law", "Force makes things speed up (a = F ÷ m)"],
+    newton3:  ["t/newton3", "Newton’s 3rd Law", "Every push has an equal push back"],
+    gravitation: ["t/gravitation", "Universal Gravitation", "Every mass pulls every mass — F = G·m₁m₂ ÷ R²"],
+    physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -1646,16 +1654,34 @@
     mount(v);
   }
 
-  /* ---- MATCH THE ASTRONOMERS (Ch. 2) ----------------------------- */
+  /* ---- MATCH THE ASTRONOMERS / PHYSICISTS (Ch. 2 & 3) ----------- */
   function renderAstronomers() {
-    pageTitle("Match the Astronomers");
-    var people = D.astronomers || [];
+    renderPeopleMatch({
+      title: "Match the Astronomers",
+      heading: "Who did what?",
+      intro: "The people of Chapter 2 built the story step by step — from the first guess that Earth is a ball to " +
+        "the telescope that ended the argument. Read them over, then match each one to what they did.",
+      people: D.astronomers || [],
+      leftLabel: "Astronomer", rightLabel: "What they did"
+    });
+  }
+  function renderPhysicists() {
+    renderPeopleMatch({
+      title: "Match the Physicists",
+      heading: "Who worked out what?",
+      intro: "Chapter 3 is a relay race: careful measurements, then the laws that explained them, then a planet " +
+        "found by math alone. Read the scientists over, then match each one to what they contributed.",
+      people: D.physicists || [],
+      leftLabel: "Scientist", rightLabel: "What they worked out"
+    });
+  }
+  function renderPeopleMatch(cfg) {
+    pageTitle(cfg.title);
+    var people = cfg.people;
     var v = h("div", { class: "view" });
     v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
-    v.appendChild(h("h1", { text: "Who did what?" }));
-    v.appendChild(h("p", { class: "tool-intro", html:
-      "The people of Chapter 2 built the story step by step — from the first guess that Earth is a ball to " +
-      "the telescope that ended the argument. Read them over, then match each one to what they did." }));
+    v.appendChild(h("h1", { text: cfg.heading }));
+    v.appendChild(h("p", { class: "tool-intro", html: cfg.intro }));
 
     var dl = h("dl", { class: "astro-list" });
     people.forEach(function (p) {
@@ -1665,9 +1691,10 @@
     var learn = h("div", { class: "card" }, dl);
 
     var matchInner = h("div");
+    var round = Math.min(6, people.length);
     var matchWrap = h("div", { style: "display:none" }, [
       h("p", { class: "tool-intro",
-        text: "Tap a name on the left and a deed on the right. Six of the nine each round." }),
+        text: "Tap a name on the left and a deed on the right. " + round + " of the " + people.length + " each round." }),
       matchInner
     ]);
     function newMatch() {
@@ -1676,11 +1703,11 @@
         matchInner.appendChild(h("div", { class: "card", text: "Not enough people to play." }));
         return;
       }
-      var pairs = shuffle(people.slice()).slice(0, Math.min(6, people.length)).map(function (p) {
+      var pairs = shuffle(people.slice()).slice(0, round).map(function (p) {
         return { a: p.name, b: p.did };
       });
       renderMatchGame(matchInner, pairs, {
-        leftLabel: "Astronomer", rightLabel: "What they did", onRestart: newMatch
+        leftLabel: cfg.leftLabel, rightLabel: cfg.rightLabel, onRestart: newMatch
       });
     }
 
@@ -1693,6 +1720,397 @@
     }));
     v.appendChild(learn);
     v.appendChild(matchWrap);
+    mount(v);
+  }
+
+  /* ---- shared: multiple-choice practice drill (streak + explain) --- */
+  function mcDrill(host, questions) {
+    clear(host);
+    var streak = 0;
+    var stars = h("div", { class: "star-row" });
+    var card = h("div", { class: "card" });
+    host.appendChild(card);
+    host.appendChild(stars);
+    function setStars() {
+      stars.textContent = streak ? new Array(streak + 1).join("⭐") + (streak >= 5 ? "  on fire!" : "") : "";
+    }
+    var last = -1;
+    function next() {
+      clear(card);
+      setStars();
+      var qi = Math.floor(Math.random() * questions.length);
+      if (questions.length > 1 && qi === last) qi = (qi + 1) % questions.length;
+      last = qi;
+      var Q = questions[qi];
+      var opts = Q.choices.map(function (c, i) { return { t: c, ok: i === Q.answer }; });
+      opts = shuffle(opts);
+      card.appendChild(h("p", { class: "hop-msg", style: "margin-top:0", html: Q.q }));
+      var fb = h("div", { class: "hop-msg" });
+      opts.forEach(function (o) {
+        var b = h("button", {
+          class: "btn big", style: "display:block;width:100%;margin:6px 0;text-align:left",
+          text: o.t,
+          onclick: function () {
+            if (o.ok) {
+              streak++; setStars();
+              b.classList.add("done-btn");
+              fb.innerHTML = "🎉 " + (Q.why || "That’s right.");
+              var all = card.querySelectorAll(".btn.big");
+              for (var i = 0; i < all.length; i++) all[i].disabled = true;
+              card.appendChild(h("div", { class: "hop-controls" }, [
+                h("button", { class: "btn big primary", text: "next →", onclick: next })
+              ]));
+            } else {
+              b.disabled = true; b.classList.add("wrong");
+              fb.textContent = "Not that one — try again.";
+              streak = 0; setStars();
+            }
+          }
+        });
+        card.appendChild(b);
+      });
+      card.appendChild(fb);
+    }
+    next();
+  }
+
+  /* ---- generic "one study tool per law" page ---------------------- */
+  function renderLawTool(cfg) {
+    pageTitle(cfg.title);
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool · a law of Chapter 3" }));
+    v.appendChild(h("h1", { text: cfg.h1 }));
+    v.appendChild(h("p", { class: "tool-intro", html: cfg.intro }));
+
+    var modeHost = h("div");
+    v.appendChild(segControl(["Show me", "Practice", "Matching game"], 0, function (idx) {
+      stopMatch();
+      if (idx === 0) showMe();
+      else if (idx === 1) mcDrill(modeHost, cfg.questions);
+      else showMatch();
+    }));
+    v.appendChild(modeHost);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "The law in one line", style: "margin-top:0" }),
+      h("div", { class: "prose", html: cfg.recap })
+    ]));
+
+    showMe();
+    mount(v);
+
+    function showMe() {
+      clear(modeHost);
+      if (cfg.showLead) modeHost.appendChild(h("p", { class: "tool-intro", html: cfg.showLead }));
+      var dg = h("div");
+      modeHost.appendChild(dg);
+      var fn = window.ASTRO_DIAGRAMS && window.ASTRO_DIAGRAMS[cfg.diagram];
+      if (fn) { try { fn(dg); } catch (e) { dg.appendChild(h("p", { class: "tool-intro", text: "(diagram unavailable)" })); } }
+    }
+    function showMatch() {
+      clear(modeHost);
+      var host = h("div", { class: "card" });
+      modeHost.appendChild(h("p", { class: "tool-intro", text: "Tap one on each side to pair them up." }));
+      modeHost.appendChild(host);
+      (function spin() {
+        var pool = shuffle((D[cfg.matchKey] || []).slice());
+        var pairs = pool.slice(0, Math.min(6, pool.length)).map(function (m) { return { a: m.a, b: m.b }; });
+        renderMatchGame(host, pairs, { leftLabel: cfg.matchLabels[0], rightLabel: cfg.matchLabels[1], onRestart: spin });
+      })();
+    }
+  }
+
+  var LAW_TOOLS = {
+    kepler1: {
+      title: "Kepler’s First Law",
+      h1: "Kepler’s 1st law — orbits are ellipses",
+      intro: "Every planet travels on an <b>ellipse</b> — a squashed circle — with the <b>Sun at one focus</b>.",
+      diagram: "ellipse",
+      showLead: "Tap a shape and watch the planet go around. The two lines to the pins always add to the same total.",
+      matchKey: "law1match", matchLabels: ["Word", "What it means"],
+      recap: "<b>Kepler’s 1st law:</b> every planet’s orbit is an <b>ellipse</b> with the <b>Sun at one focus</b> " +
+        "(the other focus is empty). How stretched the ellipse is is called its <b>eccentricity</b> — 0 is a " +
+        "circle; the planets’ orbits are all close to circular.",
+      questions: [
+        { q: "Where is the Sun in a planet’s orbit?", choices: ["At one focus of the ellipse", "At the exact centre", "On the edge of the orbit", "Outside the orbit"], answer: 0, why: "The Sun sits at one focus; the other focus is just empty space." },
+        { q: "An ellipse with an eccentricity of 0 is really a…", choices: ["Circle", "Straight line", "Parabola", "Very long oval"], answer: 0, why: "Eccentricity 0 means the two foci meet in the middle — that’s a circle." },
+        { q: "For any point on an ellipse, the two distances to the foci always…", choices: ["Add up to the same total", "Are equal to each other", "Add up to zero", "Keep changing"], answer: 0, why: "That constant total is exactly what makes the shape an ellipse." },
+        { q: "Which planet’s orbit is the most stretched (highest eccentricity)?", choices: ["Mercury", "Earth", "Jupiter", "Neptune"], answer: 0, why: "Mercury’s eccentricity is about 0.21; every other planet is under 0.1." },
+        { q: "The “semimajor axis” of an orbit is…", choices: ["Half the longest way across — the orbit’s size", "The gap between the two foci", "The planet’s speed", "The width of the Sun"], answer: 0, why: "It also equals the planet’s average distance from the Sun." },
+        { q: "Real planet orbits are…", choices: ["Ellipses, but only a little squished", "Perfect circles", "Very long thin ovals", "Square-ish"], answer: 0, why: "Their eccentricities are small, so they look almost circular." }
+      ]
+    },
+    kepler2: {
+      title: "Kepler’s Second Law",
+      h1: "Kepler’s 2nd law — equal areas in equal times",
+      intro: "A planet moves <b>fast when it is close to the Sun</b> and <b>slow when it is far away</b> — " +
+        "so the Sun–planet line always sweeps the same area in the same time.",
+      diagram: "kepler-2nd",
+      showLead: "Just watch. The two shaded slices are the same size.",
+      matchKey: "law2match", matchLabels: ["Situation", "What happens"],
+      recap: "<b>Kepler’s 2nd law:</b> the line from the Sun to a planet sweeps out <b>equal areas in equal " +
+        "times</b>. So the planet is <b>fastest at perihelion</b> (closest) and <b>slowest at aphelion</b> " +
+        "(farthest). It’s really conservation of angular momentum.",
+      questions: [
+        { q: "A planet moves FASTEST when it is…", choices: ["Closest to the Sun (perihelion)", "Farthest from the Sun (aphelion)", "Exactly halfway", "It’s always the same speed"], answer: 0, why: "Close in, the Sun–planet line is short, so the planet must swing through a wide arc to sweep the same area." },
+        { q: "A planet moves SLOWEST when it is…", choices: ["Farthest from the Sun", "Closest to the Sun", "Crossing in front of the Sun", "Behind the Sun"], answer: 0, why: "Far out, a long thin slice covers the same area with much less motion." },
+        { q: "In equal amounts of time, the Sun–planet line sweeps out equal…", choices: ["Areas", "Angles", "Distances", "Speeds"], answer: 0, why: "That’s the law — equal areas in equal times." },
+        { q: "On a perfectly circular orbit, a planet’s speed is…", choices: ["The same all the way around", "Fastest at the top", "Always changing", "Zero"], answer: 0, why: "The Sun–planet line never changes length, so the speed stays steady." },
+        { q: "Kepler’s second law is really an example of conservation of…", choices: ["Angular momentum", "Mass", "Heat", "Charge"], answer: 0, why: "As the planet nears the Sun its distance shrinks, so its speed must rise to keep angular momentum constant." },
+        { q: "Comets have very stretched orbits, so they spend most of their time…", choices: ["Far from the Sun, moving slowly", "Near the Sun, moving fast", "Sitting still", "Going backwards"], answer: 0, why: "By the equal-area rule they crawl through the far part of the orbit and whip through perihelion." }
+      ]
+    },
+    newton1: {
+      title: "Newton’s First Law",
+      h1: "Newton’s 1st law — inertia",
+      intro: "With <b>no outside force</b>, a thing that is still stays still, and a thing that is moving " +
+        "keeps moving in a straight line at the same speed.",
+      diagram: "inertia",
+      showLead: "Same push every time — only the surface changes.",
+      matchKey: "n1match", matchLabels: ["Situation", "Force needed?"],
+      recap: "<b>Newton’s 1st law (inertia):</b> motion keeps going on its own. A force is only needed to " +
+        "<b>change</b> motion — to start, stop, speed up, slow down, or turn. On Earth, <b>friction</b> is " +
+        "usually the force that slows things down. Momentum = mass × velocity.",
+      questions: [
+        { q: "With NO force on it, a moving object will…", choices: ["Keep moving in a straight line at the same speed", "Slowly stop on its own", "Speed up", "Fall down"], answer: 0, why: "That’s inertia — motion continues unless a force changes it." },
+        { q: "You roll a ball across the floor and it stops. What stopped it?", choices: ["Friction", "It got tired", "Gravity pulling it back", "Nothing — balls just stop"], answer: 0, why: "Friction is the outside force. On smoother ground the ball rolls farther." },
+        { q: "You throw a wrench in deep space. It will…", choices: ["Keep drifting forever", "Slow down and stop", "Turn around and come back", "Speed up"], answer: 0, why: "Almost nothing to rub against, so no force changes its motion." },
+        { q: "Momentum depends on an object’s mass and its…", choices: ["Velocity (speed and direction)", "Colour", "Temperature", "Age"], answer: 0, why: "Momentum = mass × velocity." },
+        { q: "Newton’s first law is also called the law of…", choices: ["Inertia", "Gravity", "Action and reaction", "Equal areas"], answer: 0, why: "Inertia is the tendency to keep doing what you’re already doing." },
+        { q: "A book sits still on a table. To make it start moving you need…", choices: ["A force — a push or a pull", "Just to wait", "More time", "Nothing"], answer: 0, why: "Rest stays rest until a force acts." }
+      ]
+    },
+    newton2: {
+      title: "Newton’s Second Law",
+      h1: "Newton’s 2nd law — force makes things speed up",
+      intro: "A force changes how something moves. The rule is <b>a = force ÷ mass</b>: push harder to speed " +
+        "up faster; heavier things speed up slower.",
+      diagram: "force-mass",
+      showLead: "Pick a push and a box, and watch how fast it gets going.",
+      matchKey: "n2match", matchLabels: ["Change", "Result"],
+      recap: "<b>Newton’s 2nd law:</b> <b>a = F ÷ m</b>. Twice the force → twice the acceleration. Twice the " +
+        "mass → half the acceleration. A force is what starts, stops, speeds up, slows down, or turns a thing.",
+      questions: [
+        { q: "Same push on a pen and on a heavy textbook — which speeds up more?", choices: ["The pen", "The textbook", "They tie", "Neither moves"], answer: 0, why: "Less mass means more acceleration for the same force." },
+        { q: "You push twice as hard on the same box. It now speeds up…", choices: ["Twice as fast", "Half as fast", "The same", "Not at all"], answer: 0, why: "Acceleration is proportional to the force." },
+        { q: "Same push, but the box is twice as heavy. It speeds up…", choices: ["Half as fast", "Twice as fast", "The same", "Backwards"], answer: 0, why: "Double the mass → half the acceleration." },
+        { q: "To change an object’s direction you need…", choices: ["A force", "Only time", "Nothing", "Less mass"], answer: 0, why: "Turning is a change of motion, so it needs a force." },
+        { q: "Acceleration equals…", choices: ["Force divided by mass", "Force times mass", "Mass divided by force", "Force plus mass"], answer: 0, why: "a = F ÷ m." },
+        { q: "A rocket burns more fuel and pushes harder. Its acceleration…", choices: ["Goes up", "Goes down", "Stays the same", "Becomes zero"], answer: 0, why: "More force on the same rocket → more acceleration." }
+      ]
+    },
+    newton3: {
+      title: "Newton’s Third Law",
+      h1: "Newton’s 3rd law — every push has a push back",
+      intro: "If you push on something, it pushes back on you <b>just as hard</b>, the opposite way. " +
+        "Forces always come in pairs.",
+      diagram: "action-reaction",
+      showLead: "Tap a situation to see the two equal, opposite pushes.",
+      matchKey: "n3match", matchLabels: ["Action", "Reaction"],
+      recap: "<b>Newton’s 3rd law:</b> for every action there is an <b>equal and opposite reaction</b>. That " +
+        "pair of forces is why a rocket can push on nothing but its own exhaust and still fly.",
+      questions: [
+        { q: "A rocket engine pushes gas out the back. The gas pushes the rocket…", choices: ["Forward, just as hard", "Backward", "Sideways", "Not at all"], answer: 0, why: "Every action has an equal and opposite reaction." },
+        { q: "A swimmer pushes water backward. The water…", choices: ["Pushes the swimmer forward", "Pushes the swimmer down", "Does nothing", "Pulls the swimmer back"], answer: 0, why: "The push and the push-back are equal and opposite." },
+        { q: "Forces in nature always come in…", choices: ["Equal, opposite pairs", "Threes", "Single pushes", "Random amounts"], answer: 0, why: "If A pushes B, then B pushes A just as hard the other way." },
+        { q: "Earth pulls you down with gravity. You pull Earth…", choices: ["Up, just as hard", "Not at all", "Down too", "Sideways"], answer: 0, why: "The forces are equal — but Earth is so massive it barely moves." },
+        { q: "When you jump off a small boat toward the dock, the boat…", choices: ["Shoots backward", "Stays put", "Follows you", "Sinks"], answer: 0, why: "You push the boat back as you push yourself forward." },
+        { q: "Why can a rocket work in empty space with no air to push on?", choices: ["It pushes its own exhaust, and the exhaust pushes back", "It grabs onto starlight", "It can’t — that’s a myth", "It pushes on gravity"], answer: 0, why: "The action–reaction pair is between the rocket and its exhaust — no air needed." }
+      ]
+    },
+    gravitation: {
+      title: "Universal Gravitation",
+      h1: "Newton’s law of gravitation — every mass pulls every mass",
+      intro: "Any two objects with mass pull on each other. <b>More mass → stronger pull. Farther apart → " +
+        "much weaker</b> (twice as far is only a quarter as strong).",
+      diagram: "gravity-pull",
+      showLead: "Change the masses and the distance, and watch the pull bar.",
+      matchKey: "gravmatch", matchLabels: ["Change", "Pull becomes"],
+      recap: "<b>Universal gravitation:</b> <b>F = G · m₁ · m₂ ÷ R²</b>. The pull grows with each mass and " +
+        "falls off as the <b>square</b> of the distance: 2× farther → 1/4, 3× farther → 1/9. It gets tiny " +
+        "with distance but never reaches zero.",
+      questions: [
+        { q: "Move two objects twice as far apart. The gravity between them becomes…", choices: ["1/4 as strong", "1/2 as strong", "2× as strong", "The same"], answer: 0, why: "Inverse-square law: 2× distance → 1/2² = 1/4." },
+        { q: "Move them three times as far apart. Gravity becomes…", choices: ["1/9 as strong", "1/3 as strong", "1/6 as strong", "3× as strong"], answer: 0, why: "1/3² = 1/9." },
+        { q: "Double the mass of one object (same distance). Gravity…", choices: ["Doubles", "Halves", "Stays the same", "Goes to zero"], answer: 0, why: "Force is proportional to each mass." },
+        { q: "Does gravity ever drop all the way to zero as you move away?", choices: ["No — it gets tiny but never zero", "Yes, past the Moon", "Yes, at the edge of the solar system", "Yes, right away"], answer: 0, why: "It weakens fast but keeps acting at any distance." },
+        { q: "The Moon is about 60 Earth-radii away, so its fall toward Earth is…", choices: ["About 3600× weaker than at the surface", "60× weaker", "The same", "3600× stronger"], answer: 0, why: "60² = 3600 — inverse-square again." },
+        { q: "What two things set the strength of gravity between two objects?", choices: ["Their masses and the distance between them", "Their colours and shapes", "Their temperatures", "Their speeds"], answer: 0, why: "F = G · m₁ · m₂ ÷ R²." }
+      ]
+    }
+  };
+
+  /* ---- TOOL: Kepler’s Third Law (Ch. 3) ------------------------- */
+  function renderKepler() {
+    pageTitle("Kepler’s Third Law");
+    var bodies = D.keplerBodies || [];
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("h1", { text: "Kepler’s third law — farther out, longer year" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Planets far from the Sun take much longer to go around it. Pick a planet to see how much longer, " +
+      "then try the practice questions." }));
+
+    var modeHost = h("div");
+    v.appendChild(segControl(["Show me", "Practice", "Matching game"], 0, function (idx) {
+      stopMatch();
+      if (idx === 0) showExplainer();
+      else if (idx === 1) showPractice();
+      else showMatch();
+    }));
+    v.appendChild(modeHost);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "The quick idea", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p>A planet <b>2×</b> as far from the Sun takes about <b>3×</b> as long for one year. " +
+        "<b>10×</b> as far &rarr; about <b>32×</b> as long.</p>" +
+        "<p style='margin:0'><b>The exact rule</b> (for keen readers): the year squared equals the distance " +
+        "cubed &mdash; <b>P² = a³</b> &mdash; with the year P in Earth-years and the distance a in AU " +
+        "(Earth&rsquo;s distance from the Sun). Earth check: 1 &times; 1 = 1 &times; 1 &times; 1. ✓</p>" })
+    ]));
+
+    function kP(a) { return Math.sqrt(a * a * a); }
+    function fmt(n) {
+      if (n >= 1000) return commas(String(Math.round(n)));
+      if (n >= 100) return n.toFixed(0);
+      if (n >= 10) return (+n.toFixed(1)).toString();
+      return (+n.toFixed(2)).toString();
+    }
+    function yrWord(P) {
+      return (P < 2 ? P.toFixed(2) : String(Math.round(P))) + (P >= 1.5 ? " Earth-years" : " Earth-year");
+    }
+    var EMO = { Mercury: "☿️", Venus: "♀️", Earth: "🌍", Mars: "🔴", Jupiter: "🟠",
+      Saturn: "🪐", Uranus: "🔵", Neptune: "🔷", Pluto: "🌑" };
+    function pickBodies(names) {
+      var out = [];
+      names.forEach(function (nm) {
+        for (var i = 0; i < bodies.length; i++) if (bodies[i].name === nm) out.push(bodies[i]);
+      });
+      return out.length ? out : bodies.slice(0, 4);
+    }
+
+    /* -------- MODE: Show me -------- */
+    function showExplainer() {
+      clear(modeHost);
+      var picks = pickBodies(["Earth", "Mars", "Jupiter", "Saturn"]);
+      var cur = picks[0];
+
+      var row = h("div", { class: "hop-controls", style: "margin-top:4px" });
+      var btns = [];
+      picks.forEach(function (bd) {
+        var b = h("button", { class: "btn big", text: (EMO[bd.name] || "") + " " + bd.name, onclick: function () {
+          btns.forEach(function (x) { x.classList.remove("primary"); });
+          b.classList.add("primary"); cur = bd; paint();
+        } });
+        btns.push(b); row.appendChild(b);
+      });
+
+      var big = h("p", { class: "hop-msg", style: "font-size:16px" });
+      var mathBody = h("div", { class: "prose" });
+      var math = h("details", { style: "margin-top:6px" }, [
+        h("summary", { style: "cursor:pointer;color:var(--text-dim)", text: "See the math" }),
+        mathBody
+      ]);
+
+      modeHost.appendChild(h("div", { class: "card" }, [
+        h("p", { class: "hop-msg", style: "margin-top:0", text: "Tap a planet:" }),
+        row, big, math
+      ]));
+      btns[0].classList.add("primary");
+      paint();
+
+      function paint() {
+        var a = cur.a, P = cur.P;
+        big.innerHTML = cur.name === "Earth"
+          ? "🌍 <b>Earth</b> is <b>1 AU</b> from the Sun — that is the ruler we measure the other planets with. " +
+            "One trip around takes exactly <b>1 Earth-year</b>."
+          : (EMO[cur.name] || "") + " <b>" + cur.name + "</b> is about <b>" + Math.round(a) +
+            "×</b> farther from the Sun than Earth. One trip around the Sun takes it <b>" + yrWord(P) + "</b>.";
+        mathBody.innerHTML =
+          "<p style='margin:0'>Distance a = <b>" + fmt(a) + " AU</b>. Cube it: " + fmt(a) + " &times; " +
+          fmt(a) + " &times; " + fmt(a) + " = <b>" + fmt(a * a * a) + "</b>. Square root of that: <b>" +
+          fmt(kP(a)) + "</b> &rarr; about <b>" + yrWord(P) + "</b>.</p>";
+      }
+    }
+
+    /* -------- MODE: Practice -------- */
+    function showPractice() {
+      clear(modeHost);
+      var streak = 0;
+      var stars = h("div", { class: "star-row" });
+      var card = h("div", { class: "card" });
+      modeHost.appendChild(card);
+      modeHost.appendChild(stars);
+      function setStars() {
+        stars.textContent = streak ? new Array(streak + 1).join("⭐") + (streak >= 5 ? "  on fire!" : "") : "";
+      }
+      var POOL = [4, 9, 16, 25];   // each gives a clean whole-number year (8, 27, 64, 125)
+      function next() {
+        clear(card);
+        setStars();
+        var a = POOL[Math.floor(Math.random() * POOL.length)];
+        var P = kP(a), answer = fmt(P);
+        var opts = [answer];
+        [fmt(a), fmt(a * a), fmt(a * 2), fmt(P * 2)].forEach(function (d) {
+          if (opts.indexOf(d) < 0 && opts.length < 3) opts.push(d);
+        });
+        while (opts.length < 3) {
+          var pad = fmt(a + 1 + Math.floor(Math.random() * 20));
+          if (opts.indexOf(pad) < 0) opts.push(pad);
+        }
+        var fb = h("div", { class: "hop-msg" });
+        card.appendChild(h("p", { class: "hop-msg", style: "margin-top:0", html:
+          "A planet is <b>" + a + " AU</b> from the Sun — that is <b>" + a + "×</b> Earth&rsquo;s distance. " +
+          "About how long is its year?" }));
+        card.appendChild(h("p", { class: "tool-intro", style: "margin:0 0 8px",
+          text: "Tip: farther from the Sun always means a longer year." }));
+        shuffle(opts).forEach(function (o) {
+          var b = h("button", { class: "btn big", style: "display:block;width:100%;margin:6px 0",
+            text: o + " Earth-years",
+            onclick: function () {
+              if (o === answer) {
+                streak++; setStars();
+                b.classList.add("done-btn");
+                fb.innerHTML = "🎉 Yes! " + a + " AU &rarr; about <b>" + answer + " years</b>. " +
+                  "(" + a + " cubed is " + fmt(a * a * a) + ", and its square root is " + fmt(P) + ".)";
+                var all = card.querySelectorAll(".btn.big");
+                for (var i = 0; i < all.length; i++) all[i].disabled = true;
+                card.appendChild(h("div", { class: "hop-controls" }, [
+                  h("button", { class: "btn big primary", text: "next →", onclick: next })
+                ]));
+              } else {
+                b.disabled = true; b.classList.add("wrong");
+                fb.textContent = Number(o) < Number(answer)
+                  ? "Too short — it is farther out, so the year is longer. Try again."
+                  : "A bit too long — try again.";
+                streak = 0; setStars();
+              }
+            } });
+          card.appendChild(b);
+        });
+        card.appendChild(fb);
+      }
+      next();
+    }
+
+    /* -------- MODE: Matching game -------- */
+    function showMatch() {
+      clear(modeHost);
+      var host = h("div", { class: "card" });
+      modeHost.appendChild(h("p", { class: "tool-intro", text:
+        "Match each planet to how long its year is. Tap one on each side." }));
+      modeHost.appendChild(host);
+      (function spin() {
+        var pool = shuffle(bodies.slice()).slice(0, 6);
+        var pairs = pool.map(function (bd) {
+          return { a: (EMO[bd.name] || "") + " " + bd.name, b: "≈ " + fmt(bd.P) + " yr" };
+        });
+        renderMatchGame(host, pairs, { leftLabel: "Planet", rightLabel: "Its year", onRestart: spin });
+      })();
+    }
+
+    showExplainer();
     mount(v);
   }
 
@@ -2141,7 +2559,15 @@
     "t/calendar": ["calendar", function () { renderCalendar(); }],
     "t/scale": ["scale", function () { renderScale(); }],
     "t/elements": ["elements", function () { renderElements(); }],
-    "t/astronomers": ["astronomers", function () { renderAstronomers(); }]
+    "t/astronomers": ["astronomers", function () { renderAstronomers(); }],
+    "t/kepler1": ["kepler1", function () { renderLawTool(LAW_TOOLS.kepler1); }],
+    "t/kepler2": ["kepler2", function () { renderLawTool(LAW_TOOLS.kepler2); }],
+    "t/kepler3": ["kepler3", function () { renderKepler(); }],
+    "t/newton1": ["newton1", function () { renderLawTool(LAW_TOOLS.newton1); }],
+    "t/newton2": ["newton2", function () { renderLawTool(LAW_TOOLS.newton2); }],
+    "t/newton3": ["newton3", function () { renderLawTool(LAW_TOOLS.newton3); }],
+    "t/gravitation": ["gravitation", function () { renderLawTool(LAW_TOOLS.gravitation); }],
+    "t/physicists": ["physicists", function () { renderPhysicists(); }]
   };
 
   function route() {

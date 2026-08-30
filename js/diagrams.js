@@ -465,5 +465,425 @@
     render(45);
   };
 
+  /* row of big, tappable choice buttons. items: [{label, value}] */
+  function bigPick(controls, items, initialIndex, onPick) {
+    var row = E("div", { "class": "dg-bigrow" });
+    var btns = [];
+    items.forEach(function (it, i) {
+      var b = E("button", { type: "button", "class": "dg-bigbtn" + (i === initialIndex ? " on" : ""), text: it.label });
+      b.addEventListener("click", function () {
+        btns.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        onPick(it.value, i);
+      });
+      btns.push(b);
+      row.appendChild(b);
+    });
+    controls.appendChild(row);
+    return btns;
+  }
+
+  /* animation loop that starts running right away, with a Pause / Play toggle */
+  function autoTicker(controls, tick) {
+    var btn = E("button", { "class": "dg-play", type: "button", text: "❚❚ Pause" });
+    var raf = null, playing = true;
+    function stop() { playing = false; if (raf) cancelAnimationFrame(raf); raf = null; btn.textContent = "▶ Play"; }
+    function start() { if (playing) return; playing = true; btn.textContent = "❚❚ Pause"; loop(); }
+    function loop() {
+      if (!playing) return;
+      if (!document.body.contains(btn)) { stop(); return; }
+      tick();
+      raf = requestAnimationFrame(loop);
+    }
+    btn.addEventListener("click", function () { playing ? stop() : start(); });
+    controls.appendChild(btn);
+    raf = requestAnimationFrame(loop);
+    return { stop: stop, start: start };
+  }
+
+  /* ---- 3.1  An ellipse: two pins, one constant total ------------- */
+  D["ellipse"] = function (host) {
+    var r = frame(host, "Draw a planet’s path",
+      "Tap a shape. Watch the planet go around. The two lines from the pins always add up to the same number.",
+      "That “always the same total” is the secret of an ellipse. The Sun sits on one pin; the other pin is just empty space.");
+    var Cx = 180, Cy = 122, A = 138;
+    var s = svg(r.stage, 360, 244);
+    var orbit = S("ellipse", { cx: Cx, cy: Cy, "class": "dg-orbit" });
+    var l1 = S("line", { "class": "dg-ray" }), l2 = S("line", { "class": "dg-arm" });
+    var f1 = S("circle", { r: 6, "class": "dg-sun" }), f2 = S("circle", { r: 4, "class": "dg-pole" });
+    var pl = S("circle", { r: 6.5, "class": "dg-earth" });
+    var n1 = T(0, 0, "", "dg-lbl-mid"), n2 = T(0, 0, "", "dg-lbl-mid");
+    var sumL = T(Cx, 18, "", "dg-lbl-mid");
+    sumL.setAttribute("style", "font-size:13px;fill:var(--text);font-weight:700");
+    n1.setAttribute("style", "font-size:13px;fill:var(--text)");
+    n2.setAttribute("style", "font-size:13px;fill:var(--text)");
+    [orbit, l1, l2, f1, f2, pl, n1, n2, sumL].forEach(function (n) { s.appendChild(n); });
+    var ecc = 0, ang = 0;
+    function draw() {
+      var b = A * Math.sqrt(1 - ecc * ecc), c = A * ecc;
+      orbit.setAttribute("rx", A); orbit.setAttribute("ry", b);
+      var f1x = Cx - c, f2x = Cx + c;
+      f1.setAttribute("cx", f1x); f1.setAttribute("cy", Cy);
+      f2.setAttribute("cx", f2x); f2.setAttribute("cy", Cy);
+      f2.style.display = c < 3 ? "none" : "";
+      var rad = ang * Math.PI / 180;
+      var px = Cx + A * Math.cos(rad), py = Cy + b * Math.sin(rad);
+      pl.setAttribute("cx", px); pl.setAttribute("cy", py);
+      l1.setAttribute("x1", f1x); l1.setAttribute("y1", Cy); l1.setAttribute("x2", px); l1.setAttribute("y2", py);
+      l2.setAttribute("x1", f2x); l2.setAttribute("y1", Cy); l2.setAttribute("x2", px); l2.setAttribute("y2", py);
+      var d1 = Math.hypot(px - f1x, py - Cy) / A * 5;
+      var d2 = Math.hypot(px - f2x, py - Cy) / A * 5;
+      n1.setAttribute("x", (f1x + px) / 2 - 4); n1.setAttribute("y", (Cy + py) / 2 - 3);
+      n2.setAttribute("x", (f2x + px) / 2 + 4); n2.setAttribute("y", (Cy + py) / 2 - 3);
+      n1.textContent = d1.toFixed(1); n2.textContent = d2.toFixed(1);
+      n1.style.display = n2.style.display = ecc < 0.06 ? "none" : "";
+      sumL.textContent = d1.toFixed(1) + " + " + d2.toFixed(1) + " = " + (d1 + d2).toFixed(1) + "   (always 10!)";
+      r.readout.innerHTML = ecc < 0.02
+        ? "A perfectly <b>round</b> circle — both pins are stacked in the middle. 🟢"
+        : ecc < 0.55
+        ? "A gentle <b>egg</b> shape. The two lines still add up to <b>10</b> everywhere. 🥚"
+        : "A <b>very squished</b> path — still 10 every time! Real planets are only a tiny bit squished. 🫓";
+    }
+    bigPick(r.controls, [
+      { label: "🟢 Round", value: 0 }, { label: "🥚 Egg", value: 0.45 }, { label: "🫓 Squished", value: 0.72 }
+    ], 0, function (v) { ecc = v; draw(); });
+    autoTicker(r.controls, function () { ang = (ang + 1.3) % 360; draw(); });
+    draw();
+  };
+
+  /* ---- 3.1  Kepler's second law: fast near the Sun, slow far away  */
+  D["kepler-2nd"] = function (host) {
+    var r = frame(host, "Fast near the Sun, slow far away",
+      "Just watch. 👀 The planet zooms when it is close to the Sun and crawls when it is far away.",
+      "The orange slice and the blue slice are the same size. The planet always sweeps the same amount of space in the same time — so it has to hurry when the slice is short and fat.");
+    var Cx = 188, Cy = 125, A = 135, e = 0.5;
+    var b = A * Math.sqrt(1 - e * e), c = A * e, Fx = Cx + c, Fy = Cy;
+    var s = svg(r.stage, 360, 250);
+    s.appendChild(S("ellipse", { cx: Cx, cy: Cy, rx: A, ry: b, "class": "dg-orbit" }));
+    var wedgeP = S("path", { style: "fill:color-mix(in srgb, var(--warn) 42%, transparent);stroke:none" });
+    var wedgeA = S("path", { style: "fill:color-mix(in srgb, var(--accent) 38%, transparent);stroke:none" });
+    s.appendChild(wedgeP); s.appendChild(wedgeA);
+    s.appendChild(T(Cx - A + 4, Cy - b - 6, "same size", "dg-lbl"));
+    s.appendChild(T(Fx - 26, Cy + b + 16, "same size", "dg-lbl"));
+    s.appendChild(S("circle", { cx: Fx, cy: Fy, r: 9, "class": "dg-sun" }));
+    s.appendChild(T(Fx + 12, Fy + 4, "Sun", "dg-lbl"));
+    var line = S("line", { "class": "dg-dash" }), pl = S("circle", { r: 6.5, "class": "dg-earth" });
+    var word = T(0, 0, "", "dg-lbl-mid");
+    word.setAttribute("style", "font-size:15px;font-weight:700;fill:var(--text)");
+    s.appendChild(line); s.appendChild(pl); s.appendChild(word);
+    function Eof(M) {
+      var E = M;
+      for (var i = 0; i < 6; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+      return E;
+    }
+    function pos(M) { var E = Eof(M); return [Cx + A * Math.cos(E), Cy + b * Math.sin(E)]; }
+    function wedge(M0, M1) {
+      var d = "M " + Fx + " " + Fy;
+      for (var k = 0; k <= 18; k++) { var p = pos(M0 + (M1 - M0) * k / 18); d += " L " + p[0].toFixed(1) + " " + p[1].toFixed(1); }
+      return d + " Z";
+    }
+    var dM = 0.9;
+    wedgeP.setAttribute("d", wedge(-dM / 2, dM / 2));
+    wedgeA.setAttribute("d", wedge(Math.PI - dM / 2, Math.PI + dM / 2));
+    var M = 0;
+    function draw() {
+      var p = pos(M);
+      pl.setAttribute("cx", p[0]); pl.setAttribute("cy", p[1]);
+      line.setAttribute("x1", Fx); line.setAttribute("y1", Fy); line.setAttribute("x2", p[0]); line.setAttribute("y2", p[1]);
+      var near = Math.hypot(p[0] - Fx, p[1] - Fy) < A;
+      word.setAttribute("x", p[0]); word.setAttribute("y", p[1] - 12);
+      word.textContent = near ? "ZOOM!" : "slow…";
+      r.readout.innerHTML = near
+        ? "<b>ZOOM! ⚡</b> The planet is close to the Sun, so it races."
+        : "<b>s l o w … 🐢</b> The planet is far from the Sun, so it drifts along.";
+    }
+    autoTicker(r.controls, function () { M = (M + 0.028) % (2 * Math.PI); draw(); });
+    draw();
+  };
+
+  /* ---- 3.1  Kepler's third law: farther out, longer year -------- */
+  D["kepler-3rd"] = function (host) {
+    var r = frame(host, "Farther from the Sun = longer year",
+      "Tap a planet. See how far away it lives, and how long its year is.",
+      "The farther out a planet is, the longer one trip around the Sun takes — a LOT longer.");
+    var all = (window.ASTRO_CHAPTERS && window.ASTRO_CHAPTERS[3] && window.ASTRO_CHAPTERS[3].keplerBodies) || [];
+    function find(n) { for (var i = 0; i < all.length; i++) if (all[i].name === n) return all[i]; return null; }
+    var picks = ["Earth", "Mars", "Jupiter", "Saturn", "Neptune"].map(find).filter(Boolean);
+    if (!picks.length) picks = [{ name: "Earth", a: 1, P: 1 }, { name: "Jupiter", a: 5.2, P: 11.86 }, { name: "Neptune", a: 30.06, P: 164.82 }];
+    var EMO = { Earth: "🌍", Mars: "🔴", Jupiter: "🟠", Saturn: "🪐", Neptune: "🔵" };
+    var Sx = 60, Sy = 116;
+    var s = svg(r.stage, 360, 232);
+    var orbit = S("circle", { cx: Sx, cy: Sy, "class": "dg-orbit", "stroke-dasharray": "4 4" });
+    var planet = S("circle", { r: 7, "class": "dg-earth" });
+    var bigYr = T(250, 42, "", "dg-lbl-mid");
+    bigYr.setAttribute("style", "font-size:19px;font-weight:700;fill:var(--text)");
+    s.appendChild(S("circle", { cx: Sx, cy: Sy, r: 13, "class": "dg-sun" }));
+    s.appendChild(T(Sx - 9, Sy + 30, "Sun", "dg-lbl"));
+    [orbit, planet, bigYr].forEach(function (n) { s.appendChild(n); });
+    function draw(bd) {
+      var rr = Math.min(150, 22 + 128 * Math.sqrt(bd.a / 30.06));
+      orbit.setAttribute("r", rr);
+      planet.setAttribute("cx", Sx + rr); planet.setAttribute("cy", Sy);
+      var yrs = bd.P < 2 ? bd.P.toFixed(1) : Math.round(bd.P);
+      bigYr.textContent = "≈ " + yrs + (bd.P < 1.5 ? " year" : " years");
+      r.readout.innerHTML = bd.name === "Earth"
+        ? "🌍 <b>Earth</b> is <b>1 AU</b> from the Sun — the ruler we measure the others with. One trip around takes exactly <b>1 Earth-year</b>."
+        : (EMO[bd.name] || "🪐") + " <b>" + bd.name + "</b> is <b>" + Math.round(bd.a) +
+          "×</b> farther from the Sun than Earth. One trip around the Sun takes it <b>" +
+          (bd.P < 2 ? bd.P.toFixed(2) : Math.round(bd.P)) + " Earth-year" + (bd.P >= 1.5 ? "s" : "") + "</b>.";
+    }
+    bigPick(r.controls,
+      picks.map(function (bd) { return { label: (EMO[bd.name] || "") + " " + bd.name, value: bd }; }),
+      0, function (bd) { draw(bd); });
+    draw(picks[0]);
+  };
+
+  /* ---- 3.3  The inverse-square law: spreading out --------------- */
+  D["inverse-square"] = function (host) {
+    var r = frame(host, "Spreading out: why gravity gets weak fast",
+      "Tap how many steps away. The same warmth from the Sun has to cover more and more squares.",
+      "Twice as far → 4 squares → each gets ¼. Three times as far → 9 squares → each gets ⅑. Gravity spreads out the very same way, so it fades fast.");
+    var s = svg(r.stage, 360, 216);
+    s.appendChild(S("circle", { cx: 32, cy: 108, r: 10, "class": "dg-sun" }));
+    s.appendChild(T(16, 88, "Sun", "dg-lbl"));
+    var grid = S("g", {});
+    s.appendChild(grid);
+    var base = 34, x0 = 58;
+    function draw(d) {
+      clr(grid);
+      var side = d * base, y0 = 108 - side / 2;
+      for (var i = 0; i < d; i++) for (var j = 0; j < d; j++) {
+        grid.appendChild(S("rect", {
+          x: x0 + i * base, y: y0 + j * base, width: base - 2, height: base - 2, rx: 2,
+          style: "fill:color-mix(in srgb, var(--warn) " + (96 / (d * d)).toFixed(1) +
+            "%, transparent);stroke:var(--border);stroke-width:0.75"
+        }));
+      }
+      grid.appendChild(S("line", { x1: 42, y1: 108, x2: x0, y2: 108, "class": "dg-ray3" }));
+      r.readout.innerHTML = d === 1
+        ? "<b>1 step away:</b> all the warmth lands on <b>1</b> square. Full strength. ☀️"
+        : "<b>" + d + " steps away:</b> the warmth is spread over <b>" + d + " × " + d + " = " + (d * d) +
+          "</b> squares, so each one gets just <b>1 out of " + (d * d) + "</b>.";
+    }
+    bigPick(r.controls, [
+      { label: "1 step", value: 1 }, { label: "2 steps", value: 2 }, { label: "3 steps", value: 3 }, { label: "4 steps", value: 4 }
+    ], 0, function (v) { draw(v); });
+    draw(1);
+  };
+
+  /* ---- 3.5  Newton's cannon: throw a ball around the Earth ------ */
+  D["newton-cannon"] = function (host) {
+    var r = frame(host, "Throw a ball all the way around the Earth",
+      "Tap how hard to throw. Watch the cannonball fly.",
+      "Throw it fast enough sideways and the ground curves away as fast as the ball falls — so it never lands. That is how satellites stay up!");
+    var Cx = 180, Cy = 140, R = 66;
+    var s = svg(r.stage, 360, 280);
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, "class": "dg-globe" }));
+    var top = [Cx, Cy - R - 15];
+    s.appendChild(S("line", { x1: Cx, y1: Cy - R, x2: top[0], y2: top[1], "class": "dg-axis" }));
+    var pathFaint = S("path", { d: "", style: "fill:none;stroke:color-mix(in srgb, var(--bad) 35%, transparent);stroke-width:1.5;stroke-dasharray:3 3" });
+    var pathDone = S("path", { d: "", "class": "dg-track" });
+    var ball = S("circle", { r: 4.5, "class": "dg-mars" });
+    [pathFaint, pathDone, ball].forEach(function (n) { s.appendChild(n); });
+    var GM = 300, r0 = R + 15, vCirc = Math.sqrt(GM / r0);
+    function trajectory(vRel) {
+      var x = top[0] - Cx, y = top[1] - Cy, vx = vRel * vCirc, vy = 0;
+      var pts = [[top[0], top[1]]], dt = 0.1, x1 = x, y1 = y, kind = "orbit";
+      for (var i = 0; i < 4000; i++) {
+        var rr = Math.hypot(x, y);
+        if (rr <= R) { pts.push([Cx + x, Cy + y]); kind = "hit"; break; }
+        if (rr > R * 2.7) { kind = "escape"; break; }
+        var g = GM / (rr * rr);
+        vx -= g * (x / rr) * dt; vy -= g * (y / rr) * dt;
+        x += vx * dt; y += vy * dt;
+        pts.push([Cx + x, Cy + y]);
+        if (i > 60 && Math.hypot(x - x1, y - y1) < 3) { kind = "orbit"; break; }
+      }
+      return { pts: pts, kind: kind };
+    }
+    function toD(pts) { return "M " + pts.map(function (p) { return p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" L "); }
+    function msgFor(cur) {
+      if (cur.kind === "orbit") return "<b>🛰️ Yes!</b> The ball is falling <b>around and around</b> the Earth. That is an orbit!";
+      if (cur.kind === "escape") return "<b>🚀 Whoa!</b> So fast it flew away from Earth forever.";
+      return cur.pts.length > 360
+        ? "<b>💥 Still not fast enough!</b> It flew much farther this time, but gravity still won and it hit the ground."
+        : "<b>💥 Too slow!</b> The ball curves down and hits the ground not far away.";
+    }
+    var anim = null;
+    function play(vRel) {
+      if (anim) { cancelAnimationFrame(anim); anim = null; }
+      var cur = trajectory(vRel);
+      pathFaint.setAttribute("d", toD(cur.pts));
+      r.readout.innerHTML = msgFor(cur);
+      var n = 0, stepN = Math.max(2, Math.round(cur.pts.length / 90));
+      (function step() {
+        if (!document.body.contains(ball)) { anim = null; return; }
+        n += stepN;
+        if (n >= cur.pts.length) n = cur.pts.length - 1;
+        pathDone.setAttribute("d", toD(cur.pts.slice(0, n + 1)));
+        var p = cur.pts[n];
+        ball.setAttribute("cx", p[0]); ball.setAttribute("cy", p[1]);
+        if (n < cur.pts.length - 1) anim = requestAnimationFrame(step);
+        else if (cur.kind === "orbit") { n = 0; anim = requestAnimationFrame(step); }
+        else anim = null;
+      })();
+    }
+    bigPick(r.controls, [
+      { label: "🥎 Gentle", value: 0.35 }, { label: "💪 Hard", value: 0.8 },
+      { label: "🚀 Super fast", value: 1.0 }, { label: "🛰️ Space fast", value: 1.5 }
+    ], 2, function (v) { play(v); });
+    play(1.0);
+  };
+
+  /* ---- Newton's 1st law: inertia -------------------------------- */
+  D["inertia"] = function (host) {
+    var r = frame(host, "Why a moving thing keeps moving",
+      "Tap a surface. The block gets the same push every time — see how far it slides before friction stops it.",
+      "Rough surfaces have lots of friction and stop the block fast. Take friction away (deep space) and the block never stops. That is inertia.");
+    var s = svg(r.stage, 360, 168);
+    var gy = 118;
+    s.appendChild(S("line", { x1: 8, y1: gy, x2: 352, y2: gy, "class": "dg-ground" }));
+    var surfLbl = T(12, gy + 20, "", "dg-lbl");
+    var trail = S("line", { "class": "dg-dash" });
+    var block = S("rect", { width: 26, height: 20, rx: 3, "class": "dg-earth" });
+    var arrow = S("path", { "class": "dg-anglearc" });
+    [surfLbl, trail, block, arrow].forEach(function (n) { s.appendChild(n); });
+    var SURF = [
+      { label: "🧶 Carpet", fric: 0.085, name: "carpet (very rough)" },
+      { label: "🪵 Wood", fric: 0.032, name: "wood (a bit rough)" },
+      { label: "🧊 Ice", fric: 0.010, name: "ice (slippery)" },
+      { label: "🌌 Space", fric: 0, name: "deep space (nothing to rub on)" }
+    ];
+    var x0 = 40, x, v, fric, sf, anim = null;
+    function launch(pick) {
+      sf = pick; fric = pick.fric; x = x0; v = 3.6;
+      trail.setAttribute("x1", x0 + 13); trail.setAttribute("y1", gy - 2);
+      surfLbl.textContent = "surface: " + pick.name;
+      if (anim) cancelAnimationFrame(anim);
+      (function step() {
+        if (!document.body.contains(block)) { anim = null; return; }
+        v = Math.max(0, v - fric);
+        x += v;
+        if (x > 326) { if (fric === 0) { x = x0 - 13; } else { x = 326; } }
+        block.setAttribute("x", x); block.setAttribute("y", gy - 20);
+        trail.setAttribute("x2", Math.min(x, 326) + 13); trail.setAttribute("y2", gy - 2);
+        arrow.setAttribute("d", "M " + (Math.min(x, 320) + 30) + " " + (gy - 10) + " l 15 0 m -6 -5 l 6 5 l -6 5");
+        arrow.style.display = v > 0.06 ? "" : "none";
+        if (fric === 0) {
+          r.readout.innerHTML = "<b>Deep space:</b> nothing rubs on the block, so it <b>never stops</b> — it just keeps going, forever. ➡️♾️";
+          anim = requestAnimationFrame(step);
+        } else if (v > 0.06) {
+          anim = requestAnimationFrame(step);
+        } else {
+          anim = null;
+          var word = fric > 0.05 ? "a short" : fric > 0.02 ? "a medium" : "a long";
+          r.readout.innerHTML = "<b>" + sf.name.split(" (")[0].charAt(0).toUpperCase() + sf.name.split(" (")[0].slice(1) +
+            ":</b> friction rubbed the block to a stop after " + word + " slide.";
+        }
+      })();
+    }
+    bigPick(r.controls, SURF.map(function (p) { return { label: p.label, value: p }; }), 0, function (p) { launch(p); });
+    launch(SURF[0]);
+  };
+
+  /* ---- Newton's 2nd law: force ÷ mass = acceleration ------------ */
+  D["force-mass"] = function (host) {
+    var r = frame(host, "Push ÷ weight = how fast it speeds up",
+      "Pick a push and a box. Watch how quickly the box gets going — that speeding-up is acceleration.",
+      "a = force ÷ mass. A hard push on a light box speeds up fast; the same push on a heavy box speeds up slowly.");
+    var s = svg(r.stage, 360, 178);
+    var gy = 116;
+    s.appendChild(S("line", { x1: 8, y1: gy, x2: 352, y2: gy, "class": "dg-ground" }));
+    var box = S("rect", { rx: 3, "class": "dg-earth" });
+    var hand = S("path", { "class": "dg-arm" });
+    var track = S("rect", { x: 96, y: 150, width: 210, height: 12, rx: 3, style: "fill:var(--panel-2);stroke:var(--border)" });
+    var fill = S("rect", { x: 96, y: 150, width: 0, height: 12, rx: 3, style: "fill:var(--warn)" });
+    s.appendChild(box); s.appendChild(hand);
+    s.appendChild(T(12, 159, "speeding up:", "dg-lbl")); s.appendChild(track); s.appendChild(fill);
+    var force = 3, mass = 1, x, v, anim = null;
+    function run() {
+      var a = force / mass, sz = 16 + mass * 9;
+      fill.setAttribute("width", Math.min(210, a * 52));
+      x = 46; v = 0;
+      if (anim) cancelAnimationFrame(anim);
+      (function step() {
+        if (!document.body.contains(box)) { anim = null; return; }
+        v += a * 0.05; x += v;
+        if (x > 316) { x = 46; v = 0; }
+        box.setAttribute("x", x); box.setAttribute("y", gy - sz);
+        box.setAttribute("width", sz); box.setAttribute("height", sz);
+        hand.setAttribute("d", "M " + (x - 18) + " " + (gy - sz / 2) + " l 13 0 m -5 -4 l 5 4 l -5 4");
+        anim = requestAnimationFrame(step);
+      })();
+      r.readout.innerHTML = "Push = <b>" + ["", "gentle", "medium", "hard"][force] + "</b>, box = <b>" +
+        (mass === 1 ? "light 📦" : "heavy 🧱") + "</b>. Speeding up (a = force ÷ mass) is <b>" +
+        (a >= 2.5 ? "very fast ⚡" : a >= 1.2 ? "medium" : a >= 0.6 ? "slow" : "very slow 🐢") +
+        "</b>. Same push, a lighter box speeds up faster.";
+    }
+    bigPick(r.controls, [{ label: "🤏 Gentle", value: 1 }, { label: "👋 Medium", value: 2 }, { label: "💪 Hard", value: 3 }], 2, function (v) { force = v; run(); });
+    bigPick(r.controls, [{ label: "📦 Light box", value: 1 }, { label: "🧱 Heavy box", value: 3 }], 0, function (v) { mass = v; run(); });
+    run();
+  };
+
+  /* ---- Newton's 3rd law: action & reaction --------------------- */
+  D["action-reaction"] = function (host) {
+    var r = frame(host, "Every push has an equal push back",
+      "Tap a situation. The two arrows are always the same length, pointing opposite ways.",
+      "If A pushes B, then B pushes A back just as hard. That is why rockets, swimmers, and rowboats work.");
+    var AR = (window.ASTRO_CHAPTERS && window.ASTRO_CHAPTERS[3] && window.ASTRO_CHAPTERS[3].actionReaction) || [];
+    if (!AR.length) AR = [{ name: "🚀 Rocket", action: "The engine pushes gas out the back.", reaction: "The gas pushes the rocket forward." }];
+    var s = svg(r.stage, 360, 132);
+    var my = 60;
+    s.appendChild(S("rect", { x: 152, y: my - 24, width: 56, height: 48, rx: 8, "class": "dg-globe" }));
+    var emo = T(180, my + 7, "", "dg-lbl-mid"); emo.setAttribute("style", "font-size:22px");
+    var aArrow = S("path", { "class": "dg-anglearc" });
+    var bArrow = S("path", { "class": "dg-ray" });
+    [emo, aArrow, bArrow, T(66, my - 30, "action", "dg-lbl-mid"), T(296, my - 30, "reaction", "dg-lbl-mid"),
+      T(180, my + 40, "same size, opposite ways", "dg-lbl-mid")].forEach(function (n) { s.appendChild(n); });
+    function show(it) {
+      emo.textContent = it.name.trim().split(" ")[0];
+      aArrow.setAttribute("d", "M 150 " + my + " l -74 0 m 10 -7 l -10 7 l 10 7");
+      bArrow.setAttribute("d", "M 210 " + my + " l 74 0 m -10 -7 l 10 7 l -10 7");
+      r.readout.innerHTML = "<b>Action:</b> " + it.action + "<br><b>Reaction:</b> " + it.reaction;
+    }
+    bigPick(r.controls, AR.map(function (it) { return { label: it.name, value: it }; }), 0, function (it) { show(it); });
+    show(AR[0]);
+  };
+
+  /* ---- Universal gravitation: mass and distance ---------------- */
+  D["gravity-pull"] = function (host) {
+    var r = frame(host, "What makes gravity strong or weak",
+      "Change the two masses and how far apart they are. The bar shows how strong the pull is.",
+      "Bigger masses pull harder. Farther apart is much weaker — twice as far is only a quarter as strong.");
+    var s = svg(r.stage, 360, 168);
+    var cy = 66;
+    var b1 = S("circle", { "class": "dg-sun" }), b2 = S("circle", { "class": "dg-earth" });
+    var aL = S("path", { "class": "dg-ray" }), aR = S("path", { "class": "dg-ray" });
+    var track = S("rect", { x: 96, y: 142, width: 210, height: 13, rx: 3, style: "fill:var(--panel-2);stroke:var(--border)" });
+    var fill = S("rect", { x: 96, y: 142, width: 0, height: 13, rx: 3, style: "fill:var(--warn)" });
+    [b1, b2, aL, aR, track, fill].forEach(function (n) { s.appendChild(n); });
+    s.appendChild(T(12, 152, "pull:", "dg-lbl"));
+    var m1 = 3, m2 = 3, dist = 2;   // masses 1 (light) or 3 (heavy); dist 1..3
+    function draw() {
+      var gap = [0, 74, 132, 196][dist];
+      var x1 = 180 - gap / 2, x2 = 180 + gap / 2;
+      var r1 = 8 + m1 * 4, r2 = 8 + m2 * 4;
+      b1.setAttribute("cx", x1); b1.setAttribute("cy", cy); b1.setAttribute("r", r1);
+      b2.setAttribute("cx", x2); b2.setAttribute("cy", cy); b2.setAttribute("r", r2);
+      aL.setAttribute("d", "M " + (x1 + r1 + 4) + " " + cy + " l 20 0 m -7 -5 l 7 5 l -7 5");
+      aR.setAttribute("d", "M " + (x2 - r2 - 4) + " " + cy + " l -20 0 m 7 -5 l -7 5 l 7 5");
+      var F = (m1 * m2) / (dist * dist);          // relative units (max 9)
+      fill.setAttribute("width", Math.max(3, Math.min(210, F / 9 * 210)));
+      r.readout.innerHTML = "Left mass <b>" + (m1 === 1 ? "light" : "heavy") + "</b>, right mass <b>" +
+        (m2 === 1 ? "light" : "heavy") + "</b>, distance <b>" + ["", "close", "medium", "far"][dist] +
+        "</b> &rarr; pull is <b>" + (F >= 5 ? "strong" : F >= 1.5 ? "medium" : F >= 0.6 ? "weak" : "very weak") + "</b>." +
+        (dist > 1 ? " Moving to <b>" + dist + "×</b> the distance made it <b>1/" + (dist * dist) + "</b>." : "");
+    }
+    bigPick(r.controls, [{ label: "Left: light", value: 1 }, { label: "Left: heavy", value: 3 }], 1, function (v) { m1 = v; draw(); });
+    bigPick(r.controls, [{ label: "Right: light", value: 1 }, { label: "Right: heavy", value: 3 }], 1, function (v) { m2 = v; draw(); });
+    bigPick(r.controls, [{ label: "📏 Close", value: 1 }, { label: "Medium", value: 2 }, { label: "Far", value: 3 }], 1, function (v) { dist = v; draw(); });
+    draw();
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();

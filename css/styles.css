@@ -1195,9 +1195,27 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 }
 .diagram .dg-toggle button + button { border-left: 1px solid var(--border); }
 .diagram .dg-toggle button.on { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b1020; }
-.diagram .dg-readout { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.55; }
+.diagram .dg-readout { font-size: 13.5px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
 .diagram .dg-readout b { color: var(--text); }
-.diagram .dg-cap { font-size: 11.5px; color: var(--text-faint); margin: 8px 0 0; line-height: 1.5; }
+.diagram .dg-how { font-size: 13px; }
+.diagram .dg-cap { font-size: 12px; color: var(--text-faint); margin: 8px 0 0; line-height: 1.5; }
+
+/* big, tappable choice buttons for the kid-friendly diagrams */
+.diagram .dg-bigrow {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  width: 100%; margin: 6px 0 2px;
+}
+.diagram .dg-bigbtn {
+  border: 2px solid var(--border); background: var(--panel-2); color: var(--text);
+  border-radius: 12px; padding: 10px 14px; font-size: 14.5px; font-weight: 700;
+  cursor: pointer; min-width: 76px; line-height: 1.1;
+}
+.diagram .dg-bigbtn:hover { border-color: var(--accent); }
+.diagram .dg-bigbtn.on {
+  border-color: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0b1020;
+}
 
 /* svg element styling (theme-aware) */
 .diagram .dg-svg text { fill: var(--text-faint); font-size: 10px; }

@@ -6,3 +6,7 @@
 # editor / OS cruft
 .DS_Store
 *.swp
+.idea/
+
+# source textbook PDF — too large for GitHub, keep local only
+/pdf/
