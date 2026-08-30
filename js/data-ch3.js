@@ -20,7 +20,7 @@
     pages: "pp. 67–92"
   };
 
-  CH.tools = ["kepler1", "kepler2", "kepler3", "newton1", "newton2", "newton3", "gravitation", "physicists"];
+  CH.tools = ["mul", "exponents", "mathlab", "kepler1", "kepler2", "kepler3", "newton1", "newton2", "newton3", "gravitation", "physicists"];
 
   /* ---------------------------------- ONE STUDY TOOL PER LAW: match data */
   /* Kepler's 1st law — the words of an ellipse. */

@@ -885,5 +885,665 @@
     draw();
   };
 
+  /* =========================================================================
+     STEP-BY-STEP MATH TUTOR  —  powers the "Do the Math, Step by Step" study
+     tool for Chapter 3 (app.js renderMathLab() calls these by key). Pick a real
+     example, then do the arithmetic one tiny step at a time — type each step
+     yourself, or tap "Show me". Nothing bigger than "multiply two numbers".
+     Registered on window.ASTRO_DIAGRAMS as math-mul / math-exponents /
+     math-kepler3 / math-density / math-inverse-square / math-weigh.
+     ========================================================================= */
+  function smNum(s) {
+    return parseFloat(String(s == null ? "" : s).replace(/[,\s ]/g, ""));
+  }
+  function smFmt(n, dp) {
+    if (n == null || !isFinite(n)) return String(n);
+    if (dp == null) {
+      var a = Math.abs(n);
+      dp = a >= 100 ? 0 : a >= 10 ? 1 : 2;
+    }
+    var s = n.toFixed(dp);
+    if (s.indexOf(".") > -1) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+  function smCommas(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  var SM_SUP = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+    "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  function smSup(n) {
+    return String(n).split("").map(function (c) { return SM_SUP[c] || c; }).join("");
+  }
+
+  /* -- Exponents primer: the first sub-section of "Do the Math" ---------- */
+  function stepExponents(host) {
+    clr(host);
+    var box = E("div", { "class": "smx" });
+    host.appendChild(box);
+
+    box.appendChild(E("div", { "class": "smx-head" }, [
+      E("span", { "class": "smx-badge", text: "🔢 Exponents" }),
+      E("div", { "class": "smx-title", text: "What a little raised number means" })
+    ]));
+    box.appendChild(E("p", { "class": "smx-lead", text:
+      "A small raised number — an “exponent” — just says how many times to multiply a number by itself. " +
+      "Chapter 3 only ever uses “squared” (a little 2), “cubed” (a little 3), and their reverses. Tap around:" }));
+
+    var mode = "sq", val = 5;
+    var row1 = E("div", { "class": "smx-picker" });
+    var row2 = E("div", { "class": "smx-picker" });
+    var out = E("div", { "class": "smx-formula" });
+    box.appendChild(row1); box.appendChild(row2); box.appendChild(out);
+
+    var MODES = [
+      { k: "sq", label: "▪ squared" },
+      { k: "cu", label: "◼ cubed" },
+      { k: "p10", label: "10ⁿ powers of ten" },
+      { k: "root", label: "√ roots (backwards)" }
+    ];
+    var m1 = [];
+    MODES.forEach(function (mo) {
+      var b = E("button", { type: "button", "class": "smx-sc" + (mo.k === mode ? " on" : ""), text: mo.label });
+      b.addEventListener("click", function () {
+        mode = mo.k;
+        m1.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        if (mode === "p10" && val > 6) val = 4;
+        if (mode !== "p10" && val < 2) val = 5;
+        buildRow2(); paint();
+      });
+      m1.push(b);
+      row1.appendChild(b);
+    });
+
+    function buildRow2() {
+      clr(row2);
+      var nums = mode === "p10" ? [1, 2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 7, 8, 9];
+      nums.forEach(function (n) {
+        var b = E("button", { type: "button", "class": "smx-sc" + (n === val ? " on" : ""), text: String(n) });
+        b.addEventListener("click", function () { val = n; buildRow2(); paint(); });
+        row2.appendChild(b);
+      });
+    }
+    function line(txt) { out.appendChild(E("div", { "class": "smx-f-sym", text: txt })); }
+    function note(txt) { out.appendChild(E("div", { "class": "smx-f-note", text: txt })); }
+
+    function paint() {
+      clr(out);
+      if (mode === "sq") {
+        line(val + " squared  =  " + val + " × " + val + "  =  " + (val * val));
+        note("“Squared” always means the number times itself. It is NOT " + val + " × 2.");
+      } else if (mode === "cu") {
+        line(val + " cubed  =  " + val + " × " + val + " × " + val + "  =  " + smCommas(val * val * val));
+        note("“Cubed” means the number times itself, three times over.");
+      } else if (mode === "p10") {
+        var chain = [];
+        for (var i = 0; i < val; i++) chain.push("10");
+        line("10" + smSup(val) + "  =  " + chain.join(" × ") + "  =  " + smCommas(Math.pow(10, val)));
+        note("Shortcut: the little number is just how many zeros to write — " + val + " of them here.");
+      } else {
+        line("√" + (val * val) + "  =  " + val);
+        note("because " + val + " × " + val + " = " + (val * val) + ". A square root asks: what number, times itself, gives this?");
+        line("∛" + smCommas(val * val * val) + "  =  " + val);
+        note("because " + val + " × " + val + " × " + val + " = " + smCommas(val * val * val) +
+          ". When a later step needs a root, guessing numbers until you land on it works fine.");
+      }
+    }
+
+    var pr = E("div", { "class": "smx-step active", style: "margin-top:14px" });
+    box.appendChild(pr);
+    function newQ() {
+      clr(pr);
+      var kind = ["sq", "cu", "p10", "sqrt"][Math.floor(Math.random() * 4)];
+      var b, q, ans;
+      if (kind === "sq") { b = 2 + Math.floor(Math.random() * 8); q = b + "²"; ans = b * b; }
+      else if (kind === "cu") { b = 2 + Math.floor(Math.random() * 5); q = b + "³"; ans = b * b * b; }
+      else if (kind === "p10") { b = 2 + Math.floor(Math.random() * 4); q = "10" + smSup(b); ans = Math.pow(10, b); }
+      else { b = 2 + Math.floor(Math.random() * 8); q = "√" + (b * b); ans = b; }
+      pr.appendChild(E("div", { "class": "smx-n", text: "Now you try" }));
+      pr.appendChild(E("div", { "class": "smx-say", text: "What is  " + q + " ?" }));
+      var inp = E("input", { type: "text", inputmode: "numeric", "class": "smx-input",
+        autocomplete: "off", spellcheck: "false", placeholder: "answer" });
+      var ck = E("button", { type: "button", "class": "smx-check", text: "Check" });
+      var sh = E("button", { type: "button", "class": "smx-show", text: "Show me" });
+      var nx = E("button", { type: "button", "class": "smx-next", text: "Another ▶" });
+      var fb = E("div", { "class": "smx-fb" });
+      function say(msg, ok) { fb.className = "smx-fb " + (ok ? "good" : "bad"); fb.textContent = msg; }
+      function check() {
+        var g = smNum(inp.value);
+        if (isNaN(g)) { say("Type a number first.", false); return; }
+        if (Math.abs(g - ans) < 0.5) say("Yes — " + q + " = " + smCommas(ans) + ".", true);
+        else say("Not quite — try again, or tap “Show me”.", false);
+      }
+      ck.addEventListener("click", check);
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); check(); } });
+      sh.addEventListener("click", function () { say(q + " = " + smCommas(ans) + ".", true); });
+      nx.addEventListener("click", newQ);
+      pr.appendChild(E("div", { "class": "smx-try-row", style: "margin-top:8px" }, [inp, ck, sh, nx]));
+      pr.appendChild(fb);
+    }
+
+    buildRow2();
+    paint();
+    newQ();
+  }
+
+  /* -- Multiplication -> exponents: repeated adding vs repeated multiplying */
+  function stepMul(host) {
+    clr(host);
+    var box = E("div", { "class": "smx" });
+    host.appendChild(box);
+
+    box.appendChild(E("div", { "class": "smx-head" }, [
+      E("span", { "class": "smx-badge", text: "✕ → xⁿ" }),
+      E("div", { "class": "smx-title", text: "From “times” to “to the power of”" })
+    ]));
+    box.appendChild(E("p", { "class": "smx-lead", text:
+      "Multiplying is a shortcut for adding the same number over and over. Do that shortcut over and over — " +
+      "multiply the same number again and again — and that is exactly what a little raised number (an exponent) means." }));
+
+    var view = "addmul";
+    var base = 3, count = 4, nn = 4;
+
+    var vpick = E("div", { "class": "smx-picker" });
+    var vBtns = [];
+    [["addmul", "Add vs. multiply"], ["sqcube", "Squares & cubes"]].forEach(function (it, i) {
+      var b = E("button", { type: "button", "class": "smx-sc" + (i === 0 ? " on" : ""), text: it[1] });
+      b.addEventListener("click", function () {
+        view = it[0];
+        vBtns.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        draw();
+      });
+      vBtns.push(b);
+      vpick.appendChild(b);
+    });
+    box.appendChild(vpick);
+
+    var viewHost = E("div");
+    box.appendChild(viewHost);
+
+    function pickRow(parent, label, lo, hi, cur, set) {
+      parent.appendChild(E("div", { "class": "smx-f-note", text: label }));
+      var row = E("div", { "class": "smx-picker" });
+      for (var k = lo; k <= hi; k++) (function (k) {
+        var b = E("button", { type: "button", "class": "smx-sc" + (k === cur ? " on" : ""), text: String(k) });
+        b.addEventListener("click", function () { set(k); });
+        row.appendChild(b);
+      })(k);
+      parent.appendChild(row);
+    }
+    function reps(str, sep, n) {
+      var out = [];
+      for (var i = 0; i < n; i++) out.push(str);
+      return out.join(sep);
+    }
+
+    function draw() {
+      clr(viewHost);
+      if (view === "addmul") drawAddMul();
+      else drawSqCube();
+    }
+
+    function drawAddMul() {
+      pickRow(viewHost, "Pick a number:", 2, 9, base, function (v) { base = v; draw(); });
+      pickRow(viewHost, "How many times:", 2, 6, count, function (v) { count = v; draw(); });
+
+      var sum = base * count, prod = Math.pow(base, count);
+      var pw = base + smSup(count);
+
+      viewHost.appendChild(E("div", { "class": "smx-f-sym", text:
+        "Use " + base + " a total of " + count + " times — once by adding, once by multiplying:" }));
+
+      // side-by-side: same number, same number of steps, one step per row
+      var tbl = E("div", { "class": "mstep" });
+      tbl.appendChild(E("div", { "class": "mstep-row mstep-head" }, [
+        E("span", { text: "how many " + base + "s" }),
+        E("span", { text: "keep adding " + base }),
+        E("span", { text: "keep multiplying by " + base })
+      ]));
+      var aPrev = 0, mPrev = 1;
+      for (var k = 1; k <= count; k++) {
+        var aNow = aPrev + base, mNow = mPrev * base;
+        tbl.appendChild(E("div", { "class": "mstep-row" + (k === count ? " mstep-last" : "") }, [
+          E("span", { "class": "mstep-k", text: String(k) }),
+          E("span", { "class": "mstep-add", text:
+            k === 1 ? String(base) : smCommas(aPrev) + " + " + base + " = " + smCommas(aNow) }),
+          E("span", { "class": "mstep-mul" }, [
+            (k === 1 ? String(base) : smCommas(mPrev) + " × " + base + " = " + smCommas(mNow)),
+            E("em", { text: "= " + base + smSup(k) })
+          ])
+        ]));
+        aPrev = aNow; mPrev = mNow;
+      }
+      tbl.appendChild(E("div", { "class": "mstep-row mstep-total" }, [
+        E("span", {}),
+        E("span", { text: count + " × " + base + " = " + smCommas(sum) }),
+        E("span", { text: pw + " = " + smCommas(prod) })
+      ]));
+      viewHost.appendChild(tbl);
+
+      viewHost.appendChild(E("div", { "class": "smx-f-note", text:
+        "Same number (" + base + "), same number of steps (" + count + "). Adding just piles on another " + base +
+        " each row; multiplying grows the whole total by " + base + " each row. The little " + smSup(count) +
+        " in " + pw + " is exactly the count in the first column." }));
+
+      // diagram: each level, every dot splits into `base` — the total ×base per level
+      var tree = E("div", { "class": "expl-tree" });
+      for (var k = 0; k <= count; k++) {
+        var val = Math.pow(base, k);
+        var drawN = Math.min(val, 24);
+        var dots = E("div", { "class": "expl-dots" });
+        for (var d = 0; d < drawN; d++) {
+          dots.appendChild(E("span", { "class": "expl-dot" +
+            (k > 0 && d > 0 && d % base === 0 ? " grp" : "") }));
+        }
+        if (val > drawN) dots.appendChild(E("span", { "class": "expl-more", text: "…" }));
+        tree.appendChild(E("div", { "class": "expl-row" }, [
+          dots,
+          E("span", { "class": "expl-rlabel", text: k === 0
+            ? "start:  1"
+            : "×" + base + "  →  " + base + smSup(k) + " = " + smCommas(val) })
+        ]));
+      }
+
+      viewHost.appendChild(E("div", { "class": "smx-step", style: "margin-top:10px" }, [
+        E("div", { "class": "smx-n", text: "Why “multiply it " + count + " times” is an exponent" }),
+        tree,
+        E("div", { "class": "smx-f-note", text:
+          "Every level, each dot splits into " + base + " — so the whole total is multiplied by " + base +
+          " again. The little number in " + pw + " counts the levels." }),
+        E("ul", { "class": "smx-why" }, [
+          E("li", { html: "<b>Chain letter.</b> You tell <b>" + base + "</b> people a secret. Each of them tells <b>" +
+            base + "</b> more, and that keeps happening for <b>" + count + "</b> rounds. Every round <i>multiplies</i> " +
+            "the whole crowd by " + base + " (it doesn’t just add " + base + "), so " + count + " rounds gives " +
+            pw + " = " + smCommas(prod) + " people — not " + sum + "." }),
+          E("li", { html: "<b>Bricks vs. photocopier.</b> Adding lays one more brick each time (" + count +
+            " turns → " + sum + "). An exponent runs the <i>whole pile</i> through a photocopier that makes " +
+            base + " copies, " + count + " times over → " + smCommas(prod) + "." }),
+          E("li", { html: "<b>Growing money.</b> $1 that grows " + base + "× every year is worth $" +
+            smCommas(prod) + " after " + count + " years. Adding $" + base + " a year would only reach $" + sum + "." }),
+          E("li", { html: "<b>The little number counts the steps.</b> " + pw + " means “start at 1 and multiply by " +
+            base + ", " + count + " times.” Change the little number to " + (count + 1) + " and you multiply once more." })
+        ])
+      ]));
+
+      viewHost.appendChild(E("div", { "class": "smx-answer", style: "margin-top:12px" }, [
+        E("span", { "class": "smx-tick", text: "★" }),
+        E("span", { text: "“×” is repeated adding. An exponent is repeated multiplying — " +
+          base + smSup(count) + " just says “multiply " + count + " " + base + "’s together”." })
+      ]));
+    }
+
+    function drawSqCube() {
+      pickRow(viewHost, "Pick a number:", 1, 6, nn, function (v) { nn = v; draw(); });
+      var n = nn;
+
+      var sq = E("div", { "class": "smx-step" });
+      sq.appendChild(E("div", { "class": "smx-n", text: "A little 2  —  “" + n + " squared”" }));
+      var sc = Math.max(15, Math.min(30, Math.floor(170 / n)));
+      var sgrid = E("div", { "class": "sqgrid" });
+      sgrid.style.gridTemplateColumns = "repeat(" + n + ", " + sc + "px)";
+      sgrid.style.gridAutoRows = sc + "px";
+      for (var i = 0; i < n * n; i++) sgrid.appendChild(E("div", { "class": "sqcell" }));
+      sq.appendChild(sgrid);
+      sq.appendChild(E("div", { "class": "smx-calc" }, [
+        E("span", { "class": "smx-expr", text: reps(String(n), " × ", 2) }),
+        E("span", { "class": "smx-eq", text: "=" }),
+        E("span", { "class": "smx-res", text: n + smSup(2) + " = " + (n * n) })
+      ]));
+      sq.appendChild(E("div", { "class": "smx-f-note", text:
+        n + " rows of " + n + " — the dots fill a square, so we say “squared”." }));
+      viewHost.appendChild(sq);
+
+      var cu = E("div", { "class": "smx-step", style: "margin-top:10px" });
+      cu.appendChild(E("div", { "class": "smx-n", text: "A little 3  —  “" + n + " cubed”" }));
+      var lc = Math.max(7, Math.min(15, Math.floor(90 / n)));
+      var off = Math.max(5, Math.round(lc * 0.7));
+      var span = n * lc + (n - 1) * off + 4;
+      var wrap = E("div", { "class": "cubewrap" });
+      wrap.style.width = span + "px";
+      wrap.style.height = span + "px";
+      for (var L = 0; L < n; L++) {
+        var layer = E("div", { "class": "cubelayer" });
+        layer.style.gridTemplateColumns = "repeat(" + n + ", " + lc + "px)";
+        layer.style.gridAutoRows = lc + "px";
+        layer.style.transform = "translate(" + (L * off) + "px, " + (-L * off) + "px)";
+        layer.style.zIndex = String(L + 1);
+        for (var j = 0; j < n * n; j++) layer.appendChild(E("div", { "class": "sqcell" }));
+        wrap.appendChild(layer);
+      }
+      cu.appendChild(wrap);
+      cu.appendChild(E("div", { "class": "smx-calc" }, [
+        E("span", { "class": "smx-expr", text: reps(String(n), " × ", 3) }),
+        E("span", { "class": "smx-eq", text: "=" }),
+        E("span", { "class": "smx-res", text: n + smSup(3) + " = " + smCommas(n * n * n) })
+      ]));
+      cu.appendChild(E("div", { "class": "smx-f-note", text:
+        n + " copies of that square, stacked into a cube." }));
+      viewHost.appendChild(cu);
+
+      viewHost.appendChild(E("div", { "class": "smx-answer", style: "margin-top:12px" }, [
+        E("span", { "class": "smx-tick", text: "★" }),
+        E("span", { text: "A little 2 means a square (" + n + " × " + n + "). A little 3 means a cube (" +
+          n + " × " + n + " × " + n + "). The little number is how many " + n + "’s you multiply." })
+      ]));
+    }
+
+    draw();
+  }
+
+  function stepMath(host, cfg) {
+    clr(host);
+    var box = E("div", { "class": "smx" });
+    host.appendChild(box);
+
+    box.appendChild(E("div", { "class": "smx-head" }, [
+      E("span", { "class": "smx-badge", text: "🧮 Step by step" }),
+      E("div", { "class": "smx-title", text: cfg.title })
+    ]));
+    if (cfg.lead) box.appendChild(E("p", { "class": "smx-lead", text: cfg.lead }));
+
+    box.appendChild(E("div", { "class": "smx-formula" }, [
+      E("div", { "class": "smx-f-plain", html: cfg.formula.plain }),
+      E("div", { "class": "smx-f-sym", text: cfg.formula.symbol }),
+      cfg.formula.note ? E("div", { "class": "smx-f-note", text: cfg.formula.note }) : null
+    ]));
+
+    var picker = E("div", { "class": "smx-picker" });
+    box.appendChild(picker);
+    var stepsWrap = E("div", { "class": "smx-steps" });
+    box.appendChild(stepsWrap);
+    var navWrap = E("div", { "class": "smx-nav" });
+    box.appendChild(navWrap);
+
+    var scBtns = [];
+    var sc = cfg.scenarios[0];
+    var plan = cfg.build(sc);
+    var idx = 0;          // step currently being worked
+    var resolved = false; // has the active step's arithmetic been done?
+
+    cfg.scenarios.forEach(function (s, i) {
+      var b = E("button", { type: "button", "class": "smx-sc" + (i === 0 ? " on" : ""), text: s.label });
+      b.addEventListener("click", function () {
+        scBtns.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        sc = s; plan = cfg.build(s); idx = 0; resolved = false; draw();
+      });
+      scBtns.push(b);
+      picker.appendChild(b);
+    });
+
+    draw();
+
+    function checkPlain(st, g) {
+      if (Math.abs(g - st.try.value) <= (st.try.tol || 0.01)) return { ok: true };
+      return { ok: false, msg: "Not quite — check the hint, then try once more." };
+    }
+    function checkGuess(st, g) {
+      var got = st.try.op === "cube" ? g * g * g : g * g;
+      if (Math.abs(g - st.try.value) <= (st.try.tol || 0.03) ||
+          Math.abs(got - st.try.target) <= (st.try.targetTol || st.try.tol || 0.05)) return { ok: true };
+      var shown = st.try.op === "cube"
+        ? smFmt(g) + " × " + smFmt(g) + " × " + smFmt(g)
+        : smFmt(g) + " × " + smFmt(g);
+      return { ok: false, msg: shown + " = " + smFmt(got) + " — " +
+        (got < st.try.target ? "too low, try a bigger number." : "too high, try a smaller number.") };
+    }
+
+    function tryUI(st) {
+      var wrap = E("div", { "class": "smx-try" });
+      var t = st.try;
+      var isGuess = t.mode === "guess";
+      wrap.appendChild(E("div", { "class": "smx-try-q", text: isGuess
+        ? "Type a guess and tap Check — I’ll tell you higher or lower."
+        : "Your turn:  " + st.expr + "  =  ?" }));
+      var inp = E("input", { type: "text", inputmode: "decimal", "class": "smx-input",
+        autocomplete: "off", spellcheck: "false", placeholder: isGuess ? "guess" : "answer" });
+      var check = E("button", { type: "button", "class": "smx-check", text: "Check" });
+      var show = E("button", { type: "button", "class": "smx-show", text: "Show me" });
+      var fb = E("div", { "class": "smx-fb" });
+      function doCheck() {
+        var g = smNum(inp.value);
+        if (isNaN(g)) { fb.className = "smx-fb bad"; fb.textContent = "Type a number first."; return; }
+        var res = isGuess ? checkGuess(st, g) : checkPlain(st, g);
+        if (res.ok) {
+          fb.className = "smx-fb good";
+          fb.textContent = "That’s it — " + st.expr + " = " + st.result + ".";
+          resolved = true;
+          setTimeout(draw, 700);
+        } else {
+          fb.className = "smx-fb bad";
+          fb.textContent = res.msg;
+        }
+      }
+      check.addEventListener("click", doCheck);
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); doCheck(); } });
+      show.addEventListener("click", function () { resolved = true; draw(); });
+      wrap.appendChild(E("div", { "class": "smx-try-row" }, [inp, check, show]));
+      if (t.hint) wrap.appendChild(E("div", { "class": "smx-hint", text: "Hint: " + t.hint }));
+      wrap.appendChild(fb);
+      return wrap;
+    }
+
+    function draw() {
+      clr(stepsWrap);
+      clr(navWrap);
+      var M = plan.steps.length;
+
+      for (var i = 0; i <= idx && i < M; i++) {
+        var st = plan.steps[i];
+        var active = (i === idx);
+        var stepEl = E("div", { "class": "smx-step " + (active ? "active" : "done") }, [
+          E("div", { "class": "smx-n", text: "Step " + (i + 1) + " of " + M }),
+          E("div", { "class": "smx-say", text: st.say })
+        ]);
+        var showTry = active && !resolved && st.try;
+        if (showTry) {
+          stepEl.appendChild(tryUI(st));
+        } else {
+          stepEl.appendChild(E("div", { "class": "smx-calc" },
+            st.expr
+              ? [E("span", { "class": "smx-expr", text: st.expr }),
+                 E("span", { "class": "smx-eq", text: "=" }),
+                 E("span", { "class": "smx-res", text: st.result })]
+              : [E("span", { "class": "smx-res", text: st.result })]));
+        }
+        stepsWrap.appendChild(stepEl);
+      }
+
+      if (idx >= M) {
+        navWrap.appendChild(E("div", { "class": "smx-answer" }, [
+          E("span", { "class": "smx-tick", text: "✓" }),
+          E("span", { text: plan.answer })
+        ]));
+        navWrap.appendChild(E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" }))
+          .addEventListener("click", function () { idx = 0; resolved = false; draw(); });
+        return;
+      }
+
+      var cur = plan.steps[idx];
+      var canNext = resolved || !cur.try;
+      if (canNext) {
+        var nb = E("button", { type: "button", "class": "smx-next",
+          text: idx === M - 1 ? "See the answer ▶" : "Next step ▶" });
+        nb.addEventListener("click", function () { idx++; resolved = false; draw(); });
+        navWrap.appendChild(nb);
+      }
+      if (idx > 0 || resolved) {
+        var rb = E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" });
+        rb.addEventListener("click", function () { idx = 0; resolved = false; draw(); });
+        navWrap.appendChild(rb);
+      }
+    }
+  }
+
+  /* -- Kepler's third law: period <-> distance (P² = a³) ------------------ */
+  var CFG_KEPLER3 = {
+    title: "Work out a planet’s distance — or its year",
+    lead: "Kepler’s third law links how long a planet takes to orbit (its “year”, P) with how far it is from the Sun (a). Pick one you know, find the other.",
+    formula: {
+      plain: "The <b>year × the year</b> equals the <b>distance × the distance × the distance</b>.",
+      symbol: "P × P  =  a × a × a",
+      note: "P in Earth-years, a in AU (1 AU = Earth’s distance from the Sun)."
+    },
+    scenarios: [
+      { label: "Mars: year is 1.88 — how far?", mode: "p2a", P: 1.88 },
+      { label: "Earth: check it comes out to 1", mode: "p2a", P: 1 },
+      { label: "Asteroid 3 AU out — how long a year?", mode: "a2p", a: 3 },
+      { label: "Dwarf planet 50 AU out — its year?", mode: "a2p", a: 50 }
+    ],
+    build: function (sc) {
+      if (sc.mode === "a2p") {
+        var a = sc.a, a2 = a * a, a3 = a2 * a, P = Math.sqrt(a3);
+        return {
+          steps: [
+            { say: "Multiply the distance by itself.",
+              expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2),
+              try: { value: a2, tol: Math.max(0.01, a2 * 0.02), hint: "“by itself” just means " + smFmt(a) + " times " + smFmt(a) + "." } },
+            { say: "Now multiply that answer by the distance one more time. That’s “the distance cubed”.",
+              expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3),
+              try: { value: a3, tol: Math.max(0.05, a3 * 0.02), hint: "take your last answer and multiply it by " + smFmt(a) + "." } },
+            { say: "That number equals the year × the year. So the year is the number that, times itself, gives " + smFmt(a3) + " (its “square root”). Guess one.",
+              expr: "√" + smFmt(a3), result: "≈ " + smFmt(P),
+              try: { mode: "guess", op: "square", target: a3, value: P,
+                     tol: Math.max(0.1, P * 0.03),
+                     hint: "it’s between " + Math.floor(P) + " and " + Math.ceil(P) + "." } }
+          ],
+          answer: "A planet " + smFmt(a) + " AU from the Sun takes about " + smFmt(P) + " Earth-years to go once around."
+        };
+      }
+      var p = sc.P, p2 = p * p, dist = Math.pow(p2, 1 / 3);
+      return {
+        steps: [
+          { say: "Multiply the year by itself. That’s “the year squared”.",
+            expr: smFmt(p) + " × " + smFmt(p), result: smFmt(p2),
+            try: { value: p2, tol: Math.max(0.02, p2 * 0.02), hint: smFmt(p) + " times " + smFmt(p) + "." } },
+          { say: "That equals the distance × distance × distance. So the distance is the number that, cubed, gives " + smFmt(p2) + " (its “cube root”). Guess one.",
+            expr: "∛" + smFmt(p2), result: "≈ " + smFmt(dist),
+            try: { mode: "guess", op: "cube", target: p2, value: dist,
+                   tol: Math.max(0.03, dist * 0.03), targetTol: 0.06,
+                   hint: p === 1 ? "try 1." : "try a number between 1 and 2." } }
+        ],
+        answer: p === 1
+          ? "Earth’s year of 1 works out to a distance of 1 AU — the law checks out."
+          : "A year of " + smFmt(p) + " Earth-years puts the planet about " + smFmt(dist) + " AU from the Sun" +
+            (Math.abs(p - 1.88) < 0.01 ? " — half again Earth’s distance, which is exactly Mars." : ".")
+      };
+    }
+  };
+
+  /* -- Density = mass ÷ volume ------------------------------------------- */
+  function densWord(d) {
+    if (d < 0.3) return "far lighter than water — it would float high.";
+    if (d < 1) return "lighter than water, so it floats.";
+    if (d < 1.3) return "about the same as water.";
+    if (d < 4) return "a few times denser than water, like ordinary rock.";
+    if (d < 9) return "dense, in the range of iron.";
+    return "very dense, like lead or gold.";
+  }
+  var CFG_DENSITY = {
+    title: "Find the density of something",
+    lead: "Density tells you how tightly the matter is packed. It’s just one division.",
+    formula: {
+      plain: "<b>Density</b> = how much matter (mass) <b>÷</b> how much room it takes up (volume).",
+      symbol: "density  =  mass ÷ volume",
+      note: "Mass in grams, volume in cubic centimetres (cm³); water comes out to 1."
+    },
+    scenarios: [
+      { label: "The book’s block: 300 g, 100 cm³", m: 300, v: 100 },
+      { label: "Gold bar: 386 g, 20 cm³", m: 386, v: 20 },
+      { label: "Block of wood: 240 g, 300 cm³", m: 240, v: 300 },
+      { label: "Foam packing: 5 g, 100 cm³", m: 5, v: 100 }
+    ],
+    build: function (sc) {
+      var d = sc.m / sc.v;
+      return {
+        steps: [
+          { say: "Divide the mass by the volume.",
+            expr: smFmt(sc.m) + " ÷ " + smFmt(sc.v), result: smFmt(d) + " g/cm³",
+            try: { value: d, tol: Math.max(0.01, d * 0.03),
+                   hint: "how many times does " + smFmt(sc.v) + " fit into " + smFmt(sc.m) + "?" } },
+          { say: "Read it against water, which is exactly 1 g/cm³.",
+            expr: "", result: smFmt(d) + " g/cm³ is " + densWord(d) }
+        ],
+        answer: "This block’s density is about " + smFmt(d) + " g/cm³ — " + densWord(d)
+      };
+    }
+  };
+
+  /* -- Inverse-square: how gravity fades with distance ----------------- */
+  var CFG_INVSQ = {
+    title: "How much weaker does gravity get farther away?",
+    lead: "Gravity follows an “inverse-square” rule: go some number of times farther, and the pull drops by that number multiplied by itself.",
+    formula: {
+      plain: "New pull = <b>1 ÷ (how many times farther × how many times farther)</b>.",
+      symbol: "pull  →  1 ÷ (d × d)",
+      note: "d = how many times farther away you moved."
+    },
+    scenarios: [
+      { label: "Twice as far", d: 2 },
+      { label: "3× as far", d: 3 },
+      { label: "10× as far", d: 10 },
+      { label: "The Moon: 60× as far", d: 60 }
+    ],
+    build: function (sc) {
+      var d = sc.d, d2 = d * d;
+      return {
+        steps: [
+          { say: "Multiply “how many times farther” by itself.",
+            expr: d + " × " + d, result: smFmt(d2),
+            try: { value: d2, tol: Math.max(1, d2 * 0.02), hint: d + " times " + d + "." } },
+          { say: "The pull becomes 1 divided by that number.",
+            expr: "1 ÷ " + smFmt(d2), result: "1/" + smFmt(d2) + " as strong" }
+        ],
+        answer: "Move " + d + "× farther from Earth and gravity drops to about 1/" + smFmt(d2) + " of what it was" +
+          (d === 60 ? " — and 9.8 ÷ 3600 is exactly the gentle pull the Moon’s orbit needs." : ".")
+      };
+    }
+  };
+
+  /* -- Weigh a star from a planet's orbit: M = a³ ÷ P² ----------------- */
+  var CFG_WEIGH = {
+    title: "Weigh a star by watching a planet go around it",
+    lead: "Newton’s sharper version of Kepler’s third law: if a planet’s own mass is tiny, the star’s mass is just the distance cubed divided by the year squared.",
+    formula: {
+      plain: "<b>Star’s mass</b> = (distance × distance × distance) <b>÷</b> (year × year).",
+      symbol: "M  =  (a × a × a) ÷ (P × P)",
+      note: "a in AU, P in Earth-years, M in “Suns” (1 = the Sun’s mass)."
+    },
+    scenarios: [
+      { label: "Planet at 1 AU, year = 0.71", a: 1, P: 0.71 },
+      { label: "Planet at 4 AU, year = 8", a: 4, P: 8 },
+      { label: "Planet at 3.2 AU, year = 4", a: 3.2, P: 4 }
+    ],
+    build: function (sc) {
+      var a = sc.a, P = sc.P, a2 = a * a, a3 = a2 * a, p2 = P * P, M = a3 / p2;
+      return {
+        steps: [
+          { say: "Multiply the distance by itself.",
+            expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2),
+            try: { value: a2, tol: Math.max(0.01, a2 * 0.03), hint: smFmt(a) + " times " + smFmt(a) + "." } },
+          { say: "Multiply that by the distance again — the distance cubed.",
+            expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3),
+            try: { value: a3, tol: Math.max(0.02, a3 * 0.03), hint: "your last answer × " + smFmt(a) + "." } },
+          { say: "Now multiply the year by itself — the year squared.",
+            expr: smFmt(P) + " × " + smFmt(P), result: smFmt(p2),
+            try: { value: p2, tol: Math.max(0.02, p2 * 0.03), hint: smFmt(P) + " times " + smFmt(P) + "." } },
+          { say: "Divide the distance-cubed by the year-squared.",
+            expr: smFmt(a3) + " ÷ " + smFmt(p2), result: smFmt(M) + " Suns",
+            try: { value: M, tol: Math.max(0.03, M * 0.05),
+                   hint: "how many times does " + smFmt(p2) + " fit into " + smFmt(a3) + "?" } }
+        ],
+        answer: "The star weighs about " + smFmt(M) + " times as much as the Sun."
+      };
+    }
+  };
+
+  D["math-mul"] = function (host) { stepMul(host); };
+  D["math-exponents"] = function (host) { stepExponents(host); };
+  D["math-kepler3"] = function (host) { stepMath(host, CFG_KEPLER3); };
+  D["math-density"] = function (host) { stepMath(host, CFG_DENSITY); };
+  D["math-inverse-square"] = function (host) { stepMath(host, CFG_INVSQ); };
+  D["math-weigh"] = function (host) { stepMath(host, CFG_WEIGH); };
+
   window.ASTRO_DIAGRAMS = D;
 })();

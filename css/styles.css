@@ -229,6 +229,26 @@ body::before {
   color: var(--text-faint);
   padding: 16px 12px 6px;
 }
+.nav-subgroup-label {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-faint);
+  padding: 10px 12px 4px;
+}
+.nav-link.nav-sub { padding-left: 24px; font-size: 13px; }
+.nav-link.nav-sub::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+.nav-link.nav-sub { position: relative; }
 .nav-link {
   display: flex;
   align-items: center;
@@ -1329,4 +1349,303 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* ===== Step-by-step math tutor (inline in Ch. 3 sections) ================= */
+.smx {
+  margin: 24px 0;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--accent) 7%, var(--panel)),
+      var(--panel));
+}
+.smx-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.smx-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.smx .smx-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+.smx .smx-lead { color: var(--text-dim); font-size: 13.5px; line-height: 1.55; margin: 10px 0 0; }
+
+.smx-formula {
+  margin: 14px 0 2px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.smx-f-plain { font-size: 13.5px; color: var(--text-dim); line-height: 1.5; }
+.smx-f-plain b { color: var(--text); }
+.smx-f-sym {
+  margin-top: 7px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.smx-f-note { margin-top: 6px; font-size: 12px; color: var(--text-faint); }
+.smx-formula > .smx-f-sym:first-child { margin-top: 0; }
+.smx-formula > .smx-f-note + .smx-f-sym { margin-top: 12px; }
+
+.smx-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 2px; }
+.smx-sc {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.smx-sc:hover { border-color: var(--accent); color: var(--text); }
+.smx-sc.on {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: #0b1020;
+  font-weight: 600;
+}
+
+.smx-steps { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.smx-step {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.smx-step.active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.smx-step.done { opacity: .9; }
+.smx-n {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.smx-say { margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--text); }
+.smx-why { margin: 12px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+.smx-why li { margin: 6px 0; }
+.smx-why b { color: var(--text); }
+.smx-why i { color: var(--accent); font-style: normal; font-weight: 600; }
+
+.mstep {
+  display: grid;
+  grid-template-columns: max-content 1fr 1fr;
+  gap: 1px;
+  margin: 12px 0 6px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mstep-row { display: contents; }
+.mstep-row > span {
+  background: var(--panel);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.mstep-head > span {
+  background: var(--bg-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--text-faint);
+}
+.mstep-k { text-align: center; font-weight: 800; color: var(--accent); }
+.mstep-add { color: var(--text-dim); }
+.mstep-mul { color: var(--text); }
+.mstep-mul em {
+  display: block;
+  font-style: normal;
+  color: var(--accent-2);
+  font-size: 11.5px;
+  margin-top: 1px;
+}
+.mstep-last .mstep-k { font-size: 15px; }
+.mstep-last .mstep-mul em { font-weight: 800; font-size: 13.5px; }
+.mstep-total > span { background: var(--bg-2); font-weight: 700; }
+.mstep-total > span:last-child { color: var(--accent-2); }
+
+.expl-tree { margin: 10px 0 4px; display: flex; flex-direction: column; gap: 7px; }
+.expl-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.expl-dots {
+  display: flex; align-items: center; gap: 3px; flex-wrap: wrap;
+  flex: 1 1 150px; min-height: 8px;
+}
+.expl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); flex: none; }
+.expl-dot.grp { margin-left: 8px; }
+.expl-more { color: var(--text-faint); font-size: 12px; margin-left: 2px; }
+.expl-rlabel {
+  font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums;
+  white-space: nowrap; flex: none;
+}
+
+.smx-calc {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+.smx-expr { color: var(--text-dim); }
+.smx-eq { color: var(--text-faint); }
+.smx-res { font-weight: 700; color: var(--accent); }
+
+.smx-try { margin-top: 10px; }
+.smx-try-q {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.smx-try-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.smx-input {
+  width: 120px;
+  padding: 8px 10px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.smx-input:focus { outline: none; border-color: var(--accent); }
+.smx-check, .smx-show, .smx-next, .smx-restart {
+  padding: 8px 13px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.smx-check { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.smx-check:hover, .smx-show:hover, .smx-next:hover, .smx-restart:hover { border-color: var(--accent); }
+.smx-show { background: transparent; color: var(--text-faint); }
+.smx-hint { margin-top: 8px; font-size: 12.5px; color: var(--text-faint); }
+.smx-fb { margin-top: 8px; font-size: 13px; line-height: 1.5; }
+.smx-fb.good { color: var(--good); }
+.smx-fb.bad { color: var(--bad); }
+
+.smx-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: center; }
+.smx-next {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: #0b1020;
+  font-weight: 600;
+}
+.smx-answer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  background: color-mix(in srgb, var(--good) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--good) 38%, var(--border));
+}
+.smx-tick { color: var(--good); font-weight: 800; }
+
+@media (max-width: 560px) {
+  .smx-input { flex: 1 1 90px; width: auto; }
+  .smx-check, .smx-show { flex: 0 0 auto; }
+}
+
+/* Multiplication → exponents tool (Do the Math » Multiplication) */
+.sqgrid {
+  display: grid;
+  gap: 3px;
+  justify-content: start;
+  margin: 10px 0 8px;
+}
+.sqcell {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 26%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 46%, var(--border));
+}
+.cubewrap {
+  position: relative;
+  margin: 12px 0 16px;
+}
+.cubelayer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg-2) 78%, transparent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+.cubelayer .sqcell {
+  background: color-mix(in srgb, var(--accent-2) 28%, var(--panel));
+  border-color: color-mix(in srgb, var(--accent-2) 46%, var(--border));
+}
+
+/* Click-to-load video embed (Do the Math » Multiplication) */
+.video-embed { max-width: 560px; margin: 4px 0 22px; }
+.video-play,
+.video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.video-play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--text);
+  background: radial-gradient(130% 130% at 50% 38%,
+    color-mix(in srgb, var(--accent) 18%, var(--panel)), var(--panel));
+}
+.video-play:hover { border-color: var(--accent); }
+.video-play-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  padding-left: 4px;
+  border-radius: 50%;
+  font-size: 21px;
+  color: #0b1020;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: var(--shadow);
+}
+.video-play-text { font-size: 13px; color: var(--text-dim); }
+.video-frame { position: relative; }
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }

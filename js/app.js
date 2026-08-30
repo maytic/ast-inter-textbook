@@ -47,6 +47,9 @@
     scale:    ["t/scale", "Cosmic Scale", "Step from Earth to the most distant quasars"],
     elements: ["t/elements", "Element Abundance", "The cosmic ‘greatest hits’ of the periodic table"],
     astronomers: ["t/astronomers", "Match the Astronomers", "Pair each sky-watcher with what they did"],
+    mul:      ["t/mul", "Multiplication", "See why an exponent is just repeated multiplying"],
+    exponents: ["t/exponents", "Exponents & Roots", "Squares, cubes, powers of ten — and working backwards"],
+    mathlab:  ["t/mathlab", "The Chapter 3 Formulas", "Kepler, density, gravity, weighing a star — one step at a time"],
     kepler1:  ["t/kepler1", "Kepler’s 1st Law", "Orbits are ellipses, with the Sun at one focus"],
     kepler2:  ["t/kepler2", "Kepler’s 2nd Law", "Equal areas — fast near the Sun, slow far away"],
     kepler3:  ["t/kepler3", "Kepler’s 3rd Law", "Farther out means a longer year (P² = a³)"],
@@ -57,6 +60,13 @@
     physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
+
+  /* tools that sit under a named sub-group in the sidebar */
+  var TOOL_GROUP = {
+    mul: "Do the Math, Step by Step",
+    exponents: "Do the Math, Step by Step",
+    mathlab: "Do the Math, Step by Step"
+  };
 
   function setActiveChapter(n) {
     n = Number(n);
@@ -360,9 +370,18 @@
     var tools = qs("#navTools", sidebarEl);
     clear(tools);
     toolsLabel.style.display = keys.length ? "" : "none";
+    var lastGroup = null;
     keys.forEach(function (key) {
       var info = TOOL_INFO[key];
-      if (info) tools.appendChild(navLink(info[0], "", info[1]));
+      if (!info) return;
+      var grp = TOOL_GROUP[key] || null;
+      if (grp !== lastGroup) {
+        if (grp) tools.appendChild(h("div", { class: "nav-subgroup-label", text: grp }));
+        lastGroup = grp;
+      }
+      var link = navLink(info[0], "", info[1]);
+      if (grp) link.classList.add("nav-sub");
+      tools.appendChild(link);
     });
     refreshSidebar();
   }
@@ -1940,6 +1959,139 @@
     }
   };
 
+  /* ---- click-to-load YouTube embed (no contact with Google until played) */
+  function videoEmbed(id, label) {
+    var wrap = h("div", { class: "video-embed" });
+    var btn = h("button", {
+      class: "video-play", type: "button", "aria-label": "Play video: " + label,
+      onclick: function () {
+        wrap.replaceChild(h("div", { class: "video-frame" }, h("iframe", {
+          src: "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0",
+          title: label,
+          allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
+          allowfullscreen: "true"
+        })), btn);
+      }
+    }, [
+      h("span", { class: "video-play-icon", text: "▶" }),
+      h("span", { class: "video-play-text", text: label })
+    ]);
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  /* ---- TOOL: Multiplication → exponents (Ch. 3 warm-up) ------ */
+  function renderMul() {
+    pageTitle("Multiplication");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
+    v.appendChild(h("h1", { text: "Multiplication — and where exponents come from" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Multiplying is repeated adding. Repeating <em>that</em> — multiplying the same number again and again — " +
+      "is what the little raised number in P² and a³ means. This tool shows the link; then go to " +
+      "<a href=\"#/t/exponents\">Exponents &amp; Roots</a>." }));
+
+    v.appendChild(h("h2", { text: "Watch this first", style: "margin-top:10px" }));
+    v.appendChild(h("p", { class: "tool-intro", style: "margin:0 0 10px",
+      text: "A short video on multiplication and exponents. It loads from YouTube only after you press play." }));
+    v.appendChild(videoEmbed("-zUmvpkhvW8", "Multiplication & exponents — video"));
+
+    var host = h("div");
+    var fn = (window.ASTRO_DIAGRAMS || {})["math-mul"];
+    if (typeof fn === "function") {
+      try { fn(host); }
+      catch (e) { host.appendChild(h("p", { class: "tool-intro", text: "(this tool could not load)" })); }
+    }
+    v.appendChild(host);
+
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
+  /* ---- TOOL: Exponents & Roots (Ch. 3 warm-up) ---------------- */
+  function renderExponents() {
+    pageTitle("Exponents & Roots");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
+    v.appendChild(h("h1", { text: "Exponents & roots — the basics" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "The little raised numbers in Chapter 3 (P², a³, 60²) trip people up. Here is all they mean, " +
+      "with something to tap. Once this feels easy, go on to " +
+      "<a href=\"#/t/mathlab\">The Chapter 3 Formulas</a>." }));
+
+    var host = h("div");
+    var fn = (window.ASTRO_DIAGRAMS || {})["math-exponents"];
+    if (typeof fn === "function") {
+      try { fn(host); }
+      catch (e) { host.appendChild(h("p", { class: "tool-intro", text: "(this tool could not load)" })); }
+    }
+    v.appendChild(host);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "The whole idea in three lines", style: "margin-top:0" }),
+      h("ul", { class: "prose", style: "margin:0" }, [
+        h("li", { html: "A little <b>2</b> (“squared”) means <b>times itself</b>: 7² = 7 × 7 = 49." }),
+        h("li", { html: "A little <b>3</b> (“cubed”) means <b>times itself, three times</b>: 4³ = 4 × 4 × 4 = 64." }),
+        h("li", { html: "A <b>root</b> (√ or ∛) runs it backwards: √49 = 7, because 7 × 7 = 49." })
+      ])
+    ]));
+
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
+  /* ---- TOOL: The Chapter 3 Formulas (part of "Do the Math") --- */
+  function renderMathLab() {
+    pageTitle("The Chapter 3 Formulas");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
+    v.appendChild(h("h1", { text: "The Chapter 3 formulas — one small step at a time" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Every calculation in Chapter 3, pulled out of the reading and broken into single steps you " +
+      "do yourself — type each one, or tap <b>Show me</b>. Nothing harder than multiplying two numbers. " +
+      "Warm up first with <a href=\"#/t/mul\">Multiplication</a> and <a href=\"#/t/exponents\">Exponents &amp; Roots</a>." }));
+
+    var DG = window.ASTRO_DIAGRAMS || {};
+    var TABS = [
+      { label: "Distance ↔ year", key: "math-kepler3",
+        from: "§3.1 — Kepler’s third law: the year squared equals the distance cubed (P² = a³)." },
+      { label: "Density", key: "math-density",
+        from: "§3.2 — density is mass divided by volume." },
+      { label: "Gravity & distance", key: "math-inverse-square",
+        from: "§3.3 — the inverse-square law: move farther away and the pull drops fast." },
+      { label: "Weighing a star", key: "math-weigh",
+        from: "§3.3 — Newton’s form of Kepler’s third law lets you weigh a star from a planet’s orbit." }
+    ];
+
+    var host = h("div");
+    function show(i) {
+      clear(host);
+      host.appendChild(h("p", { class: "tool-intro", style: "margin:2px 0 12px", text: TABS[i].from }));
+      var box = h("div");
+      host.appendChild(box);
+      var fn = DG[TABS[i].key];
+      if (typeof fn === "function") {
+        try { fn(box); }
+        catch (e) { box.appendChild(h("p", { class: "tool-intro", text: "(this tool could not load)" })); }
+      }
+    }
+
+    v.appendChild(segControl(TABS.map(function (t) { return t.label; }), 0, show));
+    v.appendChild(host);
+    show(0);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Why do it this way?", style: "margin-top:0" }),
+      h("p", { class: "prose", style: "margin:0", html:
+        "A formula like <b>P² = a³</b> is just a recipe. Each step here is one line of that recipe with the " +
+        "numbers already filled in, so you only ever do one tiny piece of arithmetic. Get a step wrong and " +
+        "it nudges you; stuck on a square or cube root, guess a number and it tells you higher or lower." })
+    ]));
+
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
   /* ---- TOOL: Kepler’s Third Law (Ch. 3) ------------------------- */
   function renderKepler() {
     pageTitle("Kepler’s Third Law");
@@ -2560,6 +2712,9 @@
     "t/scale": ["scale", function () { renderScale(); }],
     "t/elements": ["elements", function () { renderElements(); }],
     "t/astronomers": ["astronomers", function () { renderAstronomers(); }],
+    "t/mul": ["mul", function () { renderMul(); }],
+    "t/exponents": ["exponents", function () { renderExponents(); }],
+    "t/mathlab": ["mathlab", function () { renderMathLab(); }],
     "t/kepler1": ["kepler1", function () { renderLawTool(LAW_TOOLS.kepler1); }],
     "t/kepler2": ["kepler2", function () { renderLawTool(LAW_TOOLS.kepler2); }],
     "t/kepler3": ["kepler3", function () { renderKepler(); }],
