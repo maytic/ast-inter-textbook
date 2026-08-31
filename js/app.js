@@ -49,6 +49,7 @@
     astronomers: ["t/astronomers", "Match the Astronomers", "Pair each sky-watcher with what they did"],
     mul:      ["t/mul", "Multiplication", "See why an exponent is just repeated multiplying"],
     exponents: ["t/exponents", "Exponents & Roots", "Squares, cubes, powers of ten — and working backwards"],
+    pemdas:   ["t/pemdas", "Order of Operations", "PEMDAS — which part of a formula to do first"],
     mathlab:  ["t/mathlab", "The Chapter 3 Formulas", "Kepler, density, gravity, weighing a star — one step at a time"],
     kepler1:  ["t/kepler1", "Kepler’s 1st Law", "Orbits are ellipses, with the Sun at one focus"],
     kepler2:  ["t/kepler2", "Kepler’s 2nd Law", "Equal areas — fast near the Sun, slow far away"],
@@ -62,11 +63,18 @@
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
   /* tools that sit under a named sub-group in the sidebar */
-  var TOOL_GROUP = {
-    mul: "Do the Math, Step by Step",
-    exponents: "Do the Math, Step by Step",
-    mathlab: "Do the Math, Step by Step"
-  };
+  var TOOL_GROUP = {};
+
+  /* General arithmetic helpers. These are chapter-independent — the reader
+     reaches them from the dashboard "Math warm-ups" hub (#/math), not from
+     any one chapter's tool list — so their routes skip the hasTool() gate. */
+  var MATH_TOOLS = ["mul", "exponents", "pemdas", "sci", "round"];
+  function isMathRoute(hash) {
+    for (var i = 0; i < MATH_TOOLS.length; i++) {
+      if (TOOL_INFO[MATH_TOOLS[i]][0] === hash) return true;
+    }
+    return false;
+  }
 
   function setActiveChapter(n) {
     n = Number(n);
@@ -138,8 +146,8 @@
   function sup(n) { return String(n).split("").map(function (c) { return SUP[c] || c; }).join(""); }
 
   /* ----- segmented control (mode switcher) ----- */
-  function segControl(labels, active, onChange) {
-    var wrap = h("div", { class: "seg" });
+  function segControl(labels, active, onChange, wrapMany) {
+    var wrap = h("div", { class: "seg" + (wrapMany ? " seg-wrap" : "") });
     labels.forEach(function (lab, i) {
       var b = h("button", { class: "seg-btn" + (i === active ? " on" : ""), text: lab, onclick: function () {
         if (b.classList.contains("on")) return;
@@ -352,12 +360,21 @@
     ]);
   }
 
+  // the math warm-ups hub and its four tools live outside any chapter —
+  // while the reader is in there, the sidebar becomes a warm-ups menu
+  function isMathContext() {
+    var hash = currentHash();
+    return hash === "math" || isMathRoute(hash);
+  }
+
   function rebuildNav() {
     if (!sidebarEl) return;
+    var mathMode = isMathContext();
+
     var brand = qs("#brandBox", sidebarEl);
     clear(brand);
-    brand.appendChild(h("div", { class: "ch", text: "Chapter " + D.meta.chapter }));
-    brand.appendChild(h("div", { class: "title", text: D.meta.chapterTitle }));
+    brand.appendChild(h("div", { class: "ch", text: mathMode ? "Study guide" : "Chapter " + D.meta.chapter }));
+    brand.appendChild(h("div", { class: "title", text: mathMode ? "Math warm-ups" : D.meta.chapterTitle }));
     brand.appendChild(h("div", { class: "book", text: D.meta.book }));
 
     var read = qs("#navRead", sidebarEl);
@@ -365,10 +382,40 @@
     read.appendChild(navLink("overview", "", "Overview"));
     D.sections.forEach(function (s) { read.appendChild(navLink("s/" + s.id, s.id, s.title)); });
 
-    var keys = D.tools || [];
+    // hide the chapter-only parts of the sidebar in math mode; the standalone
+    // "Math warm-ups" link is the reverse — only shown while inside a chapter
+    ["navReadLabel", "navRead", "sidebarProgress", "navReviewLabel", "navReview"].forEach(function (id) {
+      var el = qs("#" + id, sidebarEl);
+      if (el) el.style.display = mathMode ? "none" : "";
+    });
+    var mathLink = qs("#navMathLink", sidebarEl);
+    if (mathLink) mathLink.style.display = mathMode ? "none" : "";
+
     var toolsLabel = qs("#navToolsLabel", sidebarEl);
     var tools = qs("#navTools", sidebarEl);
     clear(tools);
+
+    if (mathMode) {
+      toolsLabel.style.display = "";
+      toolsLabel.textContent = "Math warm-ups";
+      tools.appendChild(navLink("math", "", "All warm-ups"));
+      MATH_TOOLS.forEach(function (key) {
+        tools.appendChild(navLink(TOOL_INFO[key][0], "", TOOL_INFO[key][1]));
+      });
+      tools.appendChild(h("div", { class: "nav-subgroup-label", text: "Then" }));
+      tools.appendChild(h("button", {
+        class: "nav-link", "data-hash": "t/mathlab",
+        onclick: function () { if (CHAPTERS[3]) setActiveChapter(3); go("t/mathlab"); closeSidebar(); }
+      }, [
+        h("span", { text: "The Chapter 3 Formulas" }),
+        h("span", { class: "check", text: "✓" })
+      ]));
+      refreshSidebar();
+      return;
+    }
+
+    toolsLabel.textContent = "Study tools";
+    var keys = D.tools || [];
     toolsLabel.style.display = keys.length ? "" : "none";
     var lastGroup = null;
     keys.forEach(function (key) {
@@ -396,24 +443,27 @@
     }, h("span", { text: "← All chapters" })));
     sidebar.appendChild(h("div", { class: "brand", id: "brandBox" }));
 
-    sidebar.appendChild(h("div", { class: "nav-group-label", text: "Read" }));
+    sidebar.appendChild(h("div", { class: "nav-group-label", id: "navReadLabel", text: "Read" }));
     sidebar.appendChild(h("div", { id: "navRead" }));
 
     sideBarText = h("div", {}, "0 sections reviewed");
     sideBarFill = h("span");
-    sidebar.appendChild(h("div", { class: "sidebar-progress" }, [
+    sidebar.appendChild(h("div", { class: "sidebar-progress", id: "sidebarProgress" }, [
       sideBarText,
       h("div", { class: "bar" }, sideBarFill)
     ]));
 
     sidebar.appendChild(h("div", { class: "nav-group-label", id: "navToolsLabel", text: "Study tools" }));
     sidebar.appendChild(h("div", { id: "navTools" }));
+    sidebar.appendChild(h("div", { id: "navMathLink" }, navLink("math", "", "Math warm-ups")));
 
-    sidebar.appendChild(h("div", { class: "nav-group-label", text: "Review" }));
-    sidebar.appendChild(navLink("flashcards", "", "Flashcards"));
-    sidebar.appendChild(navLink("quiz", "", "Self-Test Quiz"));
-    sidebar.appendChild(navLink("glossary", "", "Glossary"));
-    sidebar.appendChild(navLink("progress", "", "My Progress"));
+    sidebar.appendChild(h("div", { class: "nav-group-label", id: "navReviewLabel", text: "Review" }));
+    sidebar.appendChild(h("div", { id: "navReview" }, [
+      navLink("flashcards", "", "Flashcards"),
+      navLink("quiz", "", "Self-Test Quiz"),
+      navLink("glossary", "", "Glossary"),
+      navLink("progress", "", "My Progress")
+    ]));
 
     /* top bar */
     var searchInput = h("input", {
@@ -522,7 +572,12 @@
       var info = TOOL_INFO[key];
       if (info && info[1].toLowerCase().indexOf(q) > -1) out.push({ kind: "Tool", label: info[1], hash: info[0] });
     });
+    MATH_TOOLS.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      if (info[1].toLowerCase().indexOf(q) > -1) out.push({ kind: "Math warm-up", label: info[1], hash: info[0] });
+    });
     if ("dashboard chapters".indexOf(q) > -1) out.push({ kind: "Go", label: "All chapters", hash: "dashboard" });
+    if ("math warm-ups arithmetic".indexOf(q) > -1) out.push({ kind: "Go", label: "Math warm-ups", hash: "math" });
 
     if (!out.length) {
       box.appendChild(h("div", { class: "sr-empty", text: "No matches for “" + qraw + "”" }));
@@ -547,6 +602,12 @@
   function pageTitle(t) {
     crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Chapter " + D.meta.chapter + " &middot; " + t;
     document.title = "Astronomy 2e · Ch. " + D.meta.chapter + " — " + t;
+  }
+
+  // crumb/title for the chapter-independent math warm-up tools
+  function mathTitle(t) {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Math warm-ups &middot; " + t;
+    document.title = "Astronomy 2e · Math warm-ups — " + t;
   }
 
   /* ---- DASHBOARD (all chapters) ------------------------------------- */
@@ -589,7 +650,90 @@
       ]));
     });
     v.appendChild(grid);
+
+    v.appendChild(h("h2", { text: "Before you start — brush up on the math", style: "margin-top:30px" }));
+    v.appendChild(h("p", { class: "lede", style: "margin-top:4px", text:
+      "Short, tappable warm-ups for the arithmetic every chapter leans on — multiplication, exponents, " +
+      "scientific notation, rounding. Not tied to any one chapter." }));
+    var mgrid = h("div", { class: "tiles" });
+    MATH_TOOLS.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      mgrid.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+        h("div", { class: "t-title", text: info[1] }),
+        h("div", { class: "t-meta", text: info[2] })
+      ]));
+    });
+    mgrid.appendChild(h("button", { class: "tile", onclick: function () { go("math"); } }, [
+      h("div", { class: "t-title", text: "All math warm-ups →" }),
+      h("div", { class: "t-meta", text: "The full hub, in learning order" })
+    ]));
+    v.appendChild(mgrid);
+
     mount(v);
+  }
+
+  /* ---- MATH WARM-UPS HUB (dashboard-level, chapter-independent) ---- */
+  function renderMathHub() {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Math warm-ups";
+    document.title = "Astronomy 2e · Math warm-ups";
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("dashboard"); },
+      text: "← All chapters" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Interactive study guide" }));
+    v.appendChild(h("h1", { text: "Math warm-ups" }));
+    v.appendChild(h("p", { class: "lede", html:
+      "The arithmetic the textbook takes for granted, one small tool at a time — nothing harder than " +
+      "multiplying two numbers. Work down the list in order; each tool leads into the next." }));
+
+    var steps = [
+      { key: "mul", why: "Where the little raised numbers in P² and a³ come from." },
+      { key: "exponents", why: "“Squared”, “cubed”, powers of ten, roots — and a first look at how 10ⁿ feeds scientific notation." },
+      { key: "pemdas", why: "Which part of a formula to do first: parentheses, exponents, then × ÷, then + −." },
+      { key: "sci", why: "The full move: the digit in front, the hop count, and the + / − sign. Reads the book’s 1.5 × 10⁸ km." },
+      { key: "round", why: "Trim a messy number down to something you can picture and check against." }
+    ];
+    var list = h("div", { class: "tiles" });
+    steps.forEach(function (st, i) {
+      var info = TOOL_INFO[st.key];
+      list.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+        h("div", { class: "t-num", text: "STEP " + (i + 1) }),
+        h("div", { class: "t-title", text: info[1] }),
+        h("div", { class: "t-meta", text: st.why })
+      ]));
+    });
+    v.appendChild(list);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Then: the real formulas", style: "margin-top:0" }),
+      h("p", { class: "prose", style: "margin:0 0 10px", html:
+        "Once the four warm-ups feel easy, <b>The Chapter 3 Formulas</b> walks through every calculation in " +
+        "Chapter 3 — Kepler’s third law, density, gravity, weighing a star — the same one-step-at-a-time way." }),
+      h("button", { class: "btn primary", onclick: function () {
+        if (CHAPTERS[3]) { setActiveChapter(3); rebuildNav(); }
+        go("t/mathlab");
+      }, text: "Open The Chapter 3 Formulas →" })
+    ]));
+
+    mount(v);
+  }
+
+  // prev / next bar shared by the four math warm-up tool pages
+  function mathToolNav(key) {
+    var i = MATH_TOOLS.indexOf(key);
+    var prev = MATH_TOOLS[i - 1], next = MATH_TOOLS[i + 1];
+    var nav = h("div", { class: "section-nav" });
+    nav.appendChild(prev
+      ? h("button", { class: "btn", onclick: function () { go(TOOL_INFO[prev][0]); } },
+          [h("small", { text: "← Previous" }), document.createTextNode(TOOL_INFO[prev][1])])
+      : h("button", { class: "btn", onclick: function () { go("math"); } },
+          [h("small", { text: "← Back" }), document.createTextNode("All math warm-ups")]));
+    nav.appendChild(next
+      ? h("button", { class: "btn next", onclick: function () { go(TOOL_INFO[next][0]); } },
+          [h("small", { text: "Next →" }), document.createTextNode(TOOL_INFO[next][1])])
+      : h("button", { class: "btn next primary", onclick: function () {
+          if (CHAPTERS[3]) setActiveChapter(3); go("t/mathlab");
+        } }, [h("small", { text: "Finish →" }), document.createTextNode("The Chapter 3 Formulas")]));
+    return nav;
   }
 
   /* ---- OVERVIEW (one chapter) -------------------------------------- */
@@ -632,19 +776,21 @@
     });
     v.appendChild(tiles);
 
-    if ((D.tools || []).length) {
-      v.appendChild(h("h2", { text: "Study tools" }));
-      var ttiles = h("div", { class: "tiles" });
-      D.tools.forEach(function (key) {
-        var info = TOOL_INFO[key];
-        if (!info) return;
-        ttiles.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
-          h("div", { class: "t-title", text: info[1] }),
-          h("div", { class: "t-meta", text: info[2] })
-        ]));
-      });
-      v.appendChild(ttiles);
-    }
+    v.appendChild(h("h2", { text: "Study tools" }));
+    var ttiles = h("div", { class: "tiles" });
+    (D.tools || []).forEach(function (key) {
+      var info = TOOL_INFO[key];
+      if (!info) return;
+      ttiles.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+        h("div", { class: "t-title", text: info[1] }),
+        h("div", { class: "t-meta", text: info[2] })
+      ]));
+    });
+    ttiles.appendChild(h("button", { class: "tile", onclick: function () { go("math"); } }, [
+      h("div", { class: "t-title", text: "Math warm-ups →" }),
+      h("div", { class: "t-meta", text: "Multiplication, exponents, scientific notation, rounding" })
+    ]));
+    v.appendChild(ttiles);
 
     mount(v);
   }
@@ -898,11 +1044,31 @@
     return wrap;
   }
 
+  /* Rounding warm-up data — worked examples + a matching-game pool. Kept here,
+     not on a chapter, because Rounding is a chapter-independent math warm-up
+     reachable from the dashboard whatever chapter is active. */
+  var ROUND_EXAMPLES = [
+    { n: 47,        place: 10,     note: "a warm-up" },
+    { n: 12742,     place: 1000,   note: "Earth’s real width in km (the book rounds it to 13,000)" },
+    { n: 384400,    place: 1000,   note: "the Moon’s distance in km (the book says 384,000)" },
+    { n: 1372,      place: 100,    note: "a nebula’s distance in light-years" },
+    { n: 149597871, place: 1e6,    note: "the Sun’s distance in km (the book says 150 million)" },
+    { n: 4.246,     place: "tenth", note: "Proxima Centauri’s distance in light-years" }
+  ];
+  var ROUND_MATCH_POOL = [
+    { n: 47, rounded: 50 }, { n: 83, rounded: 80 }, { n: 24, rounded: 20 },
+    { n: 68, rounded: 70 }, { n: 95, rounded: 100 }, { n: 36, rounded: 40 },
+    { n: 12, rounded: 10 }, { n: 61, rounded: 60 }, { n: 89, rounded: 90 },
+    { n: 33, rounded: 30 }
+  ];
+
   /* ---- TOOL: Rounding numbers ---- */
   function renderRound() {
-    pageTitle("Rounding Numbers");
+    mathTitle("Rounding Numbers");
     var v = h("div", { class: "view" });
-    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 5" }));
     v.appendChild(h("h1", { text: "Rounding — pick the nearest tidy number" }));
     v.appendChild(h("p", { class: "tool-intro", text:
       "Astronomers say “about 13,000 km” or “about 150 million km.” Rounding is how you get those tidy " +
@@ -959,13 +1125,14 @@
         "<b>Round to the nearest hundredth</b> = keep only as far as the hundredths place (right).</p>" })
     ]));
 
+    v.appendChild(mathToolNav("round"));
     showExplainer();
     mount(v);
 
     /* -------- MODE: Show me how (animated) -------- */
     function showExplainer() {
       clear(modeHost);
-      var EX = D.roundExamples;
+      var EX = ROUND_EXAMPLES;
       var cur = EX[1] || EX[0];
       var token = 0;   // cancels a running animation when the number changes
 
@@ -1142,21 +1309,40 @@
       modeHost.appendChild(h("p", { class: "tool-intro", text: "Match each number to its nearest ten. Tap one on each side." }));
       modeHost.appendChild(host);
       (function spin() {
-        var pool = shuffle(D.roundMatchPool).slice(0, 6);
+        var pool = shuffle(ROUND_MATCH_POOL).slice(0, 6);
         var pairs = pool.map(function (e) { return { a: String(e.n), b: "≈ " + e.rounded }; });
         renderMatchGame(host, pairs, { leftLabel: "Number", rightLabel: "Nearest ten", onRestart: spin });
       })();
     }
   }
 
+  /* Scientific-notation matching-game pool. Lives here (not on a chapter)
+     because the Scientific Notation warm-up is chapter-independent. Every plain
+     and scientific form is distinct, so each card has exactly one partner. */
+  var SCI_MATCH_POOL = [
+    { coeff: "3",    exp: 5,   plain: "300000",         note: "speed of light (km/s)" },
+    { coeff: "9.46", exp: 12,  plain: "9460000000000",  note: "kilometres in a light-year" },
+    { coeff: "1.5",  exp: 8,   plain: "150000000",      note: "Earth–Sun distance (km)" },
+    { coeff: "3.84", exp: 5,   plain: "384000",         note: "Earth–Moon distance (km)" },
+    { coeff: "1.38", exp: 10,  plain: "13800000000",    note: "age of the universe (years)" },
+    { coeff: "1",    exp: -8,  plain: "0.00000001",     note: "about the size of an atom (cm)" },
+    { coeff: "1.4",  exp: 3,   plain: "1400",           note: "light-years to the Orion Nebula" },
+    { coeff: "2.5",  exp: 5,   plain: "250000",         note: "stars in the cluster M9" },
+    { coeff: "6.6",  exp: 4,   plain: "66000",          note: "Earth's orbital speed (mph)" },
+    { coeff: "7.92", exp: 10,  plain: "79200000000",    note: "net worth in Example 1.1 ($)" }
+  ];
+
   function renderSci() {
-    pageTitle("Scientific Notation");
+    mathTitle("Scientific Notation");
     var v = h("div", { class: "view" });
-    v.appendChild(h("div", { class: "eyebrow", text: "Study tool" }));
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 4" }));
     v.appendChild(h("h1", { text: "Scientific notation — the dot-hopping trick" }));
-    v.appendChild(h("p", { class: "tool-intro", text:
-      "Space numbers have LOTS of zeros. The trick: keep ONE digit in front of the dot, then count how " +
-      "many times you hopped it. That count is the little raised number." }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Picking up from <a href=\"#/t/exponents\">Exponents &amp; Roots</a>: you have the 10ⁿ side of it — " +
+      "this is the whole move. Space numbers have LOTS of zeros. The trick: keep ONE digit in front of the " +
+      "dot, then count how many times you hopped it. That count is the little raised number." }));
 
     var modeHost = h("div");
     v.appendChild(segControl(["Show me how", "Practice", "Matching game"], 0, function (idx) {
@@ -1198,6 +1384,7 @@
         "10^-1 = 0.1     &larr; now it's tiny\n10^-2 = 0.01\n10^-3 = 0.001</pre>" })
     ]));
 
+    v.appendChild(mathToolNav("sci"));
     showExplainer();
     mount(v);
 
@@ -1394,7 +1581,7 @@
       modeHost.appendChild(h("p", { class: "tool-intro", text: "Match each number to its shortcut. Tap one on each side." }));
       modeHost.appendChild(host);
       (function spin() {
-        var pool = shuffle(D.sciMatchPool).slice(0, 6);
+        var pool = shuffle(SCI_MATCH_POOL).slice(0, 6);
         var pairs = pool.map(function (e) { return { a: commas(e.plain), b: e.coeff + " × 10" + sup(e.exp) }; });
         renderMatchGame(host, pairs, { leftLabel: "Number", rightLabel: "Shortcut", onRestart: spin });
       })();
@@ -1801,6 +1988,15 @@
     v.appendChild(h("h1", { text: cfg.h1 }));
     v.appendChild(h("p", { class: "tool-intro", html: cfg.intro }));
 
+    if (cfg.explain) {
+      v.appendChild(h("div", { class: "card" }, [
+        h("h2", { text: "What's going on", style: "margin-top:0" }),
+        h("div", { class: "prose", html: cfg.explain })
+      ]));
+      v.appendChild(h("p", { class: "tool-intro", style: "margin:14px 0 0", text:
+        "Now try it below — watch the picture, then test yourself." }));
+    }
+
     var modeHost = h("div");
     v.appendChild(segControl(["Show me", "Practice", "Matching game"], 0, function (idx) {
       stopMatch();
@@ -1844,6 +2040,15 @@
       title: "Kepler’s First Law",
       h1: "Kepler’s 1st law — orbits are ellipses",
       intro: "Every planet travels on an <b>ellipse</b> — a squashed circle — with the <b>Sun at one focus</b>.",
+      explain:
+        "<p><b>This law is about the shape of an orbit.</b> A planet does not go around the Sun in a perfect " +
+        "circle — it goes around a slightly squashed circle called an <b>ellipse</b>.</p>" +
+        "<p>An ellipse has <b>two special points inside it</b> (called foci). The Sun sits on one of them; the " +
+        "other is just empty space. Pick any spot on the ellipse, measure the distance to each of those two " +
+        "points, and add them — you always get the <b>same total</b>. That constant total is what makes the " +
+        "shape an ellipse.</p>" +
+        "<p><b>Why it matters:</b> because the Sun is off to one side, the planet is sometimes closer to it and " +
+        "sometimes farther — and that sets up Kepler's 2nd law.</p>",
       diagram: "ellipse",
       showLead: "Tap a shape and watch the planet go around. The two lines to the pins always add to the same total.",
       matchKey: "law1match", matchLabels: ["Word", "What it means"],
@@ -1864,6 +2069,13 @@
       h1: "Kepler’s 2nd law — equal areas in equal times",
       intro: "A planet moves <b>fast when it is close to the Sun</b> and <b>slow when it is far away</b> — " +
         "so the Sun–planet line always sweeps the same area in the same time.",
+      explain:
+        "<p><b>This law is about a planet's speed.</b> Draw a line from the Sun to the planet. As the planet " +
+        "moves along its orbit, that line sweeps across space like a windshield wiper, painting a slice.</p>" +
+        "<p>Kepler's rule: <b>in the same amount of time, the line always paints the same-sized slice</b>. " +
+        "Close to the Sun the line is short, so the planet has to <b>race</b> around to paint a full slice. " +
+        "Far from the Sun the line is long, so it can <b>crawl</b> and still paint the same slice.</p>" +
+        "<p><b>Everyday version:</b> a spinning skater speeds up when they pull their arms in tight.</p>",
       diagram: "kepler-2nd",
       showLead: "Just watch. The two shaded slices are the same size.",
       matchKey: "law2match", matchLabels: ["Situation", "What happens"],
@@ -1884,6 +2096,13 @@
       h1: "Newton’s 1st law — inertia",
       intro: "With <b>no outside force</b>, a thing that is still stays still, and a thing that is moving " +
         "keeps moving in a straight line at the same speed.",
+      explain:
+        "<p><b>Things keep doing what they are already doing.</b> Something sitting still stays still. Something " +
+        "moving keeps moving — same speed, same straight line, <b>forever</b> — until a push or a pull changes it.</p>" +
+        "<p>On Earth, moving things seem to slow down and stop by themselves. They don't: <b>friction</b> and air " +
+        "are quietly pushing back. Take those away, like in space, and a tossed object just drifts on and on.</p>" +
+        "<p><b>Why it matters:</b> a planet needs nothing to <i>keep</i> it moving. Gravity's only job is to " +
+        "<b>bend</b> its straight-line path into a loop.</p>",
       diagram: "inertia",
       showLead: "Same push every time — only the surface changes.",
       matchKey: "n1match", matchLabels: ["Situation", "Force needed?"],
@@ -1904,6 +2123,13 @@
       h1: "Newton’s 2nd law — force makes things speed up",
       intro: "A force changes how something moves. The rule is <b>a = force ÷ mass</b>: push harder to speed " +
         "up faster; heavier things speed up slower.",
+      explain:
+        "<p><b>This law links how hard you push to how fast something speeds up.</b> A force is a push or a " +
+        "pull. It does not set a speed — it sets how <b>quickly the speed changes</b> (that change is called " +
+        "acceleration).</p>" +
+        "<p>Two knobs control it: <b>push harder → speeds up faster</b>, and <b>heavier object → speeds up " +
+        "slower</b>. Written out: acceleration = force ÷ mass.</p>" +
+        "<p><b>Everyday version:</b> the same shove sends a shopping trolley flying but barely rocks a car.</p>",
       diagram: "force-mass",
       showLead: "Pick a push and a box, and watch how fast it gets going.",
       matchKey: "n2match", matchLabels: ["Change", "Result"],
@@ -1923,6 +2149,13 @@
       h1: "Newton’s 3rd law — every push has a push back",
       intro: "If you push on something, it pushes back on you <b>just as hard</b>, the opposite way. " +
         "Forces always come in pairs.",
+      explain:
+        "<p><b>Every push comes with a push back.</b> If A pushes on B, then B pushes on A <b>exactly as " +
+        "hard</b>, in the opposite direction. You cannot push on something without it pushing back.</p>" +
+        "<p>The two pushes land on <b>different objects</b>, so they don't cancel out. A rocket pushes its " +
+        "exhaust gas down; the gas pushes the rocket up — that is what lifts it, no air needed.</p>" +
+        "<p><b>Why it matters:</b> the Sun pulls Earth, and Earth pulls the Sun back <i>just as hard</i>. The " +
+        "Sun barely budges only because it is so much heavier.</p>",
       diagram: "action-reaction",
       showLead: "Tap a situation to see the two equal, opposite pushes.",
       matchKey: "n3match", matchLabels: ["Action", "Reaction"],
@@ -1942,6 +2175,15 @@
       h1: "Newton’s law of gravitation — every mass pulls every mass",
       intro: "Any two objects with mass pull on each other. <b>More mass → stronger pull. Farther apart → " +
         "much weaker</b> (twice as far is only a quarter as strong).",
+      explain:
+        "<p><b>This law says what sets the strength of gravity.</b> Every object with mass pulls on every " +
+        "other one. Two things decide how strong that pull is:</p>" +
+        "<ul>" +
+        "<li><b>Mass</b> — more mass on either side means a stronger pull. Double one mass and the pull doubles.</li>" +
+        "<li><b>Distance</b> — farther apart is much weaker, and it drops off <i>fast</i>: twice as far is only a " +
+        "<b>quarter</b> of the pull, three times as far is a <b>ninth</b>.</li>" +
+        "</ul>" +
+        "<p>The pull never quite reaches zero, no matter how far apart the two objects get.</p>",
       diagram: "gravity-pull",
       showLead: "Change the masses and the distance, and watch the pull bar.",
       matchKey: "gravmatch", matchLabels: ["Change", "Pull becomes"],
@@ -1982,9 +2224,11 @@
 
   /* ---- TOOL: Multiplication → exponents (Ch. 3 warm-up) ------ */
   function renderMul() {
-    pageTitle("Multiplication");
+    mathTitle("Multiplication");
     var v = h("div", { class: "view" });
-    v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 1" }));
     v.appendChild(h("h1", { text: "Multiplication — and where exponents come from" }));
     v.appendChild(h("p", { class: "tool-intro", html:
       "Multiplying is repeated adding. Repeating <em>that</em> — multiplying the same number again and again — " +
@@ -2004,20 +2248,23 @@
     }
     v.appendChild(host);
 
+    v.appendChild(mathToolNav("mul"));
     mount(v);
     window.scrollTo(0, 0);
   }
 
   /* ---- TOOL: Exponents & Roots (Ch. 3 warm-up) ---------------- */
   function renderExponents() {
-    pageTitle("Exponents & Roots");
+    mathTitle("Exponents & Roots");
     var v = h("div", { class: "view" });
-    v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 2" }));
     v.appendChild(h("h1", { text: "Exponents & roots — the basics" }));
     v.appendChild(h("p", { class: "tool-intro", html:
       "The little raised numbers in Chapter 3 (P², a³, 60²) trip people up. Here is all they mean, " +
-      "with something to tap. Once this feels easy, go on to " +
-      "<a href=\"#/t/mathlab\">The Chapter 3 Formulas</a>." }));
+      "with something to tap. Next comes <a href=\"#/t/pemdas\">Order of Operations</a>, then " +
+      "<a href=\"#/t/sci\">Scientific Notation</a>." }));
 
     var host = h("div");
     var fn = (window.ASTRO_DIAGRAMS || {})["math-exponents"];
@@ -2036,6 +2283,63 @@
       ])
     ]));
 
+    v.appendChild(mathToolNav("exponents"));
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
+  /* ---- TOOL: Order of operations / PEMDAS (Ch. 3 warm-up) ----- */
+  function renderPemdas() {
+    mathTitle("Order of Operations");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 3" }));
+    v.appendChild(h("h1", { text: "Order of operations — PEMDAS" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "A formula like <b>G · m₁ · m₂ ÷ r²</b> only gives one answer if everyone works the pieces in the same " +
+      "order. That order is <b>PEMDAS</b>: parentheses, exponents, then × and ÷, then + and −." }));
+
+    v.appendChild(h("h2", { text: "Watch this first", style: "margin-top:10px" }));
+    v.appendChild(h("p", { class: "tool-intro", style: "margin:0 0 10px",
+      text: "A short video on the order of operations. It loads from YouTube only after you press play." }));
+    v.appendChild(videoEmbed("dAgfnK528RA", "Order of operations (PEMDAS) — video"));
+
+    var host = h("div");
+    var fn = (window.ASTRO_DIAGRAMS || {})["math-pemdas"];
+    if (typeof fn === "function") {
+      try { fn(host); }
+      catch (e) { host.appendChild(h("p", { class: "tool-intro", text: "(this tool could not load)" })); }
+    }
+    v.appendChild(host);
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "The order, in plain words", style: "margin-top:0" }),
+      h("ol", { class: "prose", style: "margin:0" }, [
+        h("li", { html: "<b>P</b>arentheses — do anything inside ( ) first; innermost brackets before outer ones." }),
+        h("li", { html: "<b>E</b>xponents and roots — the little raised numbers (r², a³) and √." }),
+        h("li", { html: "<b>M</b>ultiply and <b>D</b>ivide — one rank, left to right." }),
+        h("li", { html: "<b>A</b>dd and <b>S</b>ubtract — one rank, left to right." })
+      ]),
+      h("p", { class: "prose", style: "margin:8px 0 0", html:
+        "The name is a memory hook — <i>Please Excuse My Dear Aunt Sally</i>. Its own trap: <b>MD</b> and " +
+        "<b>AS</b> are <i>not</i> “multiply before divide” or “add before subtract”. Each pair is a single " +
+        "rank — read it left to right." })
+    ]));
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Things that hide a bracket", style: "margin-top:0" }),
+      h("ul", { class: "prose", style: "margin:0" }, [
+        h("li", { html: "A <b>fraction bar</b> groups its whole top and its whole bottom: <b>(6 × 5) ÷ (3 × 3)</b>, done top-then-bottom-then-divide." }),
+        h("li", { html: "A <b>√</b> sign covers everything under it — finish inside before taking the root." }),
+        h("li", { html: "A number <b>touching</b> a bracket means multiply: <b>3(4 + 1) = 3 × 5 = 15</b>." }),
+        h("li", { html: "A minus sign is weaker than a power: <b>−4² = −16</b>, but <b>(−4)² = 16</b>." })
+      ]),
+      h("p", { class: "prose", style: "margin:8px 0 0", html:
+        "This is why <b>G · m₁ · m₂ ÷ r²</b> works out as “multiply the top, square the bottom, then divide”." })
+    ]));
+
+    v.appendChild(mathToolNav("pemdas"));
     mount(v);
     window.scrollTo(0, 0);
   }
@@ -2047,19 +2351,39 @@
     v.appendChild(h("div", { class: "eyebrow", text: "Do the Math · Chapter 3" }));
     v.appendChild(h("h1", { text: "The Chapter 3 formulas — one small step at a time" }));
     v.appendChild(h("p", { class: "tool-intro", html:
-      "Every calculation in Chapter 3, pulled out of the reading and broken into single steps you " +
-      "do yourself — type each one, or tap <b>Show me</b>. Nothing harder than multiplying two numbers. " +
-      "Warm up first with <a href=\"#/t/mul\">Multiplication</a> and <a href=\"#/t/exponents\">Exponents &amp; Roots</a>." }));
+      "Every calculation in Chapter 3, pulled from the reading. Pick a formula, pick a real example, then " +
+      "either <b>watch it worked out</b> or <b>do each step yourself</b> — nothing harder than multiplying " +
+      "two numbers. New to this? Run the <a href=\"#/math\">Math warm-ups</a> first, especially " +
+      "<a href=\"#/t/pemdas\">Order of Operations</a>." }));
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "What each formula is for", style: "margin-top:0" }),
+      h("ul", { class: "prose formula-map", style: "margin:0" }, [
+        h("li", { html: "<b>Ellipse size</b> &nbsp;<code>a = (near + far) ÷ 2</code><br>How big is an orbit, from its closest and farthest points from the Sun?" }),
+        h("li", { html: "<b>Distance ↔ year</b> &nbsp;<code>P² = a³</code><br>How long is a planet’s year, given its distance from the Sun — or the reverse?" }),
+        h("li", { html: "<b>Force = mass × push</b> &nbsp;<code>F = m × a</code><br>How hard do you have to push to speed something up by a certain amount?" }),
+        h("li", { html: "<b>Density</b> &nbsp;<code>density = mass ÷ volume</code><br>Is this stuff heavier or lighter than water — rock, gas, iron?" }),
+        h("li", { html: "<b>Gravity vs distance</b> &nbsp;<code>pull → 1 ÷ (d × d)</code><br>How much weaker does gravity get as two things move apart?" }),
+        h("li", { html: "<b>Gravity’s pull</b> &nbsp;<code>F = G · m₁ · m₂ ÷ r²</code><br>The actual strength of the pull between any two masses." }),
+        h("li", { html: "<b>Weigh a star</b> &nbsp;<code>M = a³ ÷ P²</code><br>How heavy is a star, worked out from a planet orbiting it?" })
+      ])
+    ]));
 
     var DG = window.ASTRO_DIAGRAMS || {};
     var TABS = [
+      { label: "Ellipse size", key: "math-semimajor",
+        from: "§3.1 — an orbit’s size is the average of its closest and farthest distance from the Sun." },
       { label: "Distance ↔ year", key: "math-kepler3",
         from: "§3.1 — Kepler’s third law: the year squared equals the distance cubed (P² = a³)." },
+      { label: "F = m × a", key: "math-newton2",
+        from: "§3.2 — Newton’s second law: a bigger push, or a lighter object, means more speed-up." },
       { label: "Density", key: "math-density",
-        from: "§3.2 — density is mass divided by volume." },
-      { label: "Gravity & distance", key: "math-inverse-square",
+        from: "§3.2 — density is mass divided by volume; water comes out to 1." },
+      { label: "Gravity vs distance", key: "math-inverse-square",
         from: "§3.3 — the inverse-square law: move farther away and the pull drops fast." },
-      { label: "Weighing a star", key: "math-weigh",
+      { label: "Gravity’s pull", key: "math-gravitation",
+        from: "§3.3 — Newton’s law of gravitation, the full formula: F = G · m₁ · m₂ ÷ r²." },
+      { label: "Weigh a star", key: "math-weigh",
         from: "§3.3 — Newton’s form of Kepler’s third law lets you weigh a star from a planet’s orbit." }
     ];
 
@@ -2076,16 +2400,17 @@
       }
     }
 
-    v.appendChild(segControl(TABS.map(function (t) { return t.label; }), 0, show));
+    v.appendChild(segControl(TABS.map(function (t) { return t.label; }), 0, show, true));
     v.appendChild(host);
     show(0);
 
     v.appendChild(h("div", { class: "card" }, [
-      h("h2", { text: "Why do it this way?", style: "margin-top:0" }),
-      h("p", { class: "prose", style: "margin:0", html:
-        "A formula like <b>P² = a³</b> is just a recipe. Each step here is one line of that recipe with the " +
-        "numbers already filled in, so you only ever do one tiny piece of arithmetic. Get a step wrong and " +
-        "it nudges you; stuck on a square or cube root, guess a number and it tells you higher or lower." })
+      h("h2", { text: "How to use each one", style: "margin-top:0" }),
+      h("ul", { class: "prose", style: "margin:0" }, [
+        h("li", { html: "The box at the top shows the formula and <b>what every letter means</b> in plain words." }),
+        h("li", { html: "<b>Just show it worked</b> plays the whole thing start to finish. <b>Try it step by step</b> hands you one line at a time." }),
+        h("li", { html: "Type each answer, or tap <b>Show me</b>. Stuck on a square or cube root? Guess a number and it tells you higher or lower." })
+      ])
     ]));
 
     mount(v);
@@ -2102,6 +2427,20 @@
     v.appendChild(h("p", { class: "tool-intro", html:
       "Planets far from the Sun take much longer to go around it. Pick a planet to see how much longer, " +
       "then try the practice questions." }));
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "What's going on", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p><b>This law connects two things about a planet: its distance from the Sun and the length of its " +
+        "year</b> (one full trip around).</p>" +
+        "<p>The farther out a planet is, the longer its year — and not just a little. It is farther to travel " +
+        "<i>and</i> the planet moves slower out there, so the year stretches out <b>much</b> faster than the " +
+        "distance does. A planet twice as far from the Sun takes about <b>three times</b> as long, not twice.</p>" +
+        "<p>Knowing this, if you can measure how long a planet's year is, you can work out how far away it is " +
+        "— which is how the size of the whole solar system was first pinned down.</p>" })
+    ]));
+    v.appendChild(h("p", { class: "tool-intro", style: "margin:14px 0 0", text:
+      "Now try it below — pick a planet, then test yourself." }));
 
     var modeHost = h("div");
     v.appendChild(segControl(["Show me", "Practice", "Matching game"], 0, function (idx) {
@@ -2356,7 +2695,71 @@
         (status ? "  ·  previously: " + (status === "known" ? "got it" : "needs review") : "");
     }
 
-    var cardMode = true;
+    var mode = "cards";   // "cards" | "list" | "match"
+
+    /* -------- LIST: every card on one page -------- */
+    var hideDefs = false;
+    var listInner = h("div");
+    var hideChk = h("input", { type: "checkbox" });
+    hideChk.addEventListener("change", function () { hideDefs = hideChk.checked; renderList(); });
+    var listWrap = h("div", { style: "display:none" }, [
+      h("p", { class: "tool-intro", style: "margin:0 0 4px", text:
+        "Every term for this filter on one page — no clicking through. Mark them as you scan; " +
+        "the section and “needs review” filters above still apply." }),
+      h("label", { class: "fc-listopt" }, [hideChk, h("span", { text: "Hide definitions (tap a card to reveal)" })]),
+      listInner
+    ]);
+
+    function setStatus(term, status) {
+      var m = flashMap();
+      if (m[term] === status) delete m[term]; else m[term] = status;
+      store.set("flash", m);
+      renderList();
+      refreshSidebar();
+    }
+
+    function renderList() {
+      clear(listInner);
+      var m = flashMap();
+      var total = 0;
+      D.sections.forEach(function (s) {
+        var terms = D.glossary.filter(function (g) {
+          if (g.section !== s.id) return false;
+          if (filterSel.value !== "all" && ("s" + g.section) !== filterSel.value) return false;
+          if (modeSel.value === "review" && m[g.term] === "known") return false;
+          return true;
+        });
+        if (!terms.length) return;
+        total += terms.length;
+        var card = h("div", { class: "card" }, [h("h2", { text: s.id + "  " + s.title, style: "margin-top:0" })]);
+        terms.forEach(function (g) {
+          var status = m[g.term];
+          var defEl = h("div", { class: "fc-li-def" + (hideDefs ? " blur" : ""), text: g.def });
+          var row = h("div", { class: "fc-li" + (status ? " " + status : "") }, [
+            h("div", { class: "fc-li-term", text: g.term }),
+            defEl,
+            h("div", { class: "fc-li-actions" }, [
+              h("button", { class: "btn small", text: status === "review" ? "↺ needs review ✓" : "↺ needs review",
+                onclick: function (e) { e.stopPropagation(); setStatus(g.term, "review"); } }),
+              h("button", { class: "btn small primary", text: status === "known" ? "got it ✓✓" : "got it ✓",
+                onclick: function (e) { e.stopPropagation(); setStatus(g.term, "known"); } })
+            ])
+          ]);
+          if (hideDefs) row.addEventListener("click", function () { defEl.classList.toggle("blur"); });
+          card.appendChild(row);
+        });
+        listInner.appendChild(card);
+      });
+      if (!total) {
+        listInner.appendChild(h("div", { class: "card", text: "No terms match this filter." }));
+      } else {
+        listInner.insertBefore(
+          h("div", { class: "fc-list-count", text: total + " term" + (total === 1 ? "" : "s") + " shown" }),
+          listInner.firstChild);
+      }
+    }
+
+    /* -------- MATCH game -------- */
     var matchInner = h("div");
     var matchWrap = h("div", { style: "display:none" }, [
       h("p", { class: "tool-intro", text: "Match each term to its definition — the section filter still applies." }),
@@ -2377,30 +2780,39 @@
       renderMatchGame(matchInner, pairs, { leftLabel: "Term", rightLabel: "Definition", onRestart: newTermMatch });
     }
 
-    filterSel.addEventListener("change", function () { cardMode ? buildDeck() : newTermMatch(); });
-    modeSel.addEventListener("change", buildDeck);
+    function refreshCurrent() {
+      if (mode === "cards") buildDeck();
+      else if (mode === "list") renderList();
+      else newTermMatch();
+    }
+    filterSel.addEventListener("change", refreshCurrent);
+    modeSel.addEventListener("change", function () { mode === "list" ? renderList() : buildDeck(); });
 
-    v.appendChild(segControl(["Study cards", "Match game"], 0, function (idx) {
+    var shuffleBtn = h("button", { class: "btn small", text: "Shuffle",
+      onclick: function () { mode === "match" ? newTermMatch() : buildDeck(); } });
+
+    v.appendChild(segControl(["Study cards", "List all", "Match game"], 0, function (idx) {
       stopMatch();
-      cardMode = idx === 0;
-      stageWrap.style.display = cardMode ? "" : "none";
-      progEl.style.display = cardMode ? "" : "none";
-      modeSel.style.display = cardMode ? "" : "none";
-      matchWrap.style.display = cardMode ? "none" : "";
-      if (!cardMode) newTermMatch();
+      mode = idx === 0 ? "cards" : idx === 1 ? "list" : "match";
+      stageWrap.style.display = mode === "cards" ? "" : "none";
+      progEl.style.display = mode === "cards" ? "" : "none";
+      listWrap.style.display = mode === "list" ? "" : "none";
+      matchWrap.style.display = mode === "match" ? "" : "none";
+      modeSel.style.display = mode === "match" ? "none" : "";
+      shuffleBtn.style.display = mode === "list" ? "none" : "";
+      if (mode === "list") renderList();
+      else if (mode === "match") newTermMatch();
     }));
-    v.appendChild(h("div", { class: "fc-toolbar" }, [
-      filterSel, modeSel,
-      h("button", { class: "btn small", text: "Shuffle", onclick: function () { cardMode ? buildDeck() : newTermMatch(); } })
-    ]));
+    v.appendChild(h("div", { class: "fc-toolbar" }, [filterSel, modeSel, shuffleBtn]));
     v.appendChild(stageWrap);
+    v.appendChild(listWrap);
     v.appendChild(matchWrap);
     v.appendChild(progEl);
 
     document.addEventListener("keydown", fcKeys);
     function fcKeys(e) {
       if (currentHash() !== "flashcards") { document.removeEventListener("keydown", fcKeys); return; }
-      if (!cardMode) return;
+      if (mode !== "cards") return;
       if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
       if (e.key === " " || e.key === "Enter") { e.preventDefault(); var fc = qs(".flashcard", stageWrap); if (fc) { flipped = !flipped; fc.classList.toggle("flipped"); } }
       if (e.key === "1") mark("review");
@@ -2714,6 +3126,7 @@
     "t/astronomers": ["astronomers", function () { renderAstronomers(); }],
     "t/mul": ["mul", function () { renderMul(); }],
     "t/exponents": ["exponents", function () { renderExponents(); }],
+    "t/pemdas": ["pemdas", function () { renderPemdas(); }],
     "t/mathlab": ["mathlab", function () { renderMathLab(); }],
     "t/kepler1": ["kepler1", function () { renderLawTool(LAW_TOOLS.kepler1); }],
     "t/kepler2": ["kepler2", function () { renderLawTool(LAW_TOOLS.kepler2); }],
@@ -2730,7 +3143,8 @@
     closeSidebar();
     stopMatch();
 
-    if (hash === "dashboard") { renderDashboard(); refreshSidebar(); return; }
+    if (hash === "dashboard") { rebuildNav(); renderDashboard(); refreshSidebar(); return; }
+    if (hash === "math") { rebuildNav(); renderMathHub(); refreshSidebar(); return; }
 
     // keep the active chapter in sync with a section deep-link
     var sm = hash.match(/^s\/(\d+)\./);
@@ -2742,7 +3156,7 @@
     else if ((m = hash.match(/^s\/(.+)$/))) renderSection(m[1]);
     else if (TOOL_ROUTES[hash]) {
       var tr = TOOL_ROUTES[hash];
-      if (hasTool(tr[0])) tr[1](); else renderOverview();
+      if (isMathRoute(hash) || hasTool(tr[0])) tr[1](); else renderOverview();
     }
     else if (hash === "flashcards") renderFlashcards();
     else if (hash === "quiz") renderQuiz();

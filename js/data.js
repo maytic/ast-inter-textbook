@@ -24,7 +24,8 @@
   };
 
   // interactive study tools available for this chapter
-  ASTRO.tools = ["sci", "round", "light", "calendar", "scale", "elements"];
+  // "sci" and "round" now live in the dashboard-level Math warm-ups hub (#/math)
+  ASTRO.tools = ["light", "calendar", "scale", "elements"];
 
   /* ------------------------------------------------------------- FIGURES
      Photographs from OpenStax Astronomy 2e (CC BY 4.0), placed in the
@@ -1049,46 +1050,8 @@
     ]
   };
 
-  // Scientific-notation practice tasks are generated at runtime in app.js.
-  // This curated pool feeds the matching game (all plain and scientific forms are
-  // distinct, so every card has exactly one partner).
-  ASTRO.sciMatchPool = [
-    { coeff: "3",    exp: 5,   plain: "300000",         note: "speed of light (km/s)" },
-    { coeff: "9.46", exp: 12,  plain: "9460000000000",  note: "kilometres in a light-year" },
-    { coeff: "1.5",  exp: 8,   plain: "150000000",      note: "Earth–Sun distance (km)" },
-    { coeff: "3.84", exp: 5,   plain: "384000",         note: "Earth–Moon distance (km)" },
-    { coeff: "1.38", exp: 10,  plain: "13800000000",    note: "age of the universe (years)" },
-    { coeff: "1",    exp: -8,  plain: "0.00000001",     note: "about the size of an atom (cm)" },
-    { coeff: "1.4",  exp: 3,   plain: "1400",           note: "light-years to the Orion Nebula" },
-    { coeff: "2.5",  exp: 5,   plain: "250000",         note: "stars in the cluster M9" },
-    { coeff: "6.6",  exp: 4,   plain: "66000",          note: "Earth's orbital speed (mph)" },
-    { coeff: "7.92", exp: 10,  plain: "79200000000",    note: "net worth in Example 1.1 ($)" }
-  ];
-
-  // Rounding tool — worked examples for "Show me how".
-  // place: an integer step (10, 100, 1000, 1e6) OR "tenth" / "whole" for decimals.
-  ASTRO.roundExamples = [
-    { n: 47,         place: 10,   note: "a warm-up" },
-    { n: 12742,      place: 1000, note: "Earth's real width in km (the book rounds it to 13,000)" },
-    { n: 384400,     place: 1000, note: "the Moon's distance in km (the book says 384,000)" },
-    { n: 1372,       place: 100,  note: "a nebula's distance in light-years" },
-    { n: 149597871,  place: 1e6,  note: "the Sun's distance in km (the book says 150 million)" },
-    { n: 4.246,      place: "tenth", note: "Proxima Centauri's distance in light-years" }
-  ];
-
-  // Rounding tool — matching game. Every number rounds to a DIFFERENT nearest ten.
-  ASTRO.roundMatchPool = [
-    { n: 47, rounded: 50 },
-    { n: 83, rounded: 80 },
-    { n: 24, rounded: 20 },
-    { n: 68, rounded: 70 },
-    { n: 95, rounded: 100 },
-    { n: 36, rounded: 40 },
-    { n: 12, rounded: 10 },
-    { n: 61, rounded: 60 },
-    { n: 89, rounded: 90 },
-    { n: 33, rounded: 30 }
-  ];
+  // (The Scientific Notation and Rounding warm-ups are chapter-independent tools;
+  //  their data now lives in app.js.)
 
   window.ASTRO = ASTRO;                         // back-compat
   window.ASTRO_CHAPTERS = window.ASTRO_CHAPTERS || {};

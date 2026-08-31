@@ -925,18 +925,29 @@
     ]));
     box.appendChild(E("p", { "class": "smx-lead", text:
       "A small raised number — an “exponent” — just says how many times to multiply a number by itself. " +
-      "Chapter 3 only ever uses “squared” (a little 2), “cubed” (a little 3), and their reverses. Tap around:" }));
+      "Chapter 3 only ever uses “squared” (a little 2), “cubed” (a little 3), and their reverses. The last " +
+      "tab is a quick look at how 10ⁿ feeds into scientific notation — the next warm-up covers that in full. " +
+      "Tap around:" }));
 
-    var mode = "sq", val = 5;
+    var mode = "sq", val = 5, sciIdx = 1;
+    var SCI_EX = [
+      { tag: "Moon", disp: "384,000", unit: "km", c: "3.84", e: 5 },
+      { tag: "Sun", disp: "150,000,000", unit: "km", c: "1.5", e: 8 },
+      { tag: "light-year", disp: "9,460,000,000,000", unit: "km", c: "9.46", e: 12 },
+      { tag: "an atom", disp: "0.0000001", unit: "cm", c: "1", e: -7 }
+    ];
+    function supE(e) { return (e < 0 ? "⁻" : "") + smSup(Math.abs(e)); }
     var row1 = E("div", { "class": "smx-picker" });
     var row2 = E("div", { "class": "smx-picker" });
     var out = E("div", { "class": "smx-formula" });
-    box.appendChild(row1); box.appendChild(row2); box.appendChild(out);
+    var bridge = E("div", { "class": "smx-f-note", style: "margin-top:8px" });
+    box.appendChild(row1); box.appendChild(row2); box.appendChild(out); box.appendChild(bridge);
 
     var MODES = [
       { k: "sq", label: "▪ squared" },
       { k: "cu", label: "◼ cubed" },
       { k: "p10", label: "10ⁿ powers of ten" },
+      { k: "sci", label: "→ into scientific notation" },
       { k: "root", label: "√ roots (backwards)" }
     ];
     var m1 = [];
@@ -956,6 +967,14 @@
 
     function buildRow2() {
       clr(row2);
+      if (mode === "sci") {
+        SCI_EX.forEach(function (ex, i) {
+          var b = E("button", { type: "button", "class": "smx-sc" + (i === sciIdx ? " on" : ""), text: ex.tag });
+          b.addEventListener("click", function () { sciIdx = i; buildRow2(); paint(); });
+          row2.appendChild(b);
+        });
+        return;
+      }
       var nums = mode === "p10" ? [1, 2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 7, 8, 9];
       nums.forEach(function (n) {
         var b = E("button", { type: "button", "class": "smx-sc" + (n === val ? " on" : ""), text: String(n) });
@@ -968,6 +987,7 @@
 
     function paint() {
       clr(out);
+      bridge.innerHTML = "";
       if (mode === "sq") {
         line(val + " squared  =  " + val + " × " + val + "  =  " + (val * val));
         note("“Squared” always means the number times itself. It is NOT " + val + " × 2.");
@@ -979,6 +999,13 @@
         for (var i = 0; i < val; i++) chain.push("10");
         line("10" + smSup(val) + "  =  " + chain.join(" × ") + "  =  " + smCommas(Math.pow(10, val)));
         note("Shortcut: the little number is just how many zeros to write — " + val + " of them here.");
+      } else if (mode === "sci") {
+        var ex = SCI_EX[sciIdx];
+        line(ex.c + " × 10" + supE(ex.e) + "   =   " + ex.disp + " " + ex.unit);
+        note("The 10" + supE(ex.e) + " is just a power of ten from the tab before. The " + ex.c +
+          " in front is the number's digits, with one kept ahead of the dot. Together, that is scientific notation.");
+        bridge.innerHTML = "Counting the hop and getting the + / − sign right is what the next warm-up drills: " +
+          "<a href=\"#/t/sci\">Scientific Notation →</a>";
       } else {
         line("√" + (val * val) + "  =  " + val);
         note("because " + val + " × " + val + " = " + (val * val) + ". A square root asks: what number, times itself, gives this?");
@@ -1248,6 +1275,38 @@
       cfg.formula.note ? E("div", { "class": "smx-f-note", text: cfg.formula.note }) : null
     ]));
 
+    // what each letter in the formula stands for
+    if (cfg.formula.legend) {
+      var leg = E("div", { "class": "smx-legend" });
+      cfg.formula.legend.forEach(function (it) {
+        leg.appendChild(E("div", { "class": "smx-leg-row" }, [
+          E("span", { "class": "smx-leg-sym", text: it.sym }),
+          E("span", { "class": "smx-leg-say", text: it.say })
+        ]));
+      });
+      box.appendChild(leg);
+    }
+
+    var revealAll = false;
+
+    // "try it" vs "just show it worked"
+    var modeRow = E("div", { "class": "smx-picker", style: "margin-top:12px" });
+    box.appendChild(modeRow);
+    var mTry = E("button", { type: "button", "class": "smx-sc on", text: "Try it step by step" });
+    var mSee = E("button", { type: "button", "class": "smx-sc", text: "Just show it worked" });
+    mTry.addEventListener("click", function () {
+      if (!revealAll) return;
+      revealAll = false; mTry.classList.add("on"); mSee.classList.remove("on");
+      idx = 0; resolved = false; draw();
+    });
+    mSee.addEventListener("click", function () {
+      if (revealAll) return;
+      revealAll = true; mSee.classList.add("on"); mTry.classList.remove("on");
+      draw();
+    });
+    modeRow.appendChild(mTry); modeRow.appendChild(mSee);
+
+    box.appendChild(E("div", { "class": "smx-f-note", style: "margin:8px 0 2px", text: "Pick a real example:" }));
     var picker = E("div", { "class": "smx-picker" });
     box.appendChild(picker);
     var stepsWrap = E("div", { "class": "smx-steps" });
@@ -1328,10 +1387,11 @@
       clr(stepsWrap);
       clr(navWrap);
       var M = plan.steps.length;
+      var upto = revealAll ? M - 1 : Math.min(idx, M - 1);
 
-      for (var i = 0; i <= idx && i < M; i++) {
+      for (var i = 0; i <= upto; i++) {
         var st = plan.steps[i];
-        var active = (i === idx);
+        var active = !revealAll && (i === idx);
         var stepEl = E("div", { "class": "smx-step " + (active ? "active" : "done") }, [
           E("div", { "class": "smx-n", text: "Step " + (i + 1) + " of " + M }),
           E("div", { "class": "smx-say", text: st.say })
@@ -1350,13 +1410,22 @@
         stepsWrap.appendChild(stepEl);
       }
 
-      if (idx >= M) {
+      if (revealAll || idx >= M) {
         navWrap.appendChild(E("div", { "class": "smx-answer" }, [
           E("span", { "class": "smx-tick", text: "✓" }),
           E("span", { text: plan.answer })
         ]));
-        navWrap.appendChild(E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" }))
-          .addEventListener("click", function () { idx = 0; resolved = false; draw(); });
+        if (revealAll) {
+          var tb = E("button", { type: "button", "class": "smx-next", text: "Now let me try it ▶" });
+          tb.addEventListener("click", function () {
+            revealAll = false; mTry.classList.add("on"); mSee.classList.remove("on");
+            idx = 0; resolved = false; draw();
+          });
+          navWrap.appendChild(tb);
+        } else {
+          navWrap.appendChild(E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" }))
+            .addEventListener("click", function () { idx = 0; resolved = false; draw(); });
+        }
         return;
       }
 
@@ -1383,7 +1452,13 @@
     formula: {
       plain: "The <b>year × the year</b> equals the <b>distance × the distance × the distance</b>.",
       symbol: "P × P  =  a × a × a",
-      note: "P in Earth-years, a in AU (1 AU = Earth’s distance from the Sun)."
+      note: "P in Earth-years, a in AU (1 AU = Earth’s distance from the Sun).",
+      legend: [
+        { sym: "P", say: "the planet’s year — one full lap around the Sun, in Earth-years." },
+        { sym: "a", say: "the planet’s distance from the Sun, in AU (Earth = 1 AU)." },
+        { sym: "P²", say: "“P squared” — P multiplied by itself." },
+        { sym: "a³", say: "“a cubed” — a multiplied by itself, three times." }
+      ]
     },
     scenarios: [
       { label: "Mars: year is 1.88 — how far?", mode: "p2a", P: 1.88 },
@@ -1446,7 +1521,12 @@
     formula: {
       plain: "<b>Density</b> = how much matter (mass) <b>÷</b> how much room it takes up (volume).",
       symbol: "density  =  mass ÷ volume",
-      note: "Mass in grams, volume in cubic centimetres (cm³); water comes out to 1."
+      note: "Mass in grams, volume in cubic centimetres (cm³); water comes out to 1.",
+      legend: [
+        { sym: "mass", say: "how much matter is in the object, in grams." },
+        { sym: "volume", say: "how much space it fills, in cubic centimetres (cm³)." },
+        { sym: "density", say: "matter packed into each cm³. Water = 1; above 1 sinks, below 1 floats." }
+      ]
     },
     scenarios: [
       { label: "The book’s block: 300 g, 100 cm³", m: 300, v: 100 },
@@ -1477,7 +1557,12 @@
     formula: {
       plain: "New pull = <b>1 ÷ (how many times farther × how many times farther)</b>.",
       symbol: "pull  →  1 ÷ (d × d)",
-      note: "d = how many times farther away you moved."
+      note: "d = how many times farther away you moved.",
+      legend: [
+        { sym: "d", say: "how many times farther apart the two objects moved (2 = twice as far)." },
+        { sym: "d × d", say: "d squared — the distance factor is always multiplied by itself." },
+        { sym: "1 ÷ (d×d)", say: "the fraction of the original pull that is left." }
+      ]
     },
     scenarios: [
       { label: "Twice as far", d: 2 },
@@ -1508,7 +1593,13 @@
     formula: {
       plain: "<b>Star’s mass</b> = (distance × distance × distance) <b>÷</b> (year × year).",
       symbol: "M  =  (a × a × a) ÷ (P × P)",
-      note: "a in AU, P in Earth-years, M in “Suns” (1 = the Sun’s mass)."
+      note: "a in AU, P in Earth-years, M in “Suns” (1 = the Sun’s mass).",
+      legend: [
+        { sym: "M", say: "the star’s mass, counted in Suns (1 = the mass of our Sun)." },
+        { sym: "a", say: "the planet’s distance from that star, in AU." },
+        { sym: "P", say: "the planet’s year around that star, in Earth-years." },
+        { sym: "a³ ÷ P²", say: "distance cubed, divided by year squared." }
+      ]
     },
     scenarios: [
       { label: "Planet at 1 AU, year = 0.71", a: 1, P: 0.71 },
@@ -1538,12 +1629,436 @@
     }
   };
 
+  /* -- Gravity's pull: F = G·m₁·m₂ ÷ r² ------------------------------- */
+  var CFG_GRAVITATION = {
+    title: "Work out the pull between two masses",
+    lead: "Newton’s law of gravitation: multiply the two masses, then divide by the distance times itself. Big G is a fixed number — set it to 1 here so you can watch what the masses and the distance do.",
+    formula: {
+      plain: "<b>Pull</b> = big G × mass₁ × mass₂ <b>÷</b> (distance × distance).",
+      symbol: "F  =  G · m₁ · m₂ ÷ r²",
+      note: "Real G = 0.0000000000667 and never changes. With G = 1: doubling a mass doubles the pull; doubling the distance quarters it.",
+      legend: [
+        { sym: "F", say: "the force of gravity — the strength of the pull between the two objects." },
+        { sym: "G", say: "the gravitational constant: a fixed tiny number. Set to 1 here." },
+        { sym: "m₁, m₂", say: "the two masses. Bigger mass → stronger pull." },
+        { sym: "r", say: "the distance between the two objects’ centres." },
+        { sym: "r²", say: "r times itself — the pull is divided by this whole amount." }
+      ]
+    },
+    scenarios: [
+      { label: "Two 5s, distance 2", m1: 5, m2: 5, r: 2 },
+      { label: "Double one mass: 5 and 10, distance 2", m1: 5, m2: 10, r: 2 },
+      { label: "Two 5s, but distance 4", m1: 5, m2: 5, r: 4 },
+      { label: "Bigger: 10 and 8, distance 5", m1: 10, m2: 8, r: 5 }
+    ],
+    build: function (sc) {
+      var top = sc.m1 * sc.m2, r2 = sc.r * sc.r, F = top / r2;
+      var note;
+      if (sc.m1 === 5 && sc.m2 === 10 && sc.r === 2)
+        note = "Pull ≈ " + smFmt(F) + " — double the 6.25 you get from two 5s, because one mass doubled.";
+      else if (sc.m1 === 5 && sc.m2 === 5 && sc.r === 4)
+        note = "Pull ≈ " + smFmt(F) + " — a quarter of the 6.25 you get at distance 2, because 2× the distance means 2² = 4× weaker.";
+      else
+        note = "The pull works out to about " + smFmt(F) + " in these units.";
+      return {
+        steps: [
+          { say: "Multiply the two masses together.",
+            expr: smFmt(sc.m1) + " × " + smFmt(sc.m2), result: smFmt(top),
+            try: { value: top, tol: Math.max(0.01, top * 0.02),
+                   hint: smFmt(sc.m1) + " times " + smFmt(sc.m2) + "." } },
+          { say: "Multiply the distance by itself — the distance squared.",
+            expr: smFmt(sc.r) + " × " + smFmt(sc.r), result: smFmt(r2),
+            try: { value: r2, tol: Math.max(0.01, r2 * 0.02),
+                   hint: "“squared” just means " + smFmt(sc.r) + " × " + smFmt(sc.r) + "." } },
+          { say: "Divide the masses-answer by the distance-squared. (Big G = 1 here, so it does not change the number.)",
+            expr: smFmt(top) + " ÷ " + smFmt(r2), result: smFmt(F),
+            try: { value: F, tol: Math.max(0.01, F * 0.04),
+                   hint: "how many times does " + smFmt(r2) + " fit into " + smFmt(top) + "?" } }
+        ],
+        answer: note
+      };
+    }
+  };
+
+  /* -- Order of operations (PEMDAS) --------------------------------- */
+  function stepPemdas(host) {
+    clr(host);
+    var box = E("div", { "class": "smx" });
+    host.appendChild(box);
+
+    box.appendChild(E("div", { "class": "smx-head" }, [
+      E("span", { "class": "smx-badge", text: "🔢 PEMDAS" }),
+      E("div", { "class": "smx-title", text: "Order of operations — the whole thing" })
+    ]));
+    box.appendChild(E("p", { "class": "smx-lead", text:
+      "Mix +, −, ×, ÷ and powers in one line and the answer depends on the order you work in. Everyone " +
+      "follows one order so every expression has exactly one value. That order is PEMDAS." }));
+
+    box.appendChild(E("div", { "class": "smx-formula" }, [
+      E("div", { "class": "smx-f-sym", text: "( )   →   xⁿ   →   × ÷   →   + −" }),
+      E("div", { "class": "smx-f-note", text:
+        "1. Parentheses (innermost first).   2. Exponents & roots.   3. × and ÷ — one rank, left to right.   " +
+        "4. + and − — one rank, left to right." })
+    ]));
+
+    var MODES = [
+      { k: "why", label: "Why the order" },
+      { k: "ranks", label: "The 4 ranks" },
+      { k: "walk", label: "Walk an example" },
+      { k: "traps", label: "Common traps" },
+      { k: "practice", label: "Practice" }
+    ];
+    var mode = "ranks";
+    var pick = E("div", { "class": "smx-picker" });
+    var body = E("div");
+    box.appendChild(pick); box.appendChild(body);
+    var mBtns = [];
+    MODES.forEach(function (mo) {
+      var b = E("button", { type: "button", "class": "smx-sc" + (mo.k === mode ? " on" : ""), text: mo.label });
+      b.addEventListener("click", function () {
+        mode = mo.k;
+        mBtns.forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        render();
+      });
+      mBtns.push(b);
+      pick.appendChild(b);
+    });
+
+    /* ---------- shared: a compact wrong-vs-right pair ---------- */
+    function twoCol(exprText, badTitle, badBody, goodTitle, goodBody) {
+      var frag = E("div", {});
+      if (exprText) frag.appendChild(E("div", { "class": "smx-calc" },
+        [E("span", { "class": "smx-expr", text: exprText })]));
+      frag.appendChild(E("div", { "class": "pem-two" }, [
+        E("div", { "class": "pem-col bad" }, [
+          E("h4", { text: "✗ " + badTitle }),
+          E("div", { text: badBody })
+        ]),
+        E("div", { "class": "pem-col good" }, [
+          E("h4", { text: "✓ " + goodTitle }),
+          E("div", { text: goodBody })
+        ])
+      ]));
+      return frag;
+    }
+
+    /* ---------- section: why ---------- */
+    function renderWhy() {
+      body.appendChild(E("p", { "class": "smx-say", text:
+        "Take 2 + 3 × 4. Two people, two orders, two different answers — that is exactly the problem the rule fixes." }));
+      body.appendChild(twoCol("2 + 3 × 4",
+        "Just left to right", "2 + 3 = 5, then 5 × 4 = 20",
+        "PEMDAS: × before +", "3 × 4 = 12, then 2 + 12 = 14"));
+      body.appendChild(E("div", { "class": "smx-f-note", text:
+        "A calculator, a teacher, and a physics formula all use PEMDAS, so 14 is the one correct value. " +
+        "Parentheses are how you force the other order when you actually want it: (2 + 3) × 4 = 20." }));
+    }
+
+    /* ---------- section: the 4 ranks ---------- */
+    var RANKS = [
+      { L: "P", name: "Parentheses  ( )",
+        p: "Do everything inside brackets first. If brackets sit inside brackets, start with the innermost.",
+        eg: "2 × (3 + 4) = 2 × 7 = 14",
+        trap: "A <b>fraction bar</b> and a <b>√</b> act like invisible parentheses — finish the whole top and the whole bottom before you divide." },
+      { L: "E", name: "Exponents & roots",
+        p: "A power or root applies only to the one number (or bracket) directly attached to it.",
+        eg: "3 × 2³ = 3 × 8 = 24",
+        trap: "<b>−3² = −9</b>, not 9. The power grabs the 3 before the minus does. Only <b>(−3)² = 9</b>." },
+      { L: "MD", name: "Multiply & Divide",
+        p: "Same rank — neither beats the other. Work left to right across the line.",
+        eg: "24 ÷ 6 × 2 = 4 × 2 = 8   (not 24 ÷ 12)",
+        trap: "Not “multiply before divide”. Also: a number touching a bracket is a multiply — <b>3(4) = 12</b>." },
+      { L: "AS", name: "Add & Subtract",
+        p: "Same rank — work left to right. A subtraction is just adding a negative.",
+        eg: "10 − 4 + 3 = 6 + 3 = 9   (not 10 − 7)",
+        trap: "Not “add before subtract”. 10 − 4 + 3 is <b>not</b> 10 − 7." }
+    ];
+    function renderRanks() {
+      var list = E("div", { "class": "pem-ranks" });
+      RANKS.forEach(function (r) {
+        list.appendChild(E("div", { "class": "pem-rank" }, [
+          E("div", { "class": "pem-letter", text: r.L }),
+          E("div", {}, [
+            E("h4", { text: r.name }),
+            E("p", { text: r.p }),
+            E("div", { "class": "pem-eg", text: r.eg }),
+            E("div", { "class": "pem-trap", html: "Watch out: " + r.trap })
+          ])
+        ]));
+      });
+      body.appendChild(list);
+      body.appendChild(E("div", { "class": "smx-f-note", text:
+        "“PEMDAS” is one memory hook (Please Excuse My Dear Aunt Sally). The trap it hides: MD is one step and AS is one step — always read those left to right." }));
+    }
+
+    /* ---------- section: walk an example ---------- */
+    var EXPR = [
+      { show: "2 + 3 × 4", steps: [
+          { rule: "× and ÷ come before + and −", was: "3 × 4", got: "12", line: "2 + 12" },
+          { rule: "now the + is all that is left", was: "2 + 12", got: "14", line: "14" }
+        ], answer: "14 — not 20. The × goes first even though it is not on the left." },
+      { show: "(2 + 3) × 4", steps: [
+          { rule: "parentheses always go first", was: "2 + 3", got: "5", line: "5 × 4" },
+          { rule: "then the ×", was: "5 × 4", got: "20", line: "20" }
+        ], answer: "20. The brackets forced the + to the front of the line." },
+      { show: "20 ÷ 4 × 5", steps: [
+          { rule: "× and ÷ are one rank — left to right, so ÷ first", was: "20 ÷ 4", got: "5", line: "5 × 5" },
+          { rule: "then the ×", was: "5 × 5", got: "25", line: "25" }
+        ], answer: "25 — not 1. ÷ is not “after” ×; they run left to right." },
+      { show: "2 + 4²", steps: [
+          { rule: "exponents come before + and −", was: "4²", got: "16", line: "2 + 16" },
+          { rule: "then the +", was: "2 + 16", got: "18", line: "18" }
+        ], answer: "18. The little 2 means 4 × 4, and that happens before the adding." },
+      { show: "3 × (2 + 1)²", steps: [
+          { rule: "parentheses first", was: "2 + 1", got: "3", line: "3 × 3²" },
+          { rule: "then the exponent", was: "3²", got: "9", line: "3 × 9" },
+          { rule: "then the ×", was: "3 × 9", got: "27", line: "27" }
+        ], answer: "27. Parentheses, then the power on that bracket, then the multiply." },
+      { show: "10 − (2 + 3) + 1", steps: [
+          { rule: "parentheses first", was: "2 + 3", got: "5", line: "10 − 5 + 1" },
+          { rule: "+ and − left to right — the − first", was: "10 − 5", got: "5", line: "5 + 1" },
+          { rule: "then the +", was: "5 + 1", got: "6", line: "6" }
+        ], answer: "6. After the bracket, just read + and − left to right." },
+      { show: "6 × 5 ÷ (3 × 3)", steps: [
+          { rule: "parentheses first", was: "3 × 3", got: "9", line: "6 × 5 ÷ 9" },
+          { rule: "left to right: the × before the ÷", was: "6 × 5", got: "30", line: "30 ÷ 9" },
+          { rule: "then the ÷", was: "30 ÷ 9", got: "≈ 3.3", line: "≈ 3.3" }
+        ], answer: "About 3.3 — the same shape as G · m₁ · m₂ ÷ r²: build the top, square the bottom, then divide." }
+    ];
+    var cur = 0, shown = 0;
+    function renderWalk() {
+      var strip = E("div", { "class": "smx-picker" });
+      var stage = E("div", { "class": "smx-steps" });
+      var nav = E("div", { "class": "smx-nav" });
+      body.appendChild(strip); body.appendChild(stage); body.appendChild(nav);
+      var wBtns = [];
+      EXPR.forEach(function (ex, i) {
+        var b = E("button", { type: "button", "class": "smx-sc" + (i === cur ? " on" : ""), text: ex.show });
+        b.addEventListener("click", function () {
+          cur = i; shown = 0;
+          wBtns.forEach(function (x) { x.classList.remove("on"); });
+          b.classList.add("on");
+          paint();
+        });
+        wBtns.push(b);
+        strip.appendChild(b);
+      });
+      function paint() {
+        clr(stage); clr(nav);
+        var ex = EXPR[cur];
+        stage.appendChild(E("div", { "class": "smx-calc" }, [E("span", { "class": "smx-expr", text: ex.show })]));
+        for (var i = 0; i < shown && i < ex.steps.length; i++) {
+          var s = ex.steps[i];
+          stage.appendChild(E("div", { "class": "smx-step done" }, [
+            E("div", { "class": "smx-n", text: "Rule: " + s.rule }),
+            E("div", { "class": "smx-calc" }, [
+              E("span", { "class": "smx-expr", text: s.was }),
+              E("span", { "class": "smx-eq", text: "=" }),
+              E("span", { "class": "smx-res", text: s.got })
+            ]),
+            E("div", { "class": "smx-f-note", text: "→  " + s.line })
+          ]));
+        }
+        if (shown < ex.steps.length) {
+          var nb = E("button", { type: "button", "class": "smx-next",
+            text: shown === 0 ? "First step ▶" : "Next step ▶" });
+          nb.addEventListener("click", function () { shown++; paint(); });
+          nav.appendChild(nb);
+        } else {
+          nav.appendChild(E("div", { "class": "smx-answer" }, [
+            E("span", { "class": "smx-tick", text: "✓" }),
+            E("span", { text: ex.answer })
+          ]));
+          var rb = E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" });
+          rb.addEventListener("click", function () { shown = 0; paint(); });
+          nav.appendChild(rb);
+        }
+      }
+      paint();
+    }
+
+    /* ---------- section: common traps ---------- */
+    function renderTraps() {
+      body.appendChild(E("p", { "class": "smx-say", text: "The five that catch people out most:" }));
+      body.appendChild(E("div", { "class": "smx-n", text: "1 · × and ÷ go left to right" }));
+      body.appendChild(twoCol("8 ÷ 2 × 4",
+        "× before ÷", "8 ÷ 2 × 4 → 8 ÷ 8 = 1",
+        "left to right", "8 ÷ 2 × 4 → 4 × 4 = 16"));
+      body.appendChild(E("div", { "class": "smx-n", text: "2 · + and − go left to right" }));
+      body.appendChild(twoCol("9 − 5 + 2",
+        "+ before −", "9 − 5 + 2 → 9 − 7 = 2",
+        "left to right", "9 − 5 + 2 → 4 + 2 = 6"));
+      body.appendChild(E("div", { "class": "smx-n", text: "3 · a minus in front of a power" }));
+      body.appendChild(twoCol("−4²",
+        "square the −4", "(−4)² = 16",
+        "power first, then the minus", "−(4 × 4) = −16"));
+      body.appendChild(E("div", { "class": "smx-n", text: "4 · a division line groups top and bottom" }));
+      body.appendChild(twoCol("12 ÷ (2 + 4)",
+        "no brackets: 12 ÷ 2 + 4", "6 + 4 = 10",
+        "the (2 + 4) is one number", "12 ÷ 6 = 2"));
+      body.appendChild(E("div", { "class": "smx-n", text: "5 · a number touching a bracket means ×" }));
+      body.appendChild(twoCol("2(5) + 3",
+        "read 2 and 5 as one number", "25 + 3 = 28",
+        "2(5) is 2 × 5", "10 + 3 = 13"));
+      body.appendChild(E("div", { "class": "smx-f-note", text:
+        "In a real formula like G·m₁·m₂ ÷ r², the r² is done first (exponent), and everything on top is its own group before the divide." }));
+    }
+
+    /* ---------- section: practice ---------- */
+    var Q_FIRST = [
+      { q: "5 + 2 × 3", opts: ["5 + 2", "2 × 3"], a: 1, why: "× comes before +." },
+      { q: "8 ÷ (4 − 2)", opts: ["8 ÷ 4", "4 − 2"], a: 1, why: "Parentheses first." },
+      { q: "3 × 4²", opts: ["3 × 4", "4²"], a: 1, why: "The exponent comes before the ×." },
+      { q: "12 ÷ 6 × 2", opts: ["12 ÷ 6", "6 × 2"], a: 0, why: "× and ÷ run left to right — ÷ is leftmost." },
+      { q: "10 − 3 + 1", opts: ["10 − 3", "3 + 1"], a: 0, why: "+ and − run left to right — the − is leftmost." },
+      { q: "2 × 3 + 4 × 5", opts: ["2 × 3", "3 + 4"], a: 0, why: "Both ×'s happen before the +; do the left one first." }
+    ];
+    var Q_EVAL = [
+      { q: "2 + 3 × 4", opts: ["14", "20"], a: 0, why: "3 × 4 = 12, then 2 + 12." },
+      { q: "(2 + 3) × 4", opts: ["20", "14"], a: 0, why: "Brackets first: 5, then 5 × 4." },
+      { q: "20 − 4 × 2", opts: ["12", "32"], a: 0, why: "4 × 2 = 8, then 20 − 8." },
+      { q: "12 ÷ 2 + 4", opts: ["10", "2"], a: 0, why: "12 ÷ 2 = 6, then 6 + 4." },
+      { q: "1 + 2²  × 3", opts: ["13", "36"], a: 0, why: "2² = 4, then 4 × 3 = 12, then 1 + 12." },
+      { q: "18 ÷ (3 + 3) × 2", opts: ["6", "1.5"], a: 0, why: "brackets → 6, then 18 ÷ 6 = 3, then 3 × 2." }
+    ];
+    function renderPractice() {
+      var pr = E("div", { "class": "smx-step active" });
+      body.appendChild(pr);
+      function newQ() {
+        clr(pr);
+        var evalKind = Math.random() < 0.5;
+        var pool = evalKind ? Q_EVAL : Q_FIRST;
+        var item = pool[Math.floor(Math.random() * pool.length)];
+        pr.appendChild(E("div", { "class": "smx-n", text: "Now you try" }));
+        pr.appendChild(E("div", { "class": "smx-say", text: evalKind
+          ? "What does   " + item.q + "   come out to?"
+          : "In   " + item.q + "   — which part do you do FIRST?" }));
+        var fb = E("div", { "class": "smx-fb" });
+        var row = E("div", { "class": "smx-picker" });
+        item.opts.forEach(function (opt, oi) {
+          var b = E("button", { type: "button", "class": "smx-sc", text: opt });
+          b.addEventListener("click", function () {
+            if (oi === item.a) { fb.className = "smx-fb good"; fb.textContent = "Yes — " + item.why; }
+            else { fb.className = "smx-fb bad"; fb.textContent = (evalKind ? "Not quite. " : "Not first. ") + item.why; }
+          });
+          row.appendChild(b);
+        });
+        var nx = E("button", { type: "button", "class": "smx-next", text: "Another ▶" });
+        nx.addEventListener("click", newQ);
+        pr.appendChild(row);
+        pr.appendChild(nx);
+        pr.appendChild(fb);
+      }
+      newQ();
+    }
+
+    function render() {
+      clr(body);
+      if (mode === "why") renderWhy();
+      else if (mode === "ranks") renderRanks();
+      else if (mode === "walk") renderWalk();
+      else if (mode === "traps") renderTraps();
+      else renderPractice();
+    }
+    render();
+  }
+
+  /* -- Ellipse size: a = (near + far) ÷ 2 ---------------------------- */
+  var CFG_SEMIMAJOR = {
+    title: "Find an orbit’s size from its near and far points",
+    lead: "A planet’s orbit is an ellipse — a slightly stretched circle. Its “size” (the number a that Kepler’s third law needs) is just the halfway point between its closest and farthest distance from the Sun.",
+    formula: {
+      plain: "<b>Orbit size</b> = (closest distance <b>+</b> farthest distance) <b>÷</b> 2.",
+      symbol: "a  =  (near + far) ÷ 2",
+      note: "“near” is the perihelion, “far” is the aphelion. Distances in AU. a is called the semi-major axis.",
+      legend: [
+        { sym: "near", say: "the orbit’s closest point to the Sun (perihelion), in AU." },
+        { sym: "far", say: "the orbit’s farthest point from the Sun (aphelion), in AU." },
+        { sym: "a", say: "the orbit’s size — halfway between near and far. This is the a in P² = a³." }
+      ]
+    },
+    scenarios: [
+      { label: "Earth: near 0.98, far 1.02", near: 0.98, far: 1.02 },
+      { label: "Mars: near 1.38, far 1.67", near: 1.38, far: 1.67 },
+      { label: "Halley’s Comet: near 0.6, far 35", near: 0.6, far: 35 },
+      { label: "Pluto: near 29.7, far 49.3", near: 29.7, far: 49.3 }
+    ],
+    build: function (sc) {
+      var sum = sc.near + sc.far, a = sum / 2;
+      return {
+        steps: [
+          { say: "Add the closest and farthest distances together.",
+            expr: smFmt(sc.near) + " + " + smFmt(sc.far), result: smFmt(sum),
+            try: { value: sum, tol: Math.max(0.01, sum * 0.02), hint: "just add the two numbers." } },
+          { say: "Halve it — divide by 2 to land in the middle.",
+            expr: smFmt(sum) + " ÷ 2", result: smFmt(a) + " AU",
+            try: { value: a, tol: Math.max(0.01, a * 0.02), hint: "half of " + smFmt(sum) + "." } }
+        ],
+        answer: "This orbit’s size is a ≈ " + smFmt(a) + " AU" +
+          (sc.near === 0.6 && sc.far === 35
+            ? " — even a wildly stretched comet orbit still has one tidy “size” number to feed into P² = a³."
+            : ".")
+      };
+    }
+  };
+
+  /* -- Newton's second law: F = m × a ------------------------------- */
+  var CFG_NEWTON2 = {
+    title: "How much does a push speed something up?",
+    lead: "Newton’s second law. The same push moves a light thing more than a heavy thing. Force equals mass times acceleration — and turned around, acceleration equals force divided by mass.",
+    formula: {
+      plain: "<b>Force</b> = mass <b>×</b> acceleration.   Rearranged: acceleration = force <b>÷</b> mass.",
+      symbol: "F  =  m × a",
+      note: "Mass in kilograms, acceleration in m/s² (how fast the speed changes each second), force in newtons.",
+      legend: [
+        { sym: "F", say: "the push or pull, measured in newtons (N)." },
+        { sym: "m", say: "the mass being pushed, in kilograms." },
+        { sym: "a", say: "the acceleration — how much the speed changes each second, in m/s²." }
+      ]
+    },
+    scenarios: [
+      { label: "Push a 2 kg ball at 3 m/s² — the force?", find: "F", m: 2, a: 3 },
+      { label: "A 1000 kg car speeding up at 2 m/s² — the force?", find: "F", m: 1000, a: 2 },
+      { label: "6 N of push on a 12 kg cart — the speed-up?", find: "a", F: 6, m: 12 },
+      { label: "5000 N on a 2500 kg spacecraft — the speed-up?", find: "a", F: 5000, m: 2500 }
+    ],
+    build: function (sc) {
+      if (sc.find === "F") {
+        var F = sc.m * sc.a;
+        return {
+          steps: [
+            { say: "Multiply the mass by the acceleration.",
+              expr: smFmt(sc.m) + " × " + smFmt(sc.a), result: smFmt(F) + " N",
+              try: { value: F, tol: Math.max(0.01, F * 0.02),
+                     hint: smFmt(sc.m) + " times " + smFmt(sc.a) + "." } }
+          ],
+          answer: "It takes about " + smFmt(F) + " newtons of force."
+        };
+      }
+      var a = sc.F / sc.m;
+      return {
+        steps: [
+          { say: "Divide the force by the mass.",
+            expr: smFmt(sc.F) + " ÷ " + smFmt(sc.m), result: smFmt(a) + " m/s²",
+            try: { value: a, tol: Math.max(0.001, a * 0.03),
+                   hint: "how many times does " + smFmt(sc.m) + " fit into " + smFmt(sc.F) + "?" } }
+        ],
+        answer: "It speeds up by about " + smFmt(a) + " m/s each second."
+      };
+    }
+  };
+
   D["math-mul"] = function (host) { stepMul(host); };
   D["math-exponents"] = function (host) { stepExponents(host); };
+  D["math-pemdas"] = function (host) { stepPemdas(host); };
+  D["math-semimajor"] = function (host) { stepMath(host, CFG_SEMIMAJOR); };
   D["math-kepler3"] = function (host) { stepMath(host, CFG_KEPLER3); };
+  D["math-newton2"] = function (host) { stepMath(host, CFG_NEWTON2); };
   D["math-density"] = function (host) { stepMath(host, CFG_DENSITY); };
   D["math-inverse-square"] = function (host) { stepMath(host, CFG_INVSQ); };
   D["math-weigh"] = function (host) { stepMath(host, CFG_WEIGH); };
+  D["math-gravitation"] = function (host) { stepMath(host, CFG_GRAVITATION); };
 
   window.ASTRO_DIAGRAMS = D;
 })();

@@ -774,6 +774,15 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: #0b1020;
 }
+/* wrapping variant — for tool tab bars with many tabs */
+.seg.seg-wrap { display: flex; flex-wrap: wrap; gap: 6px; border: 0; overflow: visible; }
+.seg.seg-wrap .seg-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  flex: 0 1 auto;
+}
+.seg.seg-wrap .seg-btn.on { border-color: transparent; }
+@media (max-width: 700px) { .seg.seg-wrap .seg-btn { flex: 1 1 auto; } }
 
 /* ----- Matching game ---------------------------------------------------- */
 .match-head {
@@ -1017,6 +1026,32 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
   text-align: center; padding: 30px 10px;
 }
 .fc-done .big { font-size: 20px; font-weight: 800; }
+
+/* ----- Flashcards: list-all view ----- */
+.fc-listopt {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-dim); margin: 4px 0 12px; cursor: pointer;
+}
+.fc-li {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.fc-li:first-of-type { margin-top: 4px; }
+.fc-li.known { border-left-color: var(--good); }
+.fc-li.review { border-left-color: var(--warn); }
+.fc-li-term { font-weight: 700; color: var(--text); }
+.fc-li-def { color: var(--text-dim); font-size: 13.5px; line-height: 1.5; margin-top: 3px; }
+.fc-li-def.blur {
+  filter: blur(5px);
+  user-select: none;
+  transition: filter .12s;
+}
+.fc-li-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.fc-li-actions .btn.small { padding: 4px 9px; font-size: 11.5px; }
+.fc-list-count { font-size: 12.5px; color: var(--text-faint); margin: 2px 0 6px; }
 
 /* ----- Quiz -------------------------------------------------------------- */
 .quiz-setup .btn { margin-right: 10px; }
@@ -1398,6 +1433,15 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 .smx-formula > .smx-f-sym:first-child { margin-top: 0; }
 .smx-formula > .smx-f-note + .smx-f-sym { margin-top: 12px; }
 
+/* what each letter in the formula means */
+.smx-legend { margin: 10px 0 2px; display: flex; flex-direction: column; gap: 6px; }
+.smx-leg-row { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: baseline; }
+.smx-leg-sym {
+  font-weight: 800; font-size: 14px; color: var(--accent);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.smx-leg-say { font-size: 12.5px; line-height: 1.5; color: var(--text-dim); }
+
 .smx-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 2px; }
 .smx-sc {
   padding: 8px 12px;
@@ -1572,6 +1616,60 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 @media (max-width: 560px) {
   .smx-input { flex: 1 1 90px; width: auto; }
   .smx-check, .smx-show { flex: 0 0 auto; }
+}
+
+/* "What each formula is for" list in The Chapter 3 Formulas */
+.formula-map { list-style: none; padding: 0; }
+.formula-map li { margin: 0 0 12px; line-height: 1.5; }
+.formula-map li:last-child { margin-bottom: 0; }
+.formula-map code {
+  font-size: 12.5px;
+  background: var(--bg-2);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* PEMDAS / order-of-operations tool */
+.pem-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; }
+.pem-col {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--panel);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.pem-col h4 { margin: 0 0 5px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
+.pem-col.bad { border-color: color-mix(in srgb, var(--bad) 45%, var(--border)); }
+.pem-col.bad h4 { color: var(--bad); }
+.pem-col.good { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); }
+.pem-col.good h4 { color: var(--good); }
+
+.pem-ranks { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.pem-rank {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+.pem-letter { font-size: 21px; font-weight: 800; color: var(--accent); text-align: center; line-height: 1.1; }
+.pem-rank h4 { margin: 0; font-size: 13.5px; color: var(--text); }
+.pem-rank p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-dim); }
+.pem-eg {
+  margin-top: 6px; font-size: 12.5px; font-variant-numeric: tabular-nums;
+  color: var(--text); background: var(--bg-2); border-radius: 6px; padding: 5px 8px;
+}
+.pem-trap { margin-top: 6px; font-size: 12px; color: var(--text-faint); line-height: 1.5; }
+.pem-trap b { color: color-mix(in srgb, var(--bad) 78%, var(--text)); }
+
+@media (max-width: 640px) {
+  .pem-two { grid-template-columns: 1fr; }
 }
 
 /* Multiplication → exponents tool (Do the Math » Multiplication) */
