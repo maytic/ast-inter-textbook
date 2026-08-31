@@ -605,7 +605,7 @@
   D["kepler-3rd"] = function (host) {
     var r = frame(host, "Farther from the Sun = longer year",
       "Tap a planet. See how far away it lives, and how long its year is.",
-      "The farther out a planet is, the longer one trip around the Sun takes — a LOT longer.");
+      "The farther out a planet is, the longer one trip around the Sun takes — a LOT longer. The “≈” before the year means “about” — it’s rounded to a whole number.");
     var all = (window.ASTRO_CHAPTERS && window.ASTRO_CHAPTERS[3] && window.ASTRO_CHAPTERS[3].keplerBodies) || [];
     function find(n) { for (var i = 0; i < all.length; i++) if (all[i].name === n) return all[i]; return null; }
     var picks = ["Earth", "Mars", "Jupiter", "Saturn", "Neptune"].map(find).filter(Boolean);
@@ -913,23 +913,61 @@
     return String(n).split("").map(function (c) { return SM_SUP[c] || c; }).join("");
   }
 
-  /* -- Exponents primer: the first sub-section of "Do the Math" ---------- */
+  /* -- colour-tracking numbers across step-by-step lines ------------------
+     Each step's result gets a colour (mv0..mv3); when that same number turns
+     up in a later step's expression it is drawn in the same colour, so the
+     reader can follow a value from one line to the next. */
+  var SM_NUM_RE = /-?\d+(?:\.\d+)?/;
+  function smLeadNum(s) {
+    var m = String(s == null ? "" : s).match(SM_NUM_RE);
+    return m ? m[0] : null;
+  }
+  function smColorRes(s, cls) {
+    return String(s).replace(SM_NUM_RE, function (t) {
+      return "<span class='" + cls + "'>" + t + "</span>";
+    });
+  }
+  function smColorExpr(s, carried) {
+    var claimed = [];
+    return String(s).replace(/-?\d+(?:\.\d+)?/g, function (tok) {
+      for (var i = 0; i < carried.length; i++) {
+        if (!claimed[i] && carried[i].num === tok) {
+          claimed[i] = true;
+          return "<span class='" + carried[i].cls + "'>" + tok + "</span>";
+        }
+      }
+      return tok;
+    });
+  }
+
+  /* true when smFmt() had to round the number off — i.e. the tidy text shown
+     is not the exact value, so the line should read ≈ rather than = */
+  function smRound(n) {
+    return typeof n === "number" && isFinite(n) &&
+      Math.abs(n - parseFloat(smFmt(n))) > 5e-10;
+  }
+  function smApproxNote() {
+    return E("div", { "class": "smx-approx", html:
+      "Why <b>≈</b> and not <b>=</b>?  The wavy sign means <b>“about equal”</b>. The full answer has more " +
+      "decimal places than are useful here — a square root or an uneven divide can even run on forever — so " +
+      "it has been <b>rounded</b> to a number you can picture. It is close, just not exact." });
+  }
+
+  /* -- Exponents & roots: build up a power one multiply at a time -------- */
   function stepExponents(host) {
     clr(host);
     var box = E("div", { "class": "smx" });
     host.appendChild(box);
 
     box.appendChild(E("div", { "class": "smx-head" }, [
-      E("span", { "class": "smx-badge", text: "🔢 Exponents" }),
-      E("div", { "class": "smx-title", text: "What a little raised number means" })
+      E("span", { "class": "smx-badge", text: "🔢 Exponents & roots" }),
+      E("div", { "class": "smx-title", text: "The little raised number — and how to undo it" })
     ]));
     box.appendChild(E("p", { "class": "smx-lead", text:
-      "A small raised number — an “exponent” — just says how many times to multiply a number by itself. " +
-      "Chapter 3 only ever uses “squared” (a little 2), “cubed” (a little 3), and their reverses. The last " +
-      "tab is a quick look at how 10ⁿ feeds into scientific notation — the next warm-up covers that in full. " +
-      "Tap around:" }));
+      "A little raised number just says how many times to multiply a number by itself — nothing more. " +
+      "Chapter 3 only uses squared (²), cubed (³), powers of ten, and running those backwards with roots. " +
+      "Pick a tab and a number; it builds up one multiply at a time." }));
 
-    var mode = "sq", val = 5, sciIdx = 1;
     var SCI_EX = [
       { tag: "Moon", disp: "384,000", unit: "km", c: "3.84", e: 5 },
       { tag: "Sun", disp: "150,000,000", unit: "km", c: "1.5", e: 8 },
@@ -937,94 +975,202 @@
       { tag: "an atom", disp: "0.0000001", unit: "cm", c: "1", e: -7 }
     ];
     function supE(e) { return (e < 0 ? "⁻" : "") + smSup(Math.abs(e)); }
-    var row1 = E("div", { "class": "smx-picker" });
-    var row2 = E("div", { "class": "smx-picker" });
-    var out = E("div", { "class": "smx-formula" });
-    var bridge = E("div", { "class": "smx-f-note", style: "margin-top:8px" });
-    box.appendChild(row1); box.appendChild(row2); box.appendChild(out); box.appendChild(bridge);
 
     var MODES = [
-      { k: "sq", label: "▪ squared" },
-      { k: "cu", label: "◼ cubed" },
-      { k: "p10", label: "10ⁿ powers of ten" },
-      { k: "sci", label: "→ into scientific notation" },
-      { k: "root", label: "√ roots (backwards)" }
+      { k: "sq", label: "x²  squared" },
+      { k: "cu", label: "x³  cubed" },
+      { k: "p10", label: "10ⁿ  powers of ten" },
+      { k: "root", label: "√  roots — backwards" },
+      { k: "sci", label: "→  scientific notation" }
     ];
-    var m1 = [];
+    var mode = "sq", val = 5, p10n = 3, rootN = 5, sciIdx = 1;
+
+    var pick = E("div", { "class": "smx-picker" });
+    var numLabel = E("div", { "class": "smx-f-note", style: "margin:10px 0 2px" });
+    var numRow = E("div", { "class": "smx-picker" });
+    var body = E("div", { style: "margin-top:12px" });
+    box.appendChild(pick); box.appendChild(numLabel); box.appendChild(numRow); box.appendChild(body);
+
+    var mBtns = [];
     MODES.forEach(function (mo) {
       var b = E("button", { type: "button", "class": "smx-sc" + (mo.k === mode ? " on" : ""), text: mo.label });
       b.addEventListener("click", function () {
         mode = mo.k;
-        m1.forEach(function (x) { x.classList.remove("on"); });
+        mBtns.forEach(function (x) { x.classList.remove("on"); });
         b.classList.add("on");
-        if (mode === "p10" && val > 6) val = 4;
-        if (mode !== "p10" && val < 2) val = 5;
-        buildRow2(); paint();
+        buildNums(); paint();
       });
-      m1.push(b);
-      row1.appendChild(b);
+      mBtns.push(b);
+      pick.appendChild(b);
     });
 
-    function buildRow2() {
-      clr(row2);
-      if (mode === "sci") {
-        SCI_EX.forEach(function (ex, i) {
-          var b = E("button", { type: "button", "class": "smx-sc" + (i === sciIdx ? " on" : ""), text: ex.tag });
-          b.addEventListener("click", function () { sciIdx = i; buildRow2(); paint(); });
-          row2.appendChild(b);
-        });
-        return;
-      }
-      var nums = mode === "p10" ? [1, 2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 7, 8, 9];
-      nums.forEach(function (n) {
-        var b = E("button", { type: "button", "class": "smx-sc" + (n === val ? " on" : ""), text: String(n) });
-        b.addEventListener("click", function () { val = n; buildRow2(); paint(); });
-        row2.appendChild(b);
+    function numBtns(list, curVal, set) {
+      list.forEach(function (n) {
+        var b = E("button", { type: "button", "class": "smx-sc" + (n === curVal ? " on" : ""), text: String(n) });
+        b.addEventListener("click", function () { set(n); buildNums(); paint(); });
+        numRow.appendChild(b);
       });
     }
-    function line(txt) { out.appendChild(E("div", { "class": "smx-f-sym", text: txt })); }
-    function note(txt) { out.appendChild(E("div", { "class": "smx-f-note", text: txt })); }
-
-    function paint() {
-      clr(out);
-      bridge.innerHTML = "";
-      if (mode === "sq") {
-        line(val + " squared  =  " + val + " × " + val + "  =  " + (val * val));
-        note("“Squared” always means the number times itself. It is NOT " + val + " × 2.");
-      } else if (mode === "cu") {
-        line(val + " cubed  =  " + val + " × " + val + " × " + val + "  =  " + smCommas(val * val * val));
-        note("“Cubed” means the number times itself, three times over.");
+    function buildNums() {
+      clr(numRow);
+      if (mode === "sci") {
+        numLabel.textContent = "Pick a real measurement:";
+        SCI_EX.forEach(function (ex, i) {
+          var b = E("button", { type: "button", "class": "smx-sc" + (i === sciIdx ? " on" : ""), text: ex.tag });
+          b.addEventListener("click", function () { sciIdx = i; buildNums(); paint(); });
+          numRow.appendChild(b);
+        });
       } else if (mode === "p10") {
-        var chain = [];
-        for (var i = 0; i < val; i++) chain.push("10");
-        line("10" + smSup(val) + "  =  " + chain.join(" × ") + "  =  " + smCommas(Math.pow(10, val)));
-        note("Shortcut: the little number is just how many zeros to write — " + val + " of them here.");
-      } else if (mode === "sci") {
-        var ex = SCI_EX[sciIdx];
-        line(ex.c + " × 10" + supE(ex.e) + "   =   " + ex.disp + " " + ex.unit);
-        note("The 10" + supE(ex.e) + " is just a power of ten from the tab before. The " + ex.c +
-          " in front is the number's digits, with one kept ahead of the dot. Together, that is scientific notation.");
-        bridge.innerHTML = "Counting the hop and getting the + / − sign right is what the next warm-up drills: " +
-          "<a href=\"#/t/sci\">Scientific Notation →</a>";
+        numLabel.textContent = "Pick the exponent  n:";
+        numBtns([1, 2, 3, 4, 5, 6, 7, 8], p10n, function (n) { p10n = n; });
+      } else if (mode === "root") {
+        numLabel.textContent = "Pick the answer to hunt for:";
+        numBtns([2, 3, 4, 5, 6, 7, 8, 9, 10, 12], rootN, function (n) { rootN = n; });
       } else {
-        line("√" + (val * val) + "  =  " + val);
-        note("because " + val + " × " + val + " = " + (val * val) + ". A square root asks: what number, times itself, gives this?");
-        line("∛" + smCommas(val * val * val) + "  =  " + val);
-        note("because " + val + " × " + val + " × " + val + " = " + smCommas(val * val * val) +
-          ". When a later step needs a root, guessing numbers until you land on it works fine.");
+        numLabel.textContent = "Pick a number:";
+        numBtns([2, 3, 4, 5, 6, 7, 8, 9, 10, 12], val, function (n) { val = n; });
       }
     }
 
-    var pr = E("div", { "class": "smx-step active", style: "margin-top:14px" });
+    /* small building blocks */
+    function row(exprHtml, sign, resHtml) {
+      var kids = [];
+      if (exprHtml) {
+        kids.push(E("span", { "class": "smx-expr", html: exprHtml }));
+        kids.push(E("span", { "class": "smx-eq", text: sign || "=" }));
+      }
+      kids.push(E("span", { "class": "smx-res", html: resHtml }));
+      return E("div", { "class": "smx-calc" }, kids);
+    }
+    function stepRow(label, node, active) {
+      return E("div", { "class": "smx-step " + (active ? "active" : "done") }, [
+        E("div", { "class": "smx-n", text: label }), node
+      ]);
+    }
+    function answer(html) {
+      return E("div", { "class": "smx-answer" }, [
+        E("span", { "class": "smx-tick", text: "✓" }), E("span", { html: html })
+      ]);
+    }
+    function twoCol(badT, badB, goodT, goodB) {
+      return E("div", { "class": "pem-two", style: "margin-top:8px" }, [
+        E("div", { "class": "pem-col bad" }, [E("h4", { text: "✗ " + badT }), E("div", { text: badB })]),
+        E("div", { "class": "pem-col good" }, [E("h4", { text: "✓ " + goodT }), E("div", { text: goodB })])
+      ]);
+    }
+
+    function paint() {
+      clr(body);
+      if (mode === "sq") paintPow(2, "squared", "a little 2");
+      else if (mode === "cu") paintPow(3, "cubed", "a little 3");
+      else if (mode === "p10") paintP10();
+      else if (mode === "root") paintRoot();
+      else paintSci();
+    }
+
+    function paintPow(k, word, littleName) {
+      var n = val;
+      body.appendChild(E("p", { "class": "smx-say", text:
+        "“" + word.charAt(0).toUpperCase() + word.slice(1) + "” (" + littleName + ") means: take the number and " +
+        "multiply it by itself, so there are " + k + " of them multiplied together. Build it up:" }));
+      var steps = E("div", { "class": "smx-steps" });
+      steps.appendChild(stepRow("Start with the number",
+        row("", "", "<span class='mv0'>" + n + "</span>")));
+      var running = n;
+      for (var m = 2; m <= k; m++) {
+        var next = running * n;
+        steps.appendChild(stepRow(
+          m === 2 ? "Multiply by " + n + "  (now 2 of them)" : "Multiply by " + n + " again  (now " + m + " of them)",
+          row("<span class='mv" + ((m - 2) % 3) + "'>" + smCommas(running) + "</span> × " + n, "=",
+              "<span class='mv" + ((m - 1) % 3) + "'>" + smCommas(next) + "</span>")));
+        running = next;
+      }
+      body.appendChild(steps);
+      body.appendChild(answer("<b>" + n + smSup(k) + " = " + smCommas(running) + "</b>  —  “" + n + " " + word + "”."));
+      body.appendChild(E("div", { "class": "smx-n", style: "margin-top:14px", text: "The mistake everyone makes" }));
+      body.appendChild(twoCol(
+        "read " + littleName + " as “× " + k + "”", n + " × " + k + " = " + (n * k),
+        "it means “" + n + ", " + k + " times, multiplied”", Array(k + 1).join(n + " ").trim().replace(/ /g, " × ") + " = " + smCommas(running)));
+    }
+
+    function paintP10() {
+      var n = p10n;
+      body.appendChild(E("p", { "class": "smx-say", text:
+        "10 to a power is just 10 multiplied by itself that many times. Every step multiplies by 10 — which " +
+        "tacks on one more zero. Watch the ladder:" }));
+      var steps = E("div", { "class": "smx-steps" });
+      for (var kk = 1; kk <= n; kk++) {
+        var chain = new Array(kk).join("10 × ") + "10";
+        var v = Math.pow(10, kk);
+        steps.appendChild(E("div", { "class": "smx-step " + (kk === n ? "active" : "done") }, [
+          row("10" + smSup(kk) + "  =  " + chain, "=",
+              "<span class='mv" + ((kk - 1) % 3) + "'>" + smCommas(v) + "</span>  " +
+              "<span class='smx-hint'>(" + kk + " zero" + (kk === 1 ? "" : "s") + ")</span>")
+        ]));
+      }
+      body.appendChild(steps);
+      body.appendChild(answer("<b>10" + smSup(n) + " = " + smCommas(Math.pow(10, n)) +
+        "</b>  —  the exponent is just <b>how many zeros</b> to write after the 1."));
+    }
+
+    function paintRoot() {
+      var t = rootN, sq = t * t, cu = t * t * t;
+      body.appendChild(E("p", { "class": "smx-say", html:
+        "A <b>root</b> runs a power <b>backwards</b>. <b>√" + smCommas(sq) + "</b> asks: <i>what number, times " +
+        "itself, makes " + smCommas(sq) + "?</i>  There is no trick — you try numbers until one lands." }));
+      var steps = E("div", { "class": "smx-steps" });
+      var start = Math.max(2, t - 3);
+      for (var g = start; g <= t; g++) {
+        var gv = g * g;
+        var verdict = gv < sq ? "too small — go higher" : "that’s it";
+        steps.appendChild(E("div", { "class": "smx-step " + (g === t ? "active" : "done") }, [
+          E("div", { "class": "smx-n", text: "try " + g }),
+          row(g + " × " + g, "=", smCommas(gv) + "  —  " + verdict)
+        ]));
+      }
+      body.appendChild(steps);
+      body.appendChild(answer("<b>√" + smCommas(sq) + " = " + t + "</b>, because " + t + " × " + t + " = " + smCommas(sq) + "."));
+      body.appendChild(E("div", { "class": "smx-n", style: "margin-top:14px", text: "Cube root — same idea, 3 copies" }));
+      body.appendChild(row("∛" + smCommas(cu), "=", String(t)));
+      body.appendChild(E("div", { "class": "smx-f-note", text:
+        "because " + t + " × " + t + " × " + t + " = " + smCommas(cu) + ". Whenever a Chapter 3 step needs a root, " +
+        "guessing whole numbers like this is exactly how the tool expects you to do it." }));
+    }
+
+    function paintSci() {
+      var ex = SCI_EX[sciIdx];
+      body.appendChild(E("p", { "class": "smx-say", text:
+        "Scientific notation writes a giant or tiny number as “one digit, a dot, the rest — times a power of ten”. " +
+        "The power of ten is exactly what the last tab was about." }));
+      body.appendChild(row(ex.c + " × 10" + supE(ex.e), "=", "<b>" + ex.disp + "</b> " + ex.unit));
+      body.appendChild(E("div", { "class": "smx-f-note", text:
+        "The 10" + supE(ex.e) + " part says how far to hop the dot (" + Math.abs(ex.e) + " place" +
+        (Math.abs(ex.e) === 1 ? "" : "s") + (ex.e < 0 ? " right, because it’s tiny" : " left, because it’s huge") +
+        "). The " + ex.c + " in front is the digits, with one kept ahead of the dot." }));
+      body.appendChild(E("div", { "class": "smx-f-note", style: "margin-top:8px", html:
+        "Getting the hop count and the + / − sign right is its own warm-up: <a href=\"#/t/sci\">Scientific Notation →</a>" }));
+    }
+
+    /* ---------- practice ---------- */
+    var pr = E("div", { "class": "smx-step active", style: "margin-top:16px" });
     box.appendChild(pr);
     function newQ() {
       clr(pr);
       var kind = ["sq", "cu", "p10", "sqrt"][Math.floor(Math.random() * 4)];
-      var b, q, ans;
-      if (kind === "sq") { b = 2 + Math.floor(Math.random() * 8); q = b + "²"; ans = b * b; }
-      else if (kind === "cu") { b = 2 + Math.floor(Math.random() * 5); q = b + "³"; ans = b * b * b; }
-      else if (kind === "p10") { b = 2 + Math.floor(Math.random() * 4); q = "10" + smSup(b); ans = Math.pow(10, b); }
-      else { b = 2 + Math.floor(Math.random() * 8); q = "√" + (b * b); ans = b; }
+      var b, q, ans, work;
+      if (kind === "sq") {
+        b = 2 + Math.floor(Math.random() * 10); q = b + "²"; ans = b * b;
+        work = b + "² = " + b + " × " + b + " = " + smCommas(ans);
+      } else if (kind === "cu") {
+        b = 2 + Math.floor(Math.random() * 6); q = b + "³"; ans = b * b * b;
+        work = b + "³ = " + b + " × " + b + " × " + b + " = " + smCommas(ans);
+      } else if (kind === "p10") {
+        b = 2 + Math.floor(Math.random() * 5); q = "10" + smSup(b); ans = Math.pow(10, b);
+        work = "10" + smSup(b) + " = 1 with " + b + " zeros = " + smCommas(ans);
+      } else {
+        b = 2 + Math.floor(Math.random() * 10); q = "√" + (b * b); ans = b;
+        work = "√" + smCommas(b * b) + " = " + b + ", because " + b + " × " + b + " = " + smCommas(b * b);
+      }
       pr.appendChild(E("div", { "class": "smx-n", text: "Now you try" }));
       pr.appendChild(E("div", { "class": "smx-say", text: "What is  " + q + " ?" }));
       var inp = E("input", { type: "text", inputmode: "numeric", "class": "smx-input",
@@ -1037,18 +1183,18 @@
       function check() {
         var g = smNum(inp.value);
         if (isNaN(g)) { say("Type a number first.", false); return; }
-        if (Math.abs(g - ans) < 0.5) say("Yes — " + q + " = " + smCommas(ans) + ".", true);
+        if (Math.abs(g - ans) < 0.5) say("Yes!  " + work + ".", true);
         else say("Not quite — try again, or tap “Show me”.", false);
       }
       ck.addEventListener("click", check);
       inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); check(); } });
-      sh.addEventListener("click", function () { say(q + " = " + smCommas(ans) + ".", true); });
+      sh.addEventListener("click", function () { say(work + ".", true); });
       nx.addEventListener("click", newQ);
       pr.appendChild(E("div", { "class": "smx-try-row", style: "margin-top:8px" }, [inp, ck, sh, nx]));
       pr.appendChild(fb);
     }
 
-    buildRow2();
+    buildNums();
     paint();
     newQ();
   }
@@ -1309,6 +1455,8 @@
     box.appendChild(E("div", { "class": "smx-f-note", style: "margin:8px 0 2px", text: "Pick a real example:" }));
     var picker = E("div", { "class": "smx-picker" });
     box.appendChild(picker);
+    box.appendChild(E("div", { "class": "smx-f-note", style: "margin:10px 0 0", text:
+      "Each number a step works out keeps its colour, so you can spot it again in the next line." }));
     var stepsWrap = E("div", { "class": "smx-steps" });
     box.appendChild(stepsWrap);
     var navWrap = E("div", { "class": "smx-nav" });
@@ -1366,7 +1514,8 @@
         var res = isGuess ? checkGuess(st, g) : checkPlain(st, g);
         if (res.ok) {
           fb.className = "smx-fb good";
-          fb.textContent = "That’s it — " + st.expr + " = " + st.result + ".";
+          fb.textContent = "That’s it — " + st.expr + (st.approx ? " ≈ " : " = ") + st.result +
+            (st.approx ? " (rounded)." : ".");
           resolved = true;
           setTimeout(draw, 700);
         } else {
@@ -1389,23 +1538,35 @@
       var M = plan.steps.length;
       var upto = revealAll ? M - 1 : Math.min(idx, M - 1);
 
+      var carried = [], approxNoted = false;
       for (var i = 0; i <= upto; i++) {
         var st = plan.steps[i];
+        var myCls = "mv" + (i % 4);
         var active = !revealAll && (i === idx);
         var stepEl = E("div", { "class": "smx-step " + (active ? "active" : "done") }, [
           E("div", { "class": "smx-n", text: "Step " + (i + 1) + " of " + M }),
           E("div", { "class": "smx-say", text: st.say })
         ]);
         var showTry = active && !resolved && st.try;
+        var approx = !!st.approx;
         if (showTry) {
           stepEl.appendChild(tryUI(st));
+        } else if (st.expr) {
+          stepEl.appendChild(E("div", { "class": "smx-calc" }, [
+            E("span", { "class": "smx-expr", html: smColorExpr(st.expr, carried) }),
+            E("span", { "class": "smx-eq", text: approx ? "≈" : "=" }),
+            E("span", { "class": "smx-res", html: smColorRes(st.result, myCls) })
+          ]));
+          var ln = smLeadNum(st.result);
+          if (ln != null) carried.push({ num: ln, cls: myCls });
         } else {
+          // a plain conclusion line (no arithmetic) — leave it uncoloured
           stepEl.appendChild(E("div", { "class": "smx-calc" },
-            st.expr
-              ? [E("span", { "class": "smx-expr", text: st.expr }),
-                 E("span", { "class": "smx-eq", text: "=" }),
-                 E("span", { "class": "smx-res", text: st.result })]
-              : [E("span", { "class": "smx-res", text: st.result })]));
+            [E("span", { "class": "smx-res", text: st.result })]));
+        }
+        if (!showTry && !approxNoted && approx) {
+          stepEl.appendChild(smApproxNote());
+          approxNoted = true;
         }
         stepsWrap.appendChild(stepEl);
       }
@@ -1415,6 +1576,7 @@
           E("span", { "class": "smx-tick", text: "✓" }),
           E("span", { text: plan.answer })
         ]));
+        if (!approxNoted && plan.approxAnswer) navWrap.appendChild(smApproxNote());
         if (revealAll) {
           var tb = E("button", { type: "button", "class": "smx-next", text: "Now let me try it ▶" });
           tb.addEventListener("click", function () {
@@ -1470,15 +1632,16 @@
       if (sc.mode === "a2p") {
         var a = sc.a, a2 = a * a, a3 = a2 * a, P = Math.sqrt(a3);
         return {
+          approxAnswer: smRound(P),
           steps: [
             { say: "Multiply the distance by itself.",
-              expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2),
+              expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2), approx: smRound(a2),
               try: { value: a2, tol: Math.max(0.01, a2 * 0.02), hint: "“by itself” just means " + smFmt(a) + " times " + smFmt(a) + "." } },
             { say: "Now multiply that answer by the distance one more time. That’s “the distance cubed”.",
-              expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3),
+              expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3), approx: smRound(a3),
               try: { value: a3, tol: Math.max(0.05, a3 * 0.02), hint: "take your last answer and multiply it by " + smFmt(a) + "." } },
             { say: "That number equals the year × the year. So the year is the number that, times itself, gives " + smFmt(a3) + " (its “square root”). Guess one.",
-              expr: "√" + smFmt(a3), result: "≈ " + smFmt(P),
+              expr: "√" + smFmt(a3), result: smFmt(P), approx: smRound(P),
               try: { mode: "guess", op: "square", target: a3, value: P,
                      tol: Math.max(0.1, P * 0.03),
                      hint: "it’s between " + Math.floor(P) + " and " + Math.ceil(P) + "." } }
@@ -1488,12 +1651,13 @@
       }
       var p = sc.P, p2 = p * p, dist = Math.pow(p2, 1 / 3);
       return {
+        approxAnswer: p !== 1 && smRound(dist),
         steps: [
           { say: "Multiply the year by itself. That’s “the year squared”.",
-            expr: smFmt(p) + " × " + smFmt(p), result: smFmt(p2),
+            expr: smFmt(p) + " × " + smFmt(p), result: smFmt(p2), approx: smRound(p2),
             try: { value: p2, tol: Math.max(0.02, p2 * 0.02), hint: smFmt(p) + " times " + smFmt(p) + "." } },
           { say: "That equals the distance × distance × distance. So the distance is the number that, cubed, gives " + smFmt(p2) + " (its “cube root”). Guess one.",
-            expr: "∛" + smFmt(p2), result: "≈ " + smFmt(dist),
+            expr: "∛" + smFmt(p2), result: smFmt(dist), approx: p !== 1 && smRound(dist),
             try: { mode: "guess", op: "cube", target: p2, value: dist,
                    tol: Math.max(0.03, dist * 0.03), targetTol: 0.06,
                    hint: p === 1 ? "try 1." : "try a number between 1 and 2." } }
@@ -1537,9 +1701,10 @@
     build: function (sc) {
       var d = sc.m / sc.v;
       return {
+        approxAnswer: smRound(d),
         steps: [
           { say: "Divide the mass by the volume.",
-            expr: smFmt(sc.m) + " ÷ " + smFmt(sc.v), result: smFmt(d) + " g/cm³",
+            expr: smFmt(sc.m) + " ÷ " + smFmt(sc.v), result: smFmt(d) + " g/cm³", approx: smRound(d),
             try: { value: d, tol: Math.max(0.01, d * 0.03),
                    hint: "how many times does " + smFmt(sc.v) + " fit into " + smFmt(sc.m) + "?" } },
           { say: "Read it against water, which is exactly 1 g/cm³.",
@@ -1609,18 +1774,19 @@
     build: function (sc) {
       var a = sc.a, P = sc.P, a2 = a * a, a3 = a2 * a, p2 = P * P, M = a3 / p2;
       return {
+        approxAnswer: smRound(M),
         steps: [
           { say: "Multiply the distance by itself.",
-            expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2),
+            expr: smFmt(a) + " × " + smFmt(a), result: smFmt(a2), approx: smRound(a2),
             try: { value: a2, tol: Math.max(0.01, a2 * 0.03), hint: smFmt(a) + " times " + smFmt(a) + "." } },
           { say: "Multiply that by the distance again — the distance cubed.",
-            expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3),
+            expr: smFmt(a2) + " × " + smFmt(a), result: smFmt(a3), approx: smRound(a3),
             try: { value: a3, tol: Math.max(0.02, a3 * 0.03), hint: "your last answer × " + smFmt(a) + "." } },
           { say: "Now multiply the year by itself — the year squared.",
-            expr: smFmt(P) + " × " + smFmt(P), result: smFmt(p2),
+            expr: smFmt(P) + " × " + smFmt(P), result: smFmt(p2), approx: smRound(p2),
             try: { value: p2, tol: Math.max(0.02, p2 * 0.03), hint: smFmt(P) + " times " + smFmt(P) + "." } },
           { say: "Divide the distance-cubed by the year-squared.",
-            expr: smFmt(a3) + " ÷ " + smFmt(p2), result: smFmt(M) + " Suns",
+            expr: smFmt(a3) + " ÷ " + smFmt(p2), result: smFmt(M) + " Suns", approx: smRound(M),
             try: { value: M, tol: Math.max(0.03, M * 0.05),
                    hint: "how many times does " + smFmt(p2) + " fit into " + smFmt(a3) + "?" } }
         ],
@@ -1655,23 +1821,24 @@
       var top = sc.m1 * sc.m2, r2 = sc.r * sc.r, F = top / r2;
       var note;
       if (sc.m1 === 5 && sc.m2 === 10 && sc.r === 2)
-        note = "Pull ≈ " + smFmt(F) + " — double the 6.25 you get from two 5s, because one mass doubled.";
+        note = "The pull is about " + smFmt(F) + " — double the 6.25 you get from two 5s, because one mass doubled.";
       else if (sc.m1 === 5 && sc.m2 === 5 && sc.r === 4)
-        note = "Pull ≈ " + smFmt(F) + " — a quarter of the 6.25 you get at distance 2, because 2× the distance means 2² = 4× weaker.";
+        note = "The pull is about " + smFmt(F) + " — a quarter of the 6.25 you get at distance 2, because 2× the distance means 2² = 4× weaker.";
       else
         note = "The pull works out to about " + smFmt(F) + " in these units.";
       return {
+        approxAnswer: smRound(F),
         steps: [
           { say: "Multiply the two masses together.",
-            expr: smFmt(sc.m1) + " × " + smFmt(sc.m2), result: smFmt(top),
+            expr: smFmt(sc.m1) + " × " + smFmt(sc.m2), result: smFmt(top), approx: smRound(top),
             try: { value: top, tol: Math.max(0.01, top * 0.02),
                    hint: smFmt(sc.m1) + " times " + smFmt(sc.m2) + "." } },
           { say: "Multiply the distance by itself — the distance squared.",
-            expr: smFmt(sc.r) + " × " + smFmt(sc.r), result: smFmt(r2),
+            expr: smFmt(sc.r) + " × " + smFmt(sc.r), result: smFmt(r2), approx: smRound(r2),
             try: { value: r2, tol: Math.max(0.01, r2 * 0.02),
                    hint: "“squared” just means " + smFmt(sc.r) + " × " + smFmt(sc.r) + "." } },
           { say: "Divide the masses-answer by the distance-squared. (Big G = 1 here, so it does not change the number.)",
-            expr: smFmt(top) + " ÷ " + smFmt(r2), result: smFmt(F),
+            expr: smFmt(top) + " ÷ " + smFmt(r2), result: smFmt(F), approx: smRound(F),
             try: { value: F, tol: Math.max(0.01, F * 0.04),
                    hint: "how many times does " + smFmt(r2) + " fit into " + smFmt(top) + "?" } }
         ],
@@ -1792,50 +1959,95 @@
         "“PEMDAS” is one memory hook (Please Excuse My Dear Aunt Sally). The trap it hides: MD is one step and AS is one step — always read those left to right." }));
     }
 
-    /* ---------- section: walk an example ---------- */
+    /* ---------- section: walk an example ----------
+       Each step carries `from` (the running line with the chunk being worked
+       on boxed) and `to` (the line after). Every number a step produces keeps
+       its own colour — pem-v0 / v1 / v2 — so you can follow it into later lines. */
     var EXPR = [
       { show: "2 + 3 × 4", steps: [
-          { rule: "× and ÷ come before + and −", was: "3 × 4", got: "12", line: "2 + 12" },
-          { rule: "now the + is all that is left", was: "2 + 12", got: "14", line: "14" }
+          { rule: "× and ÷ come before + and −",
+            from: "2 + <span class='pem-v0 pem-now'>3 × 4</span>",
+            to:   "2 + <span class='pem-v0'>12</span>" },
+          { rule: "now the + is all that is left",
+            from: "<span class='pem-v1 pem-now'>2 + <span class='pem-v0'>12</span></span>",
+            to:   "<span class='pem-v1'>14</span>" }
         ], answer: "14 — not 20. The × goes first even though it is not on the left." },
       { show: "(2 + 3) × 4", steps: [
-          { rule: "parentheses always go first", was: "2 + 3", got: "5", line: "5 × 4" },
-          { rule: "then the ×", was: "5 × 4", got: "20", line: "20" }
+          { rule: "parentheses always go first",
+            from: "<span class='pem-v0 pem-now'>(2 + 3)</span> × 4",
+            to:   "<span class='pem-v0'>5</span> × 4" },
+          { rule: "then the ×",
+            from: "<span class='pem-v1 pem-now'><span class='pem-v0'>5</span> × 4</span>",
+            to:   "<span class='pem-v1'>20</span>" }
         ], answer: "20. The brackets forced the + to the front of the line." },
       { show: "20 ÷ 4 × 5", steps: [
-          { rule: "× and ÷ are one rank — left to right, so ÷ first", was: "20 ÷ 4", got: "5", line: "5 × 5" },
-          { rule: "then the ×", was: "5 × 5", got: "25", line: "25" }
+          { rule: "× and ÷ are one rank — left to right, so ÷ first",
+            from: "<span class='pem-v0 pem-now'>20 ÷ 4</span> × 5",
+            to:   "<span class='pem-v0'>5</span> × 5" },
+          { rule: "then the ×",
+            from: "<span class='pem-v1 pem-now'><span class='pem-v0'>5</span> × 5</span>",
+            to:   "<span class='pem-v1'>25</span>" }
         ], answer: "25 — not 1. ÷ is not “after” ×; they run left to right." },
       { show: "2 + 4²", steps: [
-          { rule: "exponents come before + and −", was: "4²", got: "16", line: "2 + 16" },
-          { rule: "then the +", was: "2 + 16", got: "18", line: "18" }
+          { rule: "exponents come before + and −",
+            from: "2 + <span class='pem-v0 pem-now'>4²</span>",
+            to:   "2 + <span class='pem-v0'>16</span>" },
+          { rule: "then the +",
+            from: "<span class='pem-v1 pem-now'>2 + <span class='pem-v0'>16</span></span>",
+            to:   "<span class='pem-v1'>18</span>" }
         ], answer: "18. The little 2 means 4 × 4, and that happens before the adding." },
       { show: "3 × (2 + 1)²", steps: [
-          { rule: "parentheses first", was: "2 + 1", got: "3", line: "3 × 3²" },
-          { rule: "then the exponent", was: "3²", got: "9", line: "3 × 9" },
-          { rule: "then the ×", was: "3 × 9", got: "27", line: "27" }
+          { rule: "parentheses first",
+            from: "3 × <span class='pem-v0 pem-now'>(2 + 1)</span>²",
+            to:   "3 × <span class='pem-v0'>3</span>²" },
+          { rule: "then the exponent on that bracket",
+            from: "3 × <span class='pem-v1 pem-now'><span class='pem-v0'>3</span>²</span>",
+            to:   "3 × <span class='pem-v1'>9</span>" },
+          { rule: "then the ×",
+            from: "<span class='pem-v2 pem-now'>3 × <span class='pem-v1'>9</span></span>",
+            to:   "<span class='pem-v2'>27</span>" }
         ], answer: "27. Parentheses, then the power on that bracket, then the multiply." },
       { show: "10 − (2 + 3) + 1", steps: [
-          { rule: "parentheses first", was: "2 + 3", got: "5", line: "10 − 5 + 1" },
-          { rule: "+ and − left to right — the − first", was: "10 − 5", got: "5", line: "5 + 1" },
-          { rule: "then the +", was: "5 + 1", got: "6", line: "6" }
+          { rule: "parentheses first",
+            from: "10 − <span class='pem-v0 pem-now'>(2 + 3)</span> + 1",
+            to:   "10 − <span class='pem-v0'>5</span> + 1" },
+          { rule: "+ and − left to right — the − first",
+            from: "<span class='pem-v1 pem-now'>10 − <span class='pem-v0'>5</span></span> + 1",
+            to:   "<span class='pem-v1'>5</span> + 1" },
+          { rule: "then the +",
+            from: "<span class='pem-v2 pem-now'><span class='pem-v1'>5</span> + 1</span>",
+            to:   "<span class='pem-v2'>6</span>" }
         ], answer: "6. After the bracket, just read + and − left to right." },
       { show: "6 × 5 ÷ (3 × 3)", steps: [
-          { rule: "parentheses first", was: "3 × 3", got: "9", line: "6 × 5 ÷ 9" },
-          { rule: "left to right: the × before the ÷", was: "6 × 5", got: "30", line: "30 ÷ 9" },
-          { rule: "then the ÷", was: "30 ÷ 9", got: "≈ 3.3", line: "≈ 3.3" }
+          { rule: "parentheses first",
+            from: "6 × 5 ÷ <span class='pem-v0 pem-now'>(3 × 3)</span>",
+            to:   "6 × 5 ÷ <span class='pem-v0'>9</span>" },
+          { rule: "left to right: the × before the ÷",
+            from: "<span class='pem-v1 pem-now'>6 × 5</span> ÷ <span class='pem-v0'>9</span>",
+            to:   "<span class='pem-v1'>30</span> ÷ <span class='pem-v0'>9</span>" },
+          { rule: "then the ÷ (30 ÷ 9 doesn’t come out even, so round it)",
+            approx: true,
+            from: "<span class='pem-v2 pem-now'><span class='pem-v1'>30</span> ÷ <span class='pem-v0'>9</span></span>",
+            to:   "<span class='pem-v2'>3.3</span>" }
         ], answer: "About 3.3 — the same shape as G · m₁ · m₂ ÷ r²: build the top, square the bottom, then divide." }
     ];
-    var cur = 0, shown = 0;
+    var cur = 0, shown = 0, walkTimer = null, walkPlaying = false;
+    function stopWalkAuto() {
+      walkPlaying = false;
+      if (walkTimer) { clearTimeout(walkTimer); walkTimer = null; }
+    }
     function renderWalk() {
       var strip = E("div", { "class": "smx-picker" });
+      var hint = E("div", { "class": "smx-f-note", style: "margin:8px 0 2px", text:
+        "Step through it — or press Play. Each new number keeps its own colour so you can follow it into the next line; the tinted box is the part being done this step." });
       var stage = E("div", { "class": "smx-steps" });
       var nav = E("div", { "class": "smx-nav" });
-      body.appendChild(strip); body.appendChild(stage); body.appendChild(nav);
+      body.appendChild(strip); body.appendChild(hint); body.appendChild(stage); body.appendChild(nav);
       var wBtns = [];
       EXPR.forEach(function (ex, i) {
         var b = E("button", { type: "button", "class": "smx-sc" + (i === cur ? " on" : ""), text: ex.show });
         b.addEventListener("click", function () {
+          stopWalkAuto();
           cur = i; shown = 0;
           wBtns.forEach(function (x) { x.classList.remove("on"); });
           b.classList.add("on");
@@ -1844,34 +2056,56 @@
         wBtns.push(b);
         strip.appendChild(b);
       });
+
+      function autoTick() {
+        if (!document.body.contains(stage)) { stopWalkAuto(); return; }
+        var ex = EXPR[cur];
+        if (shown >= ex.steps.length) { stopWalkAuto(); paint(); return; }
+        shown++;
+        paint();
+        if (shown < ex.steps.length) walkTimer = setTimeout(autoTick, 1500);
+        else { walkPlaying = false; walkTimer = null; }
+      }
+
       function paint() {
         clr(stage); clr(nav);
         var ex = EXPR[cur];
         stage.appendChild(E("div", { "class": "smx-calc" }, [E("span", { "class": "smx-expr", text: ex.show })]));
+        var sawApprox = false;
         for (var i = 0; i < shown && i < ex.steps.length; i++) {
           var s = ex.steps[i];
-          stage.appendChild(E("div", { "class": "smx-step done" }, [
+          var fresh = (i === shown - 1);
+          stage.appendChild(E("div", { "class": "smx-step done" + (fresh ? " pem-new" : "") }, [
             E("div", { "class": "smx-n", text: "Rule: " + s.rule }),
-            E("div", { "class": "smx-calc" }, [
-              E("span", { "class": "smx-expr", text: s.was }),
-              E("span", { "class": "smx-eq", text: "=" }),
-              E("span", { "class": "smx-res", text: s.got })
-            ]),
-            E("div", { "class": "smx-f-note", text: "→  " + s.line })
+            E("div", { "class": "smx-calc pem-walk" }, [
+              E("span", { "class": "pem-line", html: s.from }),
+              E("span", { "class": "smx-eq" + (fresh ? " pem-reveal" : ""), text: s.approx ? "≈" : "→" }),
+              E("span", { "class": "pem-line" + (fresh ? " pem-reveal" : ""), html: s.to })
+            ])
           ]));
+          if (s.approx) sawApprox = true;
         }
+        if (sawApprox) stage.appendChild(smApproxNote());
         if (shown < ex.steps.length) {
           var nb = E("button", { type: "button", "class": "smx-next",
             text: shown === 0 ? "First step ▶" : "Next step ▶" });
-          nb.addEventListener("click", function () { shown++; paint(); });
+          nb.addEventListener("click", function () { stopWalkAuto(); shown++; paint(); });
           nav.appendChild(nb);
+          var pb = E("button", { type: "button", "class": "smx-show",
+            text: walkPlaying ? "❚❚ Pause" : (shown === 0 ? "▶ Play" : "▶ Play rest") });
+          pb.addEventListener("click", function () {
+            if (walkPlaying) { stopWalkAuto(); paint(); return; }
+            walkPlaying = true;
+            autoTick();
+          });
+          nav.appendChild(pb);
         } else {
-          nav.appendChild(E("div", { "class": "smx-answer" }, [
+          nav.appendChild(E("div", { "class": "smx-answer pem-new" }, [
             E("span", { "class": "smx-tick", text: "✓" }),
             E("span", { text: ex.answer })
           ]));
           var rb = E("button", { type: "button", "class": "smx-restart", text: "↺ Start over" });
-          rb.addEventListener("click", function () { shown = 0; paint(); });
+          rb.addEventListener("click", function () { stopWalkAuto(); shown = 0; paint(); });
           nav.appendChild(rb);
         }
       }
@@ -1954,6 +2188,7 @@
     }
 
     function render() {
+      stopWalkAuto();
       clr(body);
       if (mode === "why") renderWhy();
       else if (mode === "ranks") renderRanks();
@@ -1987,15 +2222,16 @@
     build: function (sc) {
       var sum = sc.near + sc.far, a = sum / 2;
       return {
+        approxAnswer: smRound(a),
         steps: [
           { say: "Add the closest and farthest distances together.",
-            expr: smFmt(sc.near) + " + " + smFmt(sc.far), result: smFmt(sum),
+            expr: smFmt(sc.near) + " + " + smFmt(sc.far), result: smFmt(sum), approx: smRound(sum),
             try: { value: sum, tol: Math.max(0.01, sum * 0.02), hint: "just add the two numbers." } },
           { say: "Halve it — divide by 2 to land in the middle.",
-            expr: smFmt(sum) + " ÷ 2", result: smFmt(a) + " AU",
+            expr: smFmt(sum) + " ÷ 2", result: smFmt(a) + " AU", approx: smRound(a),
             try: { value: a, tol: Math.max(0.01, a * 0.02), hint: "half of " + smFmt(sum) + "." } }
         ],
-        answer: "This orbit’s size is a ≈ " + smFmt(a) + " AU" +
+        answer: "This orbit’s size is " + (smRound(a) ? "about " : "") + smFmt(a) + " AU" +
           (sc.near === 0.6 && sc.far === 35
             ? " — even a wildly stretched comet orbit still has one tidy “size” number to feed into P² = a³."
             : ".")
@@ -2027,9 +2263,10 @@
       if (sc.find === "F") {
         var F = sc.m * sc.a;
         return {
+          approxAnswer: smRound(F),
           steps: [
             { say: "Multiply the mass by the acceleration.",
-              expr: smFmt(sc.m) + " × " + smFmt(sc.a), result: smFmt(F) + " N",
+              expr: smFmt(sc.m) + " × " + smFmt(sc.a), result: smFmt(F) + " N", approx: smRound(F),
               try: { value: F, tol: Math.max(0.01, F * 0.02),
                      hint: smFmt(sc.m) + " times " + smFmt(sc.a) + "." } }
           ],
@@ -2038,9 +2275,10 @@
       }
       var a = sc.F / sc.m;
       return {
+        approxAnswer: smRound(a),
         steps: [
           { say: "Divide the force by the mass.",
-            expr: smFmt(sc.F) + " ÷ " + smFmt(sc.m), result: smFmt(a) + " m/s²",
+            expr: smFmt(sc.F) + " ÷ " + smFmt(sc.m), result: smFmt(a) + " m/s²", approx: smRound(a),
             try: { value: a, tol: Math.max(0.001, a * 0.03),
                    hint: "how many times does " + smFmt(sc.m) + " fit into " + smFmt(sc.F) + "?" } }
         ],

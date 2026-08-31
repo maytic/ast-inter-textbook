@@ -1556,6 +1556,11 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 .smx-expr { color: var(--text-dim); }
 .smx-eq { color: var(--text-faint); }
 .smx-res { font-weight: 700; color: var(--accent); }
+/* colour-tracked numbers carried between step-by-step lines */
+.smx-calc .mv0 { color: var(--accent-2); font-weight: 800; }
+.smx-calc .mv1 { color: var(--warn); font-weight: 800; }
+.smx-calc .mv2 { color: var(--good); font-weight: 800; }
+.smx-calc .mv3 { color: var(--accent); font-weight: 800; }
 
 .smx-try { margin-top: 10px; }
 .smx-try-q {
@@ -1613,6 +1618,17 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 }
 .smx-tick { color: var(--good); font-weight: 800; }
 
+/* why a result shows ≈ instead of = */
+.smx-approx {
+  margin-top: 9px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  padding: 3px 0 3px 10px;
+}
+.smx-approx b { color: var(--text); }
+
 @media (max-width: 560px) {
   .smx-input { flex: 1 1 90px; width: auto; }
   .smx-check, .smx-show { flex: 0 0 auto; }
@@ -1631,6 +1647,34 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
 }
 
 /* PEMDAS / order-of-operations tool */
+/* "Walk an example" — colour-tracked numbers between steps */
+.pem-walk { align-items: center; }
+.pem-line { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+.pem-line .pem-v0 { color: var(--accent-2); font-weight: 800; }
+.pem-line .pem-v1 { color: var(--warn); font-weight: 800; }
+.pem-line .pem-v2 { color: var(--good); font-weight: 800; }
+.pem-line .pem-now {
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 5px;
+  padding: 1px 5px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+/* step-by-step reveal animation */
+@keyframes pemStepIn {
+  from { opacity: 0; transform: translateY(-7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pemFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.smx-step.pem-new,
+.smx-answer.pem-new { animation: pemStepIn .3s ease-out both; }
+.pem-walk .pem-reveal { animation: pemFadeIn .5s ease-out .2s both; }
+@media (prefers-reduced-motion: reduce) {
+  .smx-step.pem-new,
+  .smx-answer.pem-new,
+  .pem-walk .pem-reveal { animation: none; }
+}
+
 .pem-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; }
 .pem-col {
   border: 1px solid var(--border);
