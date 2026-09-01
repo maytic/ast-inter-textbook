@@ -50,6 +50,7 @@
     mul:      ["t/mul", "Multiplication", "See why an exponent is just repeated multiplying"],
     exponents: ["t/exponents", "Exponents & Roots", "Squares, cubes, powers of ten — and working backwards"],
     pemdas:   ["t/pemdas", "Order of Operations", "PEMDAS — which part of a formula to do first"],
+    gravratio: ["t/gravratio", "Gravity by Ratio", "Compare two gravity setups — no big equation, no G"],
     mathlab:  ["t/mathlab", "The Chapter 3 Formulas", "Kepler, density, gravity, weighing a star — one step at a time"],
     kepler1:  ["t/kepler1", "Kepler’s 1st Law", "Orbits are ellipses, with the Sun at one focus"],
     kepler2:  ["t/kepler2", "Kepler’s 2nd Law", "Equal areas — fast near the Sun, slow far away"],
@@ -58,7 +59,8 @@
     newton2:  ["t/newton2", "Newton’s 2nd Law", "Force makes things speed up (a = F ÷ m)"],
     newton3:  ["t/newton3", "Newton’s 3rd Law", "Every push has an equal push back"],
     gravitation: ["t/gravitation", "Universal Gravitation", "Every mass pulls every mass — F = G·m₁m₂ ÷ R²"],
-    physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"]
+    physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"],
+    sizesort: ["t/sizesort", "Sort by Size", "Order cosmic sizes from Chapter 1 — smallest to largest"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -68,10 +70,21 @@
   /* General arithmetic helpers. These are chapter-independent — the reader
      reaches them from the dashboard "Math warm-ups" hub (#/math), not from
      any one chapter's tool list — so their routes skip the hasTool() gate. */
-  var MATH_TOOLS = ["mul", "exponents", "pemdas", "sci", "round"];
+  var MATH_TOOLS = ["mul", "exponents", "pemdas", "sci", "round", "gravratio"];
   function isMathRoute(hash) {
     for (var i = 0; i < MATH_TOOLS.length; i++) {
       if (TOOL_INFO[MATH_TOOLS[i]][0] === hash) return true;
+    }
+    return false;
+  }
+
+  /* Hands-on activities — no arithmetic, just doing something. Also
+     chapter-independent; reached from the dashboard "Activities" hub
+     (#/activities), so their routes skip the hasTool() gate too. */
+  var ACTIVITY_TOOLS = ["sizesort"];
+  function isActivityRoute(hash) {
+    for (var i = 0; i < ACTIVITY_TOOLS.length; i++) {
+      if (TOOL_INFO[ACTIVITY_TOOLS[i]][0] === hash) return true;
     }
     return false;
   }
@@ -360,21 +373,28 @@
     ]);
   }
 
-  // the math warm-ups hub and its four tools live outside any chapter —
-  // while the reader is in there, the sidebar becomes a warm-ups menu
+  // the math warm-ups hub and the activities hub live outside any chapter —
+  // while the reader is in one, the sidebar becomes that hub's menu
   function isMathContext() {
     var hash = currentHash();
     return hash === "math" || isMathRoute(hash);
+  }
+  function isActivityContext() {
+    var hash = currentHash();
+    return hash === "activities" || isActivityRoute(hash);
   }
 
   function rebuildNav() {
     if (!sidebarEl) return;
     var mathMode = isMathContext();
+    var actMode = isActivityContext();
+    var hubMode = mathMode || actMode;
 
     var brand = qs("#brandBox", sidebarEl);
     clear(brand);
-    brand.appendChild(h("div", { class: "ch", text: mathMode ? "Study guide" : "Chapter " + D.meta.chapter }));
-    brand.appendChild(h("div", { class: "title", text: mathMode ? "Math warm-ups" : D.meta.chapterTitle }));
+    brand.appendChild(h("div", { class: "ch", text: hubMode ? "Study guide" : "Chapter " + D.meta.chapter }));
+    brand.appendChild(h("div", { class: "title", text:
+      mathMode ? "Math warm-ups" : actMode ? "Hands-on activities" : D.meta.chapterTitle }));
     brand.appendChild(h("div", { class: "book", text: D.meta.book }));
 
     var read = qs("#navRead", sidebarEl);
@@ -382,14 +402,16 @@
     read.appendChild(navLink("overview", "", "Overview"));
     D.sections.forEach(function (s) { read.appendChild(navLink("s/" + s.id, s.id, s.title)); });
 
-    // hide the chapter-only parts of the sidebar in math mode; the standalone
-    // "Math warm-ups" link is the reverse — only shown while inside a chapter
+    // hide the chapter-only parts of the sidebar in a hub; the standalone
+    // hub links are the reverse — only shown while inside a chapter
     ["navReadLabel", "navRead", "sidebarProgress", "navReviewLabel", "navReview"].forEach(function (id) {
       var el = qs("#" + id, sidebarEl);
-      if (el) el.style.display = mathMode ? "none" : "";
+      if (el) el.style.display = hubMode ? "none" : "";
     });
     var mathLink = qs("#navMathLink", sidebarEl);
-    if (mathLink) mathLink.style.display = mathMode ? "none" : "";
+    if (mathLink) mathLink.style.display = hubMode ? "none" : "";
+    var actLink = qs("#navActivitiesLink", sidebarEl);
+    if (actLink) actLink.style.display = hubMode ? "none" : "";
 
     var toolsLabel = qs("#navToolsLabel", sidebarEl);
     var tools = qs("#navTools", sidebarEl);
@@ -410,6 +432,17 @@
         h("span", { text: "The Chapter 3 Formulas" }),
         h("span", { class: "check", text: "✓" })
       ]));
+      refreshSidebar();
+      return;
+    }
+
+    if (actMode) {
+      toolsLabel.style.display = "";
+      toolsLabel.textContent = "Hands-on activities";
+      tools.appendChild(navLink("activities", "", "All activities"));
+      ACTIVITY_TOOLS.forEach(function (key) {
+        tools.appendChild(navLink(TOOL_INFO[key][0], "", TOOL_INFO[key][1]));
+      });
       refreshSidebar();
       return;
     }
@@ -456,6 +489,7 @@
     sidebar.appendChild(h("div", { class: "nav-group-label", id: "navToolsLabel", text: "Study tools" }));
     sidebar.appendChild(h("div", { id: "navTools" }));
     sidebar.appendChild(h("div", { id: "navMathLink" }, navLink("math", "", "Math warm-ups")));
+    sidebar.appendChild(h("div", { id: "navActivitiesLink" }, navLink("activities", "", "Hands-on activities")));
 
     sidebar.appendChild(h("div", { class: "nav-group-label", id: "navReviewLabel", text: "Review" }));
     sidebar.appendChild(h("div", { id: "navReview" }, [
@@ -576,8 +610,13 @@
       var info = TOOL_INFO[key];
       if (info[1].toLowerCase().indexOf(q) > -1) out.push({ kind: "Math warm-up", label: info[1], hash: info[0] });
     });
+    ACTIVITY_TOOLS.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      if ((info[1] + " " + info[2]).toLowerCase().indexOf(q) > -1) out.push({ kind: "Activity", label: info[1], hash: info[0] });
+    });
     if ("dashboard chapters".indexOf(q) > -1) out.push({ kind: "Go", label: "All chapters", hash: "dashboard" });
     if ("math warm-ups arithmetic".indexOf(q) > -1) out.push({ kind: "Go", label: "Math warm-ups", hash: "math" });
+    if ("activities hands-on sorting".indexOf(q) > -1) out.push({ kind: "Go", label: "Hands-on activities", hash: "activities" });
 
     if (!out.length) {
       box.appendChild(h("div", { class: "sr-empty", text: "No matches for “" + qraw + "”" }));
@@ -608,6 +647,12 @@
   function mathTitle(t) {
     crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Math warm-ups &middot; " + t;
     document.title = "Astronomy 2e · Math warm-ups — " + t;
+  }
+
+  // crumb/title for the chapter-independent hands-on activities
+  function activityTitle(t) {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Activities &middot; " + t;
+    document.title = "Astronomy 2e · Activities — " + t;
   }
 
   /* ---- DASHBOARD (all chapters) ------------------------------------- */
@@ -654,7 +699,7 @@
     v.appendChild(h("h2", { text: "Before you start — brush up on the math", style: "margin-top:30px" }));
     v.appendChild(h("p", { class: "lede", style: "margin-top:4px", text:
       "Short, tappable warm-ups for the arithmetic every chapter leans on — multiplication, exponents, " +
-      "scientific notation, rounding. Not tied to any one chapter." }));
+      "scientific notation, rounding, and comparing two gravity setups by ratio. Not tied to any one chapter." }));
     var mgrid = h("div", { class: "tiles" });
     MATH_TOOLS.forEach(function (key) {
       var info = TOOL_INFO[key];
@@ -668,6 +713,23 @@
       h("div", { class: "t-meta", text: "The full hub, in learning order" })
     ]));
     v.appendChild(mgrid);
+
+    v.appendChild(h("h2", { text: "Hands-on activities", style: "margin-top:30px" }));
+    v.appendChild(h("p", { class: "lede", style: "margin-top:4px", text:
+      "No arithmetic — just move things around and see if you got it right. Also not tied to any one chapter." }));
+    var agrid = h("div", { class: "tiles" });
+    ACTIVITY_TOOLS.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      agrid.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+        h("div", { class: "t-title", text: info[1] }),
+        h("div", { class: "t-meta", text: info[2] })
+      ]));
+    });
+    agrid.appendChild(h("button", { class: "tile", onclick: function () { go("activities"); } }, [
+      h("div", { class: "t-title", text: "All activities →" }),
+      h("div", { class: "t-meta", text: "The full list" })
+    ]));
+    v.appendChild(agrid);
 
     mount(v);
   }
@@ -690,7 +752,8 @@
       { key: "exponents", why: "“Squared”, “cubed”, powers of ten, roots — and a first look at how 10ⁿ feeds scientific notation." },
       { key: "pemdas", why: "Which part of a formula to do first: parentheses, exponents, then × ÷, then + −." },
       { key: "sci", why: "The full move: the digit in front, the hop count, and the + / − sign. Reads the book’s 1.5 × 10⁸ km." },
-      { key: "round", why: "Trim a messy number down to something you can picture and check against." }
+      { key: "round", why: "Trim a messy number down to something you can picture and check against." },
+      { key: "gravratio", why: "Put it together: compare two gravity setups by ratio — “how many times stronger?” — using only ×, ÷ and squaring." }
     ];
     var list = h("div", { class: "tiles" });
     steps.forEach(function (st, i) {
@@ -706,7 +769,7 @@
     v.appendChild(h("div", { class: "card" }, [
       h("h2", { text: "Then: the real formulas", style: "margin-top:0" }),
       h("p", { class: "prose", style: "margin:0 0 10px", html:
-        "Once the four warm-ups feel easy, <b>The Chapter 3 Formulas</b> walks through every calculation in " +
+        "Once these warm-ups feel easy, <b>The Chapter 3 Formulas</b> walks through every calculation in " +
         "Chapter 3 — Kepler’s third law, density, gravity, weighing a star — the same one-step-at-a-time way." }),
       h("button", { class: "btn primary", onclick: function () {
         if (CHAPTERS[3]) { setActiveChapter(3); rebuildNav(); }
@@ -715,6 +778,398 @@
     ]));
 
     mount(v);
+  }
+
+  /* ---- ACTIVITIES HUB (dashboard-level, chapter-independent) ---- */
+  function renderActivitiesHub() {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Activities";
+    document.title = "Astronomy 2e · Activities";
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("dashboard"); },
+      text: "← All chapters" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Interactive study guide" }));
+    v.appendChild(h("h1", { text: "Hands-on activities" }));
+    v.appendChild(h("p", { class: "lede", html:
+      "No formulas here — just drag, sort, and match, then check your answer. A good way to get a feel " +
+      "for the sizes and distances the book throws around." }));
+
+    var list = h("div", { class: "tiles" });
+    ACTIVITY_TOOLS.forEach(function (key) {
+      var info = TOOL_INFO[key];
+      list.appendChild(h("button", { class: "tile", onclick: function () { go(info[0]); } }, [
+        h("div", { class: "t-title", text: info[1] }),
+        h("div", { class: "t-meta", text: info[2] })
+      ]));
+    });
+    v.appendChild(list);
+    mount(v);
+  }
+
+  /* ---- ACTIVITY: Sort by Size --------------------------------------
+     A random 5 (or the whole pool) of cosmic sizes from Chapter 1's tour
+     of the universe (§1.6-1.8). Arrange them smallest -> largest by
+     dragging (Pointer Events: mouse + touch + pen), by the ▲▼ buttons, or
+     by picking each slot from a drop-down. "Check" locks the puzzle and
+     shows the correct order with the reason each step is bigger, then
+     "New 5" starts over. */
+  function renderSizeSort() {
+    activityTitle("Sort by Size");
+
+    var PICK_N = 5;
+    // Pool in ascending size. m = characteristic size in metres, for ordering only.
+    // Every size and fact below is stated in OpenStax Astronomy 2e, Chapter 1.
+    var POOL = [
+      { name: "The Moon, across", m: 3.476e6, size: "about 3,476 km",
+        note: "Roughly a quarter of Earth’s diameter.", src: "§1.6" },
+      { name: "Earth, across", m: 1.30e7, size: "about 13,000 km",
+        note: "A nearly spherical planet, the third from the Sun.", src: "§1.6" },
+      { name: "Earth to the Moon", m: 3.84e8, size: "about 384,000 km",
+        note: "Around 30 Earth-diameters; light makes the trip in 1.3 seconds.", src: "§1.6" },
+      { name: "The Sun, across", m: 1.5e9, size: "about 1.5 million km",
+        note: "Earth could fit inside one of its sunspots.", src: "§1.6" },
+      { name: "Earth to the Sun (1 AU)", m: 1.496e11, size: "about 150 million km",
+        note: "Light takes just over 8 minutes to cross it — sunlight is always ~8 minutes old.", src: "§1.6" },
+      { name: "The Sun’s planets, out to Neptune", m: 9.0e12, size: "tens of Earth–Sun distances across",
+        note: "Neptune’s orbit marks the edge of the planetary system.", src: "§1.8" },
+      { name: "The Sun to Proxima Centauri", m: 4.02e16, size: "4.25 light-years (over 40 trillion km)",
+        note: "The nearest star beyond the Sun. If the Sun were a basketball, Proxima would be ~7,000 km away.", src: "§1.6" },
+      { name: "Distance to the Orion Nebula", m: 1.32e19, size: "about 1,400 light-years",
+        note: "A cloud of gas and dust where new stars are forming.", src: "§1.6" },
+      { name: "Distance to the nearest galaxy", m: 6.62e20, size: "about 70,000 light-years",
+        note: "A small galaxy found in 1993, hidden behind the Milky Way’s star clouds.", src: "§1.7" },
+      { name: "The Milky Way, across", m: 9.46e20, size: "about 100,000 light-years",
+        note: "Hundreds of billions of stars, plus gas, dust, and dark matter.", src: "§1.7" },
+      { name: "Distance to the Magellanic Clouds", m: 1.51e21, size: "about 160,000 light-years",
+        note: "Two small companion galaxies of the Milky Way, recorded by Magellan’s crew.", src: "§1.7" },
+      { name: "Distance to the Andromeda Galaxy", m: 2.0e22, size: "a little more than 2 million light-years",
+        note: "The nearest large galaxy, a spiral like ours.", src: "§1.7" },
+      { name: "The Local Group, across", m: 9.5e22, size: "several million light-years",
+        note: "More than 50 galaxies bound together, led by the Milky Way and Andromeda.", src: "§1.7" },
+      { name: "The Virgo Supercluster, across", m: 1.04e24, size: "about 110 million light-years",
+        note: "Thousands of galaxies in clusters and filaments; it contains the Local Group.", src: "§1.7" },
+      { name: "Distance to the most distant quasars", m: 9.5e25, size: "10 billion or more light-years",
+        note: "We see them as they were 10+ billion years ago, near the era of the Big Bang.", src: "§1.7" }
+    ];
+    function getPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+    function setPref(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    var setMode = getPref("astro.sizesort.set", "five");     // "five" | "all"
+    var inMode  = getPref("astro.sizesort.input", "drag");   // "drag" | "select"
+
+    var round = [];      // items for this round, in shuffled display order
+    var answer = [];     // the same items sorted smallest -> largest (the key)
+    var arr = [];        // drag mode: current arrangement (array of item objects)
+    var slots = [];      // drop-down mode: array of item | null, one per position
+    var checked = false;
+    var drag = null;
+
+    // nodes reused across paints
+    var listEl = h("ol", { class: "ss-list" });
+    var msg = h("div", { class: "ss-msg" });
+    var ctrlHost = h("div", { class: "ss-controls" });
+    var answerHost = h("div");
+
+    newRound();
+
+    /* -------- round lifecycle -------- */
+    function sameOrder(a, b) {
+      for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+      return true;
+    }
+    function newRound() {
+      var deck = shuffle(POOL);
+      round = setMode === "all" ? deck : deck.slice(0, PICK_N);
+      answer = round.slice().sort(function (a, b) { return a.m - b.m; });
+      arr = round.slice();
+      if (sameOrder(arr, answer)) arr = shuffle(arr);
+      slots = answer.map(function () { return null; });
+      checked = false;
+      render();
+    }
+    function resetInputs() {
+      arr = shuffle(round.slice());
+      if (sameOrder(arr, answer)) arr = shuffle(arr);
+      slots = answer.map(function () { return null; });
+      checked = false;
+      paint();
+    }
+
+    /* -------- helpers -------- */
+    function factorText(small, big) {
+      var r = big / small;
+      if (r >= 5e5) return "roughly a million times";
+      if (r >= 5e3) return "thousands of times";
+      if (r >= 500) return "about " + Math.round(r / 100) + "00 times";
+      if (r >= 50) return "about " + Math.round(r / 10) * 10 + " times";
+      if (r >= 8) return "about " + Math.round(r) + " times";
+      return "about " + (Math.round(r * 10) / 10) + " times";
+    }
+    function userSeq() { return inMode === "select" ? slots : arr; }
+    function canCheck() {
+      if (inMode !== "select") return true;
+      var seen = {};
+      for (var i = 0; i < slots.length; i++) {
+        if (!slots[i]) return false;
+        var id = round.indexOf(slots[i]);
+        if (seen[id]) return false;
+        seen[id] = 1;
+      }
+      return true;
+    }
+    function rightPos(it) { return answer.indexOf(it); }
+
+    /* -------- page shell: rebuilt on a new round or a mode change -------- */
+    function render() {
+      var v = h("div", { class: "view" });
+      v.appendChild(h("button", { class: "back-link", onclick: function () { go("activities"); },
+        text: "← Activities" }));
+      v.appendChild(h("div", { class: "eyebrow", text: "Hands-on activity" }));
+      v.appendChild(h("h1", { text: "Sort by size" }));
+      v.appendChild(h("p", { class: "tool-intro", html:
+        "Arrange these from <b>smallest at the top</b> to <b>largest at the bottom</b>. Every size is " +
+        "from <a href=\"#/s/1.6\">Chapter 1</a>. Press <b>Check</b> to lock it in and see the correct " +
+        "order, with the reason each step is bigger." }));
+
+      v.appendChild(h("div", { class: "card ss-modes" }, [
+        h("div", { class: "ss-mode-row" }, [
+          h("span", { class: "ss-mode-label", text: "Set" }),
+          segControl(["5 at a time", "Whole pool (" + POOL.length + ")"], setMode === "all" ? 1 : 0, function (i) {
+            setMode = i ? "all" : "five"; setPref("astro.sizesort.set", setMode); newRound();
+          })
+        ]),
+        h("div", { class: "ss-mode-row" }, [
+          h("span", { class: "ss-mode-label", text: "Answer by" }),
+          segControl(["Dragging", "Drop-downs"], inMode === "select" ? 1 : 0, function (i) {
+            inMode = i ? "select" : "drag"; setPref("astro.sizesort.input", inMode);
+            arr = shuffle(round.slice()); slots = answer.map(function () { return null; });
+            checked = false; render();
+          })
+        ])
+      ]));
+
+      v.appendChild(h("div", { class: "card" }, [
+        h("div", { class: "ss-ends", text: "↑ smallest" }),
+        listEl,
+        h("div", { class: "ss-ends ss-ends-bot", text: "↓ largest" }),
+        msg,
+        ctrlHost
+      ]));
+
+      v.appendChild(answerHost);
+
+      mount(v);
+      window.scrollTo(0, 0);
+      paint();
+    }
+
+    /* -------- redraw list + controls + answer -------- */
+    function paint() {
+      clear(listEl);
+      if (inMode === "select") paintSelect(); else paintDrag();
+      paintControls();
+      paintMsg();
+      paintAnswer();
+    }
+
+    function paintDrag() {
+      arr.forEach(function (it, pos) {
+        var li = h("li", { class: "ss-item" });
+        if (checked) li.classList.add(it === answer[pos] ? "ok" : "bad");
+
+        if (!checked) {
+          var grip = h("span", { class: "ss-grip", "aria-hidden": "true", text: "⠿" });
+          grip.addEventListener("pointerdown", function (e) { beginDrag(e, pos); });
+          li.appendChild(grip);
+        }
+        li.appendChild(h("span", { class: "ss-pos", text: String(pos + 1) }));
+        li.appendChild(h("span", { class: "ss-name", text: it.name }));
+
+        if (checked) {
+          li.appendChild(h("span", { class: "ss-flag",
+            text: it === answer[pos] ? "✓" : "→ #" + (rightPos(it) + 1) }));
+        } else {
+          li.appendChild(h("span", { class: "ss-moves" }, [
+            h("button", { class: "ss-move", type: "button", "aria-label": it.name + " — move up",
+              text: "▲", onclick: function () { nudge(pos, -1); } }),
+            h("button", { class: "ss-move", type: "button", "aria-label": it.name + " — move down",
+              text: "▼", onclick: function () { nudge(pos, 1); } })
+          ]));
+        }
+        listEl.appendChild(li);
+      });
+    }
+
+    function paintSelect() {
+      var count = {};
+      slots.forEach(function (it) {
+        if (it) { var k = round.indexOf(it); count[k] = (count[k] || 0) + 1; }
+      });
+
+      answer.forEach(function (_unused, pos) {
+        var pick = slots[pos];
+        var dup = pick && count[round.indexOf(pick)] > 1;
+        var li = h("li", { class: "ss-item" });
+        if (checked) li.classList.add(pick === answer[pos] ? "ok" : "bad");
+        else if (dup) li.classList.add("bad");
+
+        li.appendChild(h("span", { class: "ss-pos", text: String(pos + 1) }));
+
+        if (checked) {
+          li.appendChild(h("span", { class: "ss-name", text: pick ? pick.name : "—" }));
+          li.appendChild(h("span", { class: "ss-flag",
+            text: pick === answer[pos] ? "✓" : "should be “" + answer[pos].name + "”" }));
+        } else {
+          var sel = h("select", { class: "ss-select" });
+          sel.addEventListener("change", function () {
+            var val = sel.value;
+            slots[pos] = val === "" ? null : round[Number(val)];
+            paint();
+          });
+          sel.appendChild(h("option", { value: "", text:
+            pos === 0 ? "— smallest —" :
+            pos === answer.length - 1 ? "— largest —" : "— choose —" }));
+          round.forEach(function (it, ri) {
+            var o = h("option", { value: String(ri), text: it.name });
+            if (pick === it) o.selected = true;
+            sel.appendChild(o);
+          });
+          li.appendChild(sel);
+          if (dup) li.appendChild(h("span", { class: "ss-flag", text: "used twice" }));
+        }
+        listEl.appendChild(li);
+      });
+    }
+
+    function paintControls() {
+      clear(ctrlHost);
+      var newLabel = setMode === "all" ? "New shuffle" : "New 5";
+      if (checked) {
+        ctrlHost.appendChild(h("button", { class: "btn", type: "button", text: "Try this set again",
+          onclick: resetInputs }));
+        ctrlHost.appendChild(h("button", { class: "btn primary", type: "button", text: newLabel,
+          onclick: newRound }));
+        return;
+      }
+      var check = h("button", { class: "btn primary", type: "button", text: "Check",
+        onclick: function () { if (canCheck()) { checked = true; paint(); } } });
+      check.disabled = !canCheck();
+      ctrlHost.appendChild(check);
+      ctrlHost.appendChild(h("button", { class: "btn", type: "button",
+        text: inMode === "select" ? "Clear menus" : "Shuffle", onclick: resetInputs }));
+      ctrlHost.appendChild(h("button", { class: "btn", type: "button", text: newLabel, onclick: newRound }));
+    }
+
+    function paintMsg() {
+      if (!checked) {
+        msg.className = "ss-msg";
+        msg.textContent = (inMode === "select" && !canCheck())
+          ? "Put a different item in every slot, then press Check."
+          : "";
+        return;
+      }
+      var seq = userSeq(), right = 0;
+      for (var i = 0; i < seq.length; i++) if (seq[i] === answer[i]) right++;
+      msg.className = "ss-msg " + (right === answer.length ? "good" : "bad");
+      msg.textContent = right === answer.length
+        ? "Perfect — all " + answer.length + " in the right order."
+        : right + " of " + answer.length + " in the right place. The full order and the reasons are below.";
+    }
+
+    function paintAnswer() {
+      clear(answerHost);
+      if (!checked) return;
+      var seq = userSeq();
+      var card = h("div", { class: "card" }, [
+        h("h2", { text: "Correct order — smallest to largest", style: "margin-top:0" }),
+        h("p", { class: "prose", style: "margin:0 0 10px", html:
+          "Everything lines up by how big across, or how far away, it is — the sizes run from a few " +
+          "thousand kilometres up to billions of light-years. Figures from OpenStax Astronomy 2e, Chapter 1." })
+      ]);
+      var ol = h("ol", { class: "ss-answer" });
+      answer.forEach(function (it, i) {
+        var where = seq.indexOf(it);
+        var yours = where === i
+          ? h("span", { class: "ss-you ok", text: "you had this right" })
+          : h("span", { class: "ss-you", text: "you put it at #" + (where + 1) });
+        var why = i === 0
+          ? "The smallest thing here."
+          : factorText(answer[i - 1].m, it.m) + " bigger than “" + answer[i - 1].name + "” above it.";
+        ol.appendChild(h("li", {}, [
+          h("div", { class: "ss-answer-head" }, [
+            h("b", { text: it.name }),
+            h("span", { class: "ss-size", text: it.size }),
+            yours
+          ]),
+          h("div", { class: "ss-note", html: why +
+            " <span class=\"ss-src\">" + it.src + "</span><br>" + it.note })
+        ]));
+      });
+      card.appendChild(ol);
+      answerHost.appendChild(card);
+    }
+
+    /* -------- reorder inputs -------- */
+    function nudge(from, dir) {
+      var to = from + dir;
+      if (to < 0 || to >= arr.length) return;
+      arr.splice(to, 0, arr.splice(from, 1)[0]);
+      paint();
+    }
+
+    /* drag-and-drop via Pointer Events (one path for mouse, touch and pen).
+       No re-render mid-drag: the grabbed row follows the pointer and the rest
+       slide aside with a CSS transition; on release we commit and repaint. */
+    function rowStep() {
+      var k = listEl.children;
+      if (k.length > 1) return k[1].getBoundingClientRect().top - k[0].getBoundingClientRect().top;
+      return k.length ? k[0].getBoundingClientRect().height + 8 : 0;
+    }
+    function beginDrag(e, from) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      var mids = [];
+      for (var i = 0; i < listEl.children.length; i++) {
+        var r = listEl.children[i].getBoundingClientRect();
+        mids.push({ el: listEl.children[i], mid: r.top + r.height / 2 });
+      }
+      drag = { id: e.pointerId, from: from, target: from, startY: e.clientY,
+               mids: mids, step: rowStep(), li: listEl.children[from] };
+      drag.li.classList.add("dragging");
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      document.addEventListener("pointermove", moveDrag);
+      document.addEventListener("pointerup", endDrag);
+      document.addEventListener("pointercancel", endDrag);
+    }
+    function moveDrag(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      e.preventDefault();
+      var dy = e.clientY - drag.startY;
+      drag.li.style.transform = "translateY(" + dy + "px)";
+      var mid = drag.mids[drag.from].mid + dy, t = 0;
+      for (var i = 0; i < drag.mids.length; i++) {
+        if (i !== drag.from && mid > drag.mids[i].mid) t++;
+      }
+      if (t !== drag.target) {
+        drag.target = t;
+        for (var j = 0; j < drag.mids.length; j++) {
+          if (j === drag.from) continue;
+          var s = j < drag.from ? j : j - 1;
+          drag.mids[j].el.style.transform = s >= drag.target ? "translateY(" + drag.step + "px)" : "";
+        }
+      }
+    }
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      document.removeEventListener("pointermove", moveDrag);
+      document.removeEventListener("pointerup", endDrag);
+      document.removeEventListener("pointercancel", endDrag);
+      var from = drag.from, to = drag.target;
+      for (var i = 0; i < drag.mids.length; i++) drag.mids[i].el.style.transform = "";
+      drag.li.classList.remove("dragging");
+      drag = null;
+      if (to !== from) arr.splice(to, 0, arr.splice(from, 1)[0]);
+      paint();
+    }
   }
 
   // prev / next bar shared by the four math warm-up tool pages
@@ -2344,6 +2799,250 @@
     window.scrollTo(0, 0);
   }
 
+  /* ---- TOOL: Gravity by Ratio (chapter-independent warm-up) ---
+     Serves the "Practice: Gravity" assignment — comparing the force of gravity
+     in two setups without ever touching G, using Newton's two plain-English
+     rules (product of masses; inverse square of distance). */
+  function renderGravRatio() {
+    mathTitle("Gravity by Ratio");
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("math"); },
+      text: "← Math warm-ups" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Math warm-up · step 6" }));
+    v.appendChild(h("h1", { text: "Gravity by ratio — comparing two setups" }));
+    v.appendChild(h("p", { class: "tool-intro", html:
+      "Newton’s <a href=\"#/t/gravitation\">law of gravitation</a> carries a scary-looking constant <b>G</b>. " +
+      "But when a question asks <em>how many times</em> stronger gravity is in one case than in another, " +
+      "<b>G cancels out</b> — you only need Newton’s two plain-English rules, and nothing harder than " +
+      "multiplying, dividing, and squaring." }));
+
+    /* --- the idea --- */
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Newton’s formula, said in words", style: "margin-top:0" }),
+      h("div", { class: "prose", html:
+        "<p>There is an attractive pull between any two masses. Its strength is:</p>" +
+        "<ul>" +
+        "<li><b>Directly proportional to the product of the masses.</b> “Product” just means " +
+        "<b>multiply them</b>: m₁ × m₂. Heavier objects → stronger pull.</li>" +
+        "<li><b>Inversely proportional to the square of the distance.</b> <b>Square</b> the distance " +
+        "(r × r), then <b>divide</b> by it. Farther apart → weaker pull, and it drops off fast.</li>" +
+        "</ul>" +
+        "<p style='margin:0 0 6px'>Glue those together and give each setup a <b>strength score</b>:</p>" +
+        "<p class='gr-score'>score = (m₁ × m₂) ÷ (r × r)</p>" +
+        "<p style='margin:8px 0 0'>That score is <em>not</em> the real force in newtons — it is missing the " +
+        "constant G. But when you <b>divide one setup’s score by the other’s</b>, the G on top and the G on " +
+        "the bottom cancel, so <b>the ratio of the scores is exactly the ratio of the real forces</b>. That " +
+        "is why the assignment lets you skip the full equation.</p>" +
+        "<p style='margin:8px 0 0'>Units cancel the same way, so it does not matter that the distances are " +
+        "in kilometres — just keep both cases in the same units.</p>" })
+    ]));
+
+    /* --- interactive comparison --- */
+    function field(labelText, val) {
+      var input = h("input", { type: "number", step: "any", min: "0", value: String(val) });
+      var wrap = h("div", { class: "field" }, [h("label", { text: labelText }), input]);
+      return { wrap: wrap, input: input };
+    }
+    var A = { r: field("Distance apart (r)", 7), m1: field("Mass 1 (m₁)", 10), m2: field("Mass 2 (m₂)", 4) };
+    var B = { r: field("Distance apart (r)", 7), m1: field("Mass 1 (m₁)", 10), m2: field("Mass 2 (m₂)", 8) };
+
+    function grn(x) {
+      if (!isFinite(x)) return "—";
+      var r = Math.round(x * 10000) / 10000;
+      if (Math.abs(r) >= 1000) return String(Math.round(r));
+      return String(r);
+    }
+    function approxFrac(x) {
+      var best = null, err = 1;
+      for (var d = 2; d <= 36; d++) {
+        var n = Math.round(x * d);
+        if (n <= 0) continue;
+        var e = Math.abs(x - n / d);
+        if (e < err) { err = e; best = [n, d]; }
+      }
+      return (best && err < 0.004) ? best[0] + "/" + best[1] : null;
+    }
+
+    var out = h("div", { class: "result" });
+
+    function recompute() {
+      function read(c) {
+        return { r: parseFloat(c.r.input.value), m1: parseFloat(c.m1.input.value), m2: parseFloat(c.m2.input.value) };
+      }
+      var a = read(A), b = read(B);
+      var bad = [a, b].some(function (c) {
+        return !isFinite(c.r) || !isFinite(c.m1) || !isFinite(c.m2) || c.r <= 0 || c.m1 < 0 || c.m2 < 0;
+      });
+      if (bad) {
+        out.innerHTML = "<div class='sub'>Type a positive distance and two masses (0 or more) into both cases.</div>";
+        return;
+      }
+      var pA = a.m1 * a.m2, pB = b.m1 * b.m2;
+      var dA = a.r * a.r, dB = b.r * b.r;
+      var sA = pA / dA, sB = pB / dB;
+      var ratio = sB / sA;
+      var frac = (isFinite(ratio) && ratio > 0 && ratio < 1) ? approxFrac(ratio) : null;
+      var sentence;
+      if (!isFinite(ratio)) sentence = "Case A works out to zero pull, so there is nothing to compare against.";
+      else if (Math.abs(ratio - 1) < 0.005) sentence = "Gravity is the same strength in both cases.";
+      else if (ratio > 1) sentence = "Gravity in Case B is <b>" + ratio.toFixed(2) + " times</b> as strong as in Case A.";
+      else sentence = "Gravity in Case B is <b>" + ratio.toFixed(2) + " times</b> that of Case A" +
+        (frac ? " — about <b>" + frac + "</b> as strong" : " — i.e. weaker") + ".";
+
+      out.innerHTML =
+        "<div class='gr-wrap'><table class='gr-table'><tbody>" +
+        "<tr><th></th><th>product of masses<span>m₁ × m₂</span></th>" +
+        "<th>distance squared<span>r × r</span></th>" +
+        "<th>strength score<span>product ÷ (r × r)</span></th></tr>" +
+        "<tr><th>Case A</th><td>" + grn(a.m1) + " × " + grn(a.m2) + " = <b>" + grn(pA) + "</b></td>" +
+        "<td>" + grn(a.r) + " × " + grn(a.r) + " = <b>" + grn(dA) + "</b></td>" +
+        "<td><b>" + grn(sA) + "</b></td></tr>" +
+        "<tr><th>Case B</th><td>" + grn(b.m1) + " × " + grn(b.m2) + " = <b>" + grn(pB) + "</b></td>" +
+        "<td>" + grn(b.r) + " × " + grn(b.r) + " = <b>" + grn(dB) + "</b></td>" +
+        "<td><b>" + grn(sB) + "</b></td></tr>" +
+        "</tbody></table></div>" +
+        "<div class='big'>Case B ÷ Case A = " + grn(sB) + " ÷ " + grn(sA) + " = " +
+        (isFinite(ratio) ? ratio.toFixed(2) : "—") + "</div>" +
+        "<div class='sub'>" + sentence + "</div>";
+    }
+
+    [A, B].forEach(function (c) {
+      ["r", "m1", "m2"].forEach(function (k) {
+        c[k].input.addEventListener("input", recompute);
+      });
+    });
+
+    var presets = [
+      { label: "Make one rock 3× heavier", a: [2, 4, 5], b: [2, 4, 15] },
+      { label: "Move them twice as far apart", a: [10, 4, 6], b: [20, 4, 6] },
+      { label: "Move them 3× as far apart", a: [2, 6, 4], b: [6, 6, 4] },
+      { label: "Bring them half as far apart", a: [8, 6, 4], b: [4, 6, 4] },
+      { label: "Double one mass", a: [5, 6, 4], b: [5, 12, 4] },
+      { label: "Heavier AND farther", a: [2, 4, 5], b: [4, 8, 5] }
+    ];
+    var chips = h("div", { class: "chip-row" });
+    presets.forEach(function (p) {
+      chips.appendChild(h("button", { class: "chip", text: p.label, onclick: function () {
+        A.r.input.value = p.a[0]; A.m1.input.value = p.a[1]; A.m2.input.value = p.a[2];
+        B.r.input.value = p.b[0]; B.m1.input.value = p.b[1]; B.m2.input.value = p.b[2];
+        recompute();
+      } }));
+    });
+
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Compare two setups", style: "margin-top:0" }),
+      h("p", { class: "prose", style: "margin:0 0 12px", html:
+        "Fill in each case, or tap a preset. The table shows every step; the bottom line is the answer, " +
+        "rounded to the nearest hundredth the way the assignment asks." }),
+      h("div", { class: "row" }, [
+        h("div", { class: "gr-case" }, [h("h3", { text: "Case A", style: "margin:0 0 8px" }),
+          A.r.wrap, A.m1.wrap, A.m2.wrap]),
+        h("div", { class: "gr-case" }, [h("h3", { text: "Case B", style: "margin:0 0 8px" }),
+          B.r.wrap, B.m1.wrap, B.m2.wrap])
+      ]),
+      chips,
+      out
+    ]));
+
+    /* --- head-math shortcuts --- */
+    v.appendChild(h("div", { class: "card" }, [
+      h("h2", { text: "Shortcuts you can do in your head", style: "margin-top:0" }),
+      h("div", { class: "prose", style: "margin:0" }, [
+        h("p", { style: "margin:0 0 8px", html:
+          "<b>Only the masses change</b> (distance the same in both cases): the distance part is identical " +
+          "and cancels, so the answer is just <code>(m₁ × m₂ for B) ÷ (m₁ × m₂ for A)</code>." }),
+        h("p", { style: "margin:0 0 8px", html:
+          "<b>Only the distance changes</b> (masses the same): the answer is <code>(r for A ÷ r for B)²</code> " +
+          "— note it is <b>A over B</b> (that is the “inverse”). Double the distance → (1 ÷ 2)² = <b>0.25</b>. " +
+          "Triple it → (1 ÷ 3)² ≈ <b>0.11</b>. Halve it → (2 ÷ 1)² = <b>4</b>." }),
+        h("p", { style: "margin:0", html:
+          "<b>Both change:</b> work out the mass ratio and the distance ratio on their own, then " +
+          "<b>multiply</b> the two together." })
+      ])
+    ]));
+
+    /* --- worked examples --- */
+    var ex = h("div", { class: "card" }, [
+      h("h2", { text: "Three worked examples, step by step", style: "margin-top:0" }),
+      h("p", { class: "prose", style: "margin:0 0 6px", html:
+        "Picture two space rocks with gravity pulling them together. In each example we change one thing " +
+        "and ask: <em>how many times stronger (or weaker) is the pull now?</em>" })
+    ]);
+    ex.appendChild(h("details", { class: "qa" }, [
+      h("summary", { text: "1 · Only the mass changes → answer 3.00" }),
+      h("div", { class: "answer", html:
+        "<p>The rocks stay <b>2 m apart the whole time</b>. At first their masses are <b>4 kg and 5 kg</b>. " +
+        "Then you swap the second rock for one that is <b>15 kg</b> (3× heavier). How much stronger is the pull?</p>" +
+        "<p>Distance never changed, so it can’t be the reason — ignore it. Use <em>“the pull is proportional " +
+        "to the <b>product</b> of the masses”</em>, and “product” just means multiply:</p>" +
+        "<p>Before: 4 × 5 = <b>20</b><br>After: 4 × 15 = <b>60</b></p>" +
+        "<p>Now divide the new number by the old one: 60 ÷ 20 = <b>3</b></p>" +
+        "<p style='margin:0'>The pull is <b>3.00 times stronger</b>. Makes sense — you made one rock 3× " +
+        "heavier, and mass is a straight multiplier.</p>" })
+    ]));
+    ex.appendChild(h("details", { class: "qa" }, [
+      h("summary", { text: "2 · Only the distance changes → answer 0.25" }),
+      h("div", { class: "answer", html:
+        "<p>Same two rocks, <b>masses never change</b>. At first they are <b>10 m apart</b>. Then they drift " +
+        "out to <b>20 m apart</b> (twice as far). How much does the pull change?</p>" +
+        "<p>Masses never changed, so ignore them. Use <em>“the pull is inversely proportional to the " +
+        "<b>square</b> of the distance”</em> — square the distance, and it sits on the bottom of a fraction " +
+        "(that’s what “inversely” means).</p>" +
+        "<p>Before: 1 ÷ (10 × 10) = 1 ÷ 100<br>After: 1 ÷ (20 × 20) = 1 ÷ 400</p>" +
+        "<p>Divide the new by the old. Dividing by a fraction = flip it and multiply:<br>" +
+        "(1 ÷ 400) ÷ (1 ÷ 100) = (1 ÷ 400) × 100 = 100 ÷ 400 = <b>0.25</b></p>" +
+        "<p style='margin:0'>The pull is <b>0.25 times</b> as strong — a quarter. Fast way: take the two " +
+        "distances as a fraction, <b>old over new</b>, and square it: (10 ÷ 20)² = (½)² = ¼ = <b>0.25</b>. " +
+        "Twice as far already halves things once, and squaring halves them again.</p>" })
+    ]));
+    ex.appendChild(h("details", { class: "qa" }, [
+      h("summary", { text: "3 · Mass and distance both change → answer 0.50" }),
+      h("div", { class: "answer", html:
+        "<p>The rocks start <b>2 m apart</b> with masses <b>4 kg and 5 kg</b>. Then <b>one rock doubles to " +
+        "8 kg</b> <em>and</em> they move out to <b>4 m apart</b>. Now what?</p>" +
+        "<p>Handle the two changes one at a time, then multiply the results.</p>" +
+        "<p><b>Mass part:</b> 8 × 5 = 40, and it was 4 × 5 = 20. So 40 ÷ 20 = <b>2</b> (twice as strong).</p>" +
+        "<p><b>Distance part:</b> old over new, squared: (2 ÷ 4)² = (½)² = <b>0.25</b> (a quarter as strong).</p>" +
+        "<p>Combine: 2 × 0.25 = <b>0.5</b></p>" +
+        "<p style='margin:0'>The pull ends up <b>0.50 times</b> what it was — half as strong. The heavier " +
+        "mass pushed it up, but moving farther away pulled it down more.</p>" })
+    ]));
+    v.appendChild(ex);
+
+    /* --- extra practice --- */
+    var pr = h("div", { class: "card" }, [
+      h("h2", { text: "Now you try", style: "margin-top:0" }),
+      h("p", { class: "prose", style: "margin:0 0 10px", html:
+        "Work each one out and round to the nearest hundredth, then tap to check. Stuck? Type the same " +
+        "numbers into <b>Compare two setups</b> above and watch the steps." })
+    ]);
+    var practice = [
+      { q: "The rocks stay 3 m apart. Their masses go from 2 kg and 6 kg to 2 kg and 18 kg.",
+        a: "Distance didn’t change, so use the masses. Before: 2 × 6 = 12. After: 2 × 18 = 36. " +
+           "36 ÷ 12 = <b>3.00</b> — three times stronger." },
+      { q: "The masses stay the same. The rocks go from 5 m apart to 15 m apart.",
+        a: "Masses didn’t change, so use the distance: old over new, squared. " +
+           "(5 ÷ 15)² = (1 ÷ 3)² = 1 ÷ 9 ≈ <b>0.11</b> — about a ninth as strong." },
+      { q: "The masses stay the same. The rocks go from 10 m apart to 5 m apart (closer).",
+        a: "(10 ÷ 5)² = 2² = <b>4.00</b>. Cutting the distance in half makes the pull four times stronger." },
+      { q: "The rocks start 2 m apart with masses 3 kg and 4 kg. Then one mass triples to 9 kg AND the gap doubles to 4 m.",
+        a: "Mass part: 9 × 4 = 36, was 3 × 4 = 12, so 36 ÷ 12 = 3. Distance part: (2 ÷ 4)² = (½)² = 0.25. " +
+           "Multiply: 3 × 0.25 = <b>0.75</b> — a bit weaker than before." }
+    ];
+    practice.forEach(function (item, i) {
+      pr.appendChild(h("details", { class: "qa" }, [
+        h("summary", { text: "Practice " + (i + 1) + " — " + item.q }),
+        h("div", { class: "answer", html: item.a })
+      ]));
+    });
+    v.appendChild(pr);
+
+    v.appendChild(mathToolNav("gravratio"));
+    recompute();
+    mount(v);
+    window.scrollTo(0, 0);
+  }
+
   /* ---- TOOL: The Chapter 3 Formulas (part of "Do the Math") --- */
   function renderMathLab() {
     pageTitle("The Chapter 3 Formulas");
@@ -3127,6 +3826,7 @@
     "t/mul": ["mul", function () { renderMul(); }],
     "t/exponents": ["exponents", function () { renderExponents(); }],
     "t/pemdas": ["pemdas", function () { renderPemdas(); }],
+    "t/gravratio": ["gravratio", function () { renderGravRatio(); }],
     "t/mathlab": ["mathlab", function () { renderMathLab(); }],
     "t/kepler1": ["kepler1", function () { renderLawTool(LAW_TOOLS.kepler1); }],
     "t/kepler2": ["kepler2", function () { renderLawTool(LAW_TOOLS.kepler2); }],
@@ -3135,7 +3835,8 @@
     "t/newton2": ["newton2", function () { renderLawTool(LAW_TOOLS.newton2); }],
     "t/newton3": ["newton3", function () { renderLawTool(LAW_TOOLS.newton3); }],
     "t/gravitation": ["gravitation", function () { renderLawTool(LAW_TOOLS.gravitation); }],
-    "t/physicists": ["physicists", function () { renderPhysicists(); }]
+    "t/physicists": ["physicists", function () { renderPhysicists(); }],
+    "t/sizesort": ["sizesort", function () { renderSizeSort(); }]
   };
 
   function route() {
@@ -3145,6 +3846,7 @@
 
     if (hash === "dashboard") { rebuildNav(); renderDashboard(); refreshSidebar(); return; }
     if (hash === "math") { rebuildNav(); renderMathHub(); refreshSidebar(); return; }
+    if (hash === "activities") { rebuildNav(); renderActivitiesHub(); refreshSidebar(); return; }
 
     // keep the active chapter in sync with a section deep-link
     var sm = hash.match(/^s\/(\d+)\./);
@@ -3156,7 +3858,7 @@
     else if ((m = hash.match(/^s\/(.+)$/))) renderSection(m[1]);
     else if (TOOL_ROUTES[hash]) {
       var tr = TOOL_ROUTES[hash];
-      if (isMathRoute(hash) || hasTool(tr[0])) tr[1](); else renderOverview();
+      if (isMathRoute(hash) || isActivityRoute(hash) || hasTool(tr[0])) tr[1](); else renderOverview();
     }
     else if (hash === "flashcards") renderFlashcards();
     else if (hash === "quiz") renderQuiz();
