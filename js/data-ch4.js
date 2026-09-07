@@ -53,7 +53,7 @@
   /* The calendar — Julian and Gregorian reform. */
   CH.calendarmatch = [
     { a: "The calendar’s basic problem", b: "the day, month, and year don’t divide evenly into one another" },
-    { a: "Julian calendar (46 BCE, Julius Caesar)", b: "365 days, plus a leap day every 4th year — average 365.25 days" },
+    { a: "Julian calendar (Julius Caesar)", b: "365 days, plus a leap day every 4th year — average 365.25 days" },
     { a: "The Julian year’s error", b: "about 11 minutes too long, adding up over centuries" },
     { a: "Gregorian reform of 1582", b: "dropped 10 days, and changed the leap-year rule" },
     { a: "Gregorian leap-year rule", b: "a century year is a leap year only if divisible by 400" },
