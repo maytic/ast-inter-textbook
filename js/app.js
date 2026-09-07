@@ -60,7 +60,14 @@
     newton3:  ["t/newton3", "Newton’s 3rd Law", "Every push has an equal push back"],
     gravitation: ["t/gravitation", "Universal Gravitation", "Every mass pulls every mass — F = G·m₁m₂ ÷ R²"],
     physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"],
-    sizesort: ["t/sizesort", "Sort by Size", "Order cosmic sizes from Chapter 1 — smallest to largest"]
+    sizesort: ["t/sizesort", "Sort by Size", "Order cosmic sizes from Chapter 1 — smallest to largest"],
+    skycoords: ["t/skycoords", "Earth and Sky", "Latitude/longitude and declination/right ascension"],
+    seasons: ["t/seasons", "The Seasons", "Why the 23.5° tilt makes summer and winter"],
+    keepingtime: ["t/keepingtime", "Keeping Time", "Solar days, sidereal days, and time zones"],
+    calendar4: ["t/calendar4", "The Calendar", "Julian, Gregorian, and the leap-year rule"],
+    moonphases: ["t/moonphases", "Phases of the Moon", "New, crescent, quarter, gibbous, full — and why"],
+    tides: ["t/tides", "Ocean Tides", "Spring tides, neap tides, and the pull of the Moon"],
+    eclipses: ["t/eclipses", "Eclipses", "Solar and lunar eclipses, total, partial, and annular"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -2439,7 +2446,7 @@
   function renderLawTool(cfg) {
     pageTitle(cfg.title);
     var v = h("div", { class: "view" });
-    v.appendChild(h("div", { class: "eyebrow", text: "Study tool · a law of Chapter 3" }));
+    v.appendChild(h("div", { class: "eyebrow", text: cfg.eyebrow || "Study tool · a law of Chapter 3" }));
     v.appendChild(h("h1", { text: cfg.h1 }));
     v.appendChild(h("p", { class: "tool-intro", html: cfg.intro }));
 
@@ -2652,6 +2659,233 @@
         { q: "Does gravity ever drop all the way to zero as you move away?", choices: ["No — it gets tiny but never zero", "Yes, past the Moon", "Yes, at the edge of the solar system", "Yes, right away"], answer: 0, why: "It weakens fast but keeps acting at any distance." },
         { q: "The Moon is about 60 Earth-radii away, so its fall toward Earth is…", choices: ["About 3600× weaker than at the surface", "60× weaker", "The same", "3600× stronger"], answer: 0, why: "60² = 3600 — inverse-square again." },
         { q: "What two things set the strength of gravity between two objects?", choices: ["Their masses and the distance between them", "Their colours and shapes", "Their temperatures", "Their speeds"], answer: 0, why: "F = G · m₁ · m₂ ÷ R²." }
+      ]
+    }
+  };
+
+  var CH4_TOOLS = {
+    skycoords: {
+      title: "Earth and Sky",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Mapping Earth and mapping the sky",
+      intro: "Earth's surface and the whole sky both get pinned down the same way: <b>two coordinates</b>, each " +
+        "measured from its own zero-line.",
+      explain:
+        "<p><b>On Earth</b>, <span class=\"term\">longitude</span> counts degrees east or west of the Prime " +
+        "Meridian (0°, through Greenwich, England); <span class=\"term\">latitude</span> counts degrees north or " +
+        "south of the equator.</p>" +
+        "<p><b>In the sky</b>, the same idea repeats with new names: <span class=\"term\">right ascension</span> " +
+        "counts east from the vernal equinox (in degrees, or in hours — 15° = 1 hour); " +
+        "<span class=\"term\">declination</span> counts north or south of the celestial equator, exactly like " +
+        "latitude.</p>" +
+        "<p><b>Why it matters:</b> the farther north you stand, the higher the sky's spin point (the celestial " +
+        "pole) climbs above your horizon — which is exactly why some stars never set at high latitudes, but " +
+        "every star rises and sets at the equator.</p>",
+      diagram: "sky-latitude",
+      showLead: "Drag the slider to walk north from the equator, and watch the sky's spin point climb.",
+      matchKey: "coordsmatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Earth:</b> longitude (east–west, from Greenwich) and latitude (north–south, from the equator). " +
+        "<b>Sky:</b> right ascension (east–west, from the vernal equinox) and declination (north–south, from the " +
+        "celestial equator). The higher your latitude, the higher the celestial pole sits in your sky.",
+      questions: [
+        { q: "Longitude is measured from…", choices: ["The Prime Meridian at Greenwich, England", "The North Pole", "The vernal equinox", "The equator"], answer: 0, why: "0° longitude was set, by international agreement, through the Royal Observatory in Greenwich." },
+        { q: "Declination is the sky's version of…", choices: ["Latitude", "Longitude", "Altitude", "Time zone"], answer: 0, why: "Both are measured north or south from an equator — Earth's for latitude, the celestial one for declination." },
+        { q: "Right ascension is zeroed at…", choices: ["The vernal equinox", "Greenwich, England", "The north celestial pole", "Whatever star is brightest"], answer: 0, why: "The vernal equinox — where the Sun's path crosses the celestial equator — plays the same role for RA that Greenwich plays for longitude." },
+        { q: "15° of right ascension equals how much time?", choices: ["1 hour", "1 minute", "1 day", "15 minutes"], answer: 0, why: "The full 360° circle takes 24 hours, so 360° ÷ 24 = 15° per hour." },
+        { q: "A great circle on a sphere is one whose center is…", choices: ["The sphere's own center", "Always the North Pole", "On the sphere's surface", "Outside the sphere"], answer: 0, why: "That's the definition — Earth's equator and every meridian are great circles for exactly this reason." },
+        { q: "The farther north you stand on Earth, the …", choices: ["Higher the celestial pole sits in your sky", "Lower the celestial pole sits in your sky", "Faster the stars appear to move", "Fewer stars you can see in total"], answer: 0, why: "At the North Pole the celestial pole sits at the zenith (90° up); at the equator it sits right on the horizon (0°)." }
+      ]
+    },
+    seasons: {
+      title: "The Seasons",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Why Earth has seasons",
+      intro: "It isn't distance — Earth's Sun-distance barely changes all year. The seasons come from the " +
+        "<b>23.5° tilt</b> of Earth's axis, which keeps pointing the same way in space all year long.",
+      explain:
+        "<p><b>This is about which way Earth leans.</b> As Earth orbits the Sun, its tilted axis sometimes " +
+        "points a hemisphere toward the Sun and sometimes away — and that fixed lean, not distance, drives the " +
+        "seasons.</p>" +
+        "<p>Leaning toward the Sun helps in two ways at once: sunlight lands more <b>directly</b> (more " +
+        "concentrated, like a flashlight aimed straight at a wall instead of at an angle), and the Sun stays up " +
+        "<b>longer</b> each day.</p>" +
+        "<p><b>The numbers:</b> at the June solstice the Sun stands overhead at noon on the Tropic of Cancer " +
+        "(23° N), and everywhere within 23° of the North Pole gets 24-hour daylight. At the equinoxes the Sun " +
+        "sits on the celestial equator and everywhere gets close to 12 hours of each.</p>",
+      diagram: "seasons",
+      showLead: "Press Play, or jump to a month, and watch which half of Earth leans toward the Sun.",
+      matchKey: "seasonsmatch", matchLabels: ["Idea", "What's true"],
+      recap: "<b>Seasons come from Earth's 23.5° axial tilt</b>, not from changing distance (which varies only " +
+        "~3%, and Earth is actually closest to the Sun in January). A hemisphere leaning toward the Sun gets " +
+        "more direct sunlight AND longer days. At the equinoxes (~Mar 21, ~Sep 21), neither hemisphere is " +
+        "favored.",
+      questions: [
+        { q: "What actually causes Earth's seasons?", choices: ["The 23.5° tilt of Earth's rotation axis", "Earth moving closer to and farther from the Sun", "Changes in the Sun's brightness", "The Moon's gravity"], answer: 0, why: "Earth's axis keeps pointing the same direction in space, so each hemisphere alternately leans toward and away from the Sun over the year." },
+        { q: "In which month is Earth actually closest to the Sun?", choices: ["January", "June", "September", "It stays exactly the same all year"], answer: 0, why: "Perihelion falls in January — the middle of Northern Hemisphere winter, which rules out distance as the cause of the seasons." },
+        { q: "Leaning toward the Sun warms a hemisphere in two ways: more direct sunlight, and…", choices: ["More hours of daylight", "A shorter year", "Colder nights", "A closer Moon"], answer: 0, why: "The Sun is also above the horizon longer each day, giving it more time to heat the ground." },
+        { q: "At the June solstice, the Sun stands directly overhead at noon on the…", choices: ["Tropic of Cancer (23° N)", "Equator (0°)", "Arctic Circle (67° N)", "Tropic of Capricorn (23° S)"], answer: 0, why: "23° N is exactly Earth's tilt angle, which is why the overhead Sun reaches that latitude and no farther north." },
+        { q: "At an equinox, roughly how many hours of daylight does most of Earth get?", choices: ["12 hours", "24 hours", "6 hours", "0 hours"], answer: 0, why: "At the equinoxes the Sun sits on the celestial equator, splitting day and night close to evenly everywhere." },
+        { q: "Why is late summer usually hotter than the solstice itself, even though the solstice has the most daylight?", choices: ["Land and water absorb heat slowly, so warming lags behind the peak sunlight", "The Sun is closer to Earth in August", "Earth's tilt grows over the summer", "There is less cloud cover in August"], answer: 0, why: "The same reason a pond is warmest in the late afternoon, not at sunrise — oceans and land take weeks to catch up to the Sun's peak input." }
+      ]
+    },
+    keepingtime: {
+      title: "Keeping Time",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Solar days, sidereal days, and time zones",
+      intro: "Clocks track the <b>Sun</b>. Astronomers also track the <b>stars</b> — and the two clocks slowly " +
+        "drift apart.",
+      explain:
+        "<p><b>Two different \"days.\"</b> The <span class=\"term\">solar day</span> — the ordinary 24-hour day " +
+        "— is Earth's rotation measured against the Sun. The <span class=\"term\">sidereal day</span> is " +
+        "Earth's rotation measured against the distant stars, and it's about <b>4 minutes shorter</b>: because " +
+        "Earth also slides along its orbit each day, it has to spin a little extra to bring the Sun back " +
+        "overhead.</p>" +
+        "<p>Since ordinary clocks track the (longer) solar day, the stars drift <b>4 minutes earlier</b> every " +
+        "single night — about 2 hours a month.</p>" +
+        "<p><b>Why time zones exist:</b> true \"Sun time\" (apparent solar time) changes with every step east or " +
+        "west, which would force constant clock-resetting. <span class=\"term\">Standard time zones</span> let " +
+        "a whole region share one clock; the <span class=\"term\">International Date Line</span>, near " +
+        "180° longitude, is where the calendar date itself has to jump by a day.</p>",
+      diagram: "star-rise-calc",
+      showLead: "Slide to pick how many days from now, and watch a star's rising time creep earlier.",
+      matchKey: "timematch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Solar day</b> (Sun) is about 4 minutes <b>longer</b> than the <b>sidereal day</b> (stars), " +
+        "because Earth's own orbital motion means it must rotate a bit extra to catch the Sun. That's why stars " +
+        "rise about 4 minutes earlier every night. Standard time zones and the International Date Line exist to " +
+        "keep a single, sane clock system going all the way around a round Earth.",
+      questions: [
+        { q: "Which is longer: the solar day or the sidereal day?", choices: ["The solar day, by about 4 minutes", "The sidereal day, by about 4 minutes", "They are exactly equal", "The solar day, by about 4 hours"], answer: 0, why: "Earth must rotate a little extra each day to bring the Sun back overhead, since it has also moved along its orbit." },
+        { q: "Because of the solar/sidereal difference, a given star rises…", choices: ["About 4 minutes earlier each night", "About 4 minutes later each night", "At exactly the same time every night", "Only once a year"], answer: 0, why: "Clocks track the (longer) solar day, so stars drift earlier and earlier relative to clock time — about 2 hours a month." },
+        { q: "Apparent solar time is inconvenient for clocks mainly because…", choices: ["It doesn't advance at a perfectly constant rate", "It only works at the equator", "It requires satellites", "It resets every leap year"], answer: 0, why: "Earth's elliptical orbit and axial tilt make the Sun's apparent daily motion slightly uneven through the year." },
+        { q: "What problem do standard time zones solve?", choices: ["Constantly resetting your watch as you move east or west", "The difference between the day and the month", "The tilt of Earth's axis", "The Moon's changing phases"], answer: 0, why: "Without zones, true solar noon (and so 'correct' clock time) would change with every small change in longitude." },
+        { q: "Where does the International Date Line run, and why there?", choices: ["Near 180° longitude, mostly through the Pacific Ocean, to affect the fewest people", "Through Greenwich, England", "Along the equator", "Through the Arctic Circle"], answer: 0, why: "It jogs around island groups and Alaska but otherwise follows the 180° meridian, chosen because it crosses mostly open ocean." },
+        { q: "Crossing the date line traveling eastward, you should:", choices: ["Subtract a day from the calendar", "Add a day to the calendar", "Change your time zone but not the date", "Nothing changes"], answer: 0, why: "Traveling east keeps advancing your clock time, so crossing the line you compensate by moving the calendar date back a day." }
+      ]
+    },
+    calendar4: {
+      title: "The Calendar",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Julian, Gregorian, and the leap year",
+      intro: "The day, month, and year don't divide evenly into each other — so every calendar needs a rule for " +
+        "sneaking in the leftover time. The <b>leap year</b> is that rule.",
+      explain:
+        "<p>Earth's real year is <b>365.2422 days</b> — not a whole number. Julius Caesar's " +
+        "<span class=\"term\">Julian calendar</span> approximated this with 365 days plus one extra day every " +
+        "<b>4th year</b>, averaging 365.25 days — close, but about <b>11 minutes a year too long</b>.</p>" +
+        "<p>Over centuries, those 11 minutes piled up until the spring equinox had drifted 10 days off course by " +
+        "<b>1582</b>. Pope Gregory XIII's fix: drop 10 days at once, and sharpen the rule so a " +
+        "<b>century year is a leap year only if it's divisible by 400</b>. That's why 1700, 1800, and 1900 were " +
+        "<em>not</em> leap years, but 1600 and 2000 were.</p>" +
+        "<p>The resulting <span class=\"term\">Gregorian calendar</span> averages 365.2425 days — accurate to " +
+        "about 1 day in 3,300 years.</p>",
+      diagram: "leapyear-check",
+      showLead: "Type any year and watch the Gregorian rule work out whether it's a leap year.",
+      matchKey: "calendarmatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Leap year rule:</b> divisible by 4 → leap year, UNLESS it's a century year (divisible by 100), " +
+        "in which case it's a leap year only if also divisible by <b>400</b>. This fixed the Julian calendar's " +
+        "11-minutes-a-year overshoot, first patched by Pope Gregory XIII in 1582.",
+      questions: [
+        { q: "The Julian calendar's leap-year rule added an extra day…", choices: ["Every 4th year", "Every 10th year", "Every 100th year", "Every leap century only"], answer: 0, why: "One extra day every fourth year brought the Julian average to 365.25 days per year." },
+        { q: "Why did the calendar need reform by 1582?", choices: ["The Julian year was about 11 minutes too long, and the error had accumulated for centuries", "People had forgotten how to count days", "The Moon's orbit had changed", "Julius Caesar's original calendar had no leap years at all"], answer: 0, why: "365.25 days per year overshoots the true 365.2422-day year by about 11 minutes annually — small, but it adds up over 1,600+ years." },
+        { q: "Under the Gregorian rule, is the year 1900 a leap year?", choices: ["No — it's divisible by 100 but not by 400", "Yes — it's divisible by 4", "Yes — all century years are leap years", "No calendar rule applies to 1900"], answer: 0, why: "Century years are leap years only if divisible by 400; 1900 ÷ 400 isn't a whole number, so it's not a leap year." },
+        { q: "Is the year 2000 a leap year under the Gregorian rule?", choices: ["Yes — it's divisible by 400", "No — it's a century year", "Yes, but only in some countries", "No — only years divisible by 4 but not 100 are leap years"], answer: 0, why: "2000 ÷ 400 = 5 exactly, so the century-year exception is satisfied and 2000 is a leap year." },
+        { q: "What two changes made up Pope Gregory XIII's 1582 reform?", choices: ["Dropping 10 days at once, and revising the century leap-year rule", "Adding a 13th month, and removing leap years entirely", "Switching to a lunar calendar", "Renaming the days of the week"], answer: 0, why: "Ten days were dropped (October 4, 1582 was followed by October 15) to reset the equinox, and the leap-year rule was sharpened for century years." },
+        { q: "How accurate is the Gregorian calendar's average year length?", choices: ["About 1 day of error every 3,300 years", "About 1 day of error every 4 years", "Perfectly exact, with zero error", "About 1 day of error every century"], answer: 0, why: "365.2425 days per year is extremely close to the true 365.2422-day tropical year." }
+      ]
+    },
+    moonphases: {
+      title: "Phases of the Moon",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Why the Moon changes phase",
+      intro: "The Moon is always <b>half lit</b> by the Sun. Its phases come from how much of that lit half " +
+        "faces Earth — nothing to do with Earth's shadow.",
+      explain:
+        "<p><b>This is about angles, not shadows.</b> As the Moon circles Earth roughly every month, the angle " +
+        "between the Sun, Earth, and Moon keeps changing — so we see a changing slice of the Moon's permanently " +
+        "half-lit surface.</p>" +
+        "<p>At <span class=\"term\">new moon</span> the lit half faces away from us; at " +
+        "<span class=\"term\">full moon</span>, opposite the Sun in the sky, the lit half faces us fully. In " +
+        "between come the crescents, the quarters (each exactly half-lit), and the gibbous phases.</p>" +
+        "<p><b>Rise and set times shift too:</b> full moon rises at sunset and sets at sunrise (up <em>all " +
+        "night</em>); first quarter rises near noon and sets near midnight; third quarter does the reverse.</p>",
+      diagram: "moon-phase-wheel",
+      showLead: "Drag the slider around the Moon's orbit and watch the phase — and the rise/set time — change.",
+      matchKey: "moonmatch", matchLabels: ["Phase", "What's true"],
+      recap: "New → waxing crescent → first quarter → waxing gibbous → full → waning gibbous → third quarter → " +
+        "waning crescent → new again, in about <b>29.5 days</b>. Phases come from the changing " +
+        "<b>Sun–Earth–Moon angle</b>, never from Earth's shadow (that's a lunar eclipse, a separate and much " +
+        "rarer event).",
+      questions: [
+        { q: "What actually causes the Moon's phases?", choices: ["The changing angle between the Sun, Earth, and the Moon", "Earth's shadow covering part of the Moon", "Clouds on the Moon", "The Moon's own light dimming and brightening"], answer: 0, why: "The Moon is always half lit by the Sun; the phases just show us different amounts of that lit half as the geometry changes." },
+        { q: "At full moon, the Moon rises…", choices: ["At sunset", "At sunrise", "At noon", "At midnight"], answer: 0, why: "Full moon sits opposite the Sun in the sky, so it rises just as the Sun sets, and stays up all night." },
+        { q: "At first quarter, roughly how much of the Moon's visible face is lit?", choices: ["Half", "All of it", "None of it", "A thin sliver"], answer: 0, why: "\"Quarter\" refers to how far around its orbit the Moon has traveled (one quarter of the way), not how much is lit — but it happens to also be exactly half-lit." },
+        { q: "Why is the solar (synodic) month, 29.5 days, longer than the sidereal month, 27.3 days?", choices: ["Earth's own motion around the Sun means the Moon needs extra time to realign with the Sun", "The Moon's orbit is speeding up", "It's just a different unit of time", "The Moon's rotation is slower than its orbit"], answer: 0, why: "Because Earth has moved along its own orbit meanwhile, the Moon must travel a bit past one full lap to catch the Sun's direction again." },
+        { q: "What is synchronous rotation, as shown by the Moon?", choices: ["Rotating on its axis in exactly the time it takes to orbit once", "Not rotating at all", "Rotating once per Earth day", "Spinning faster than it orbits"], answer: 0, why: "Because the Moon's spin and orbit periods match exactly, it always shows Earth the same face." },
+        { q: "A lunar eclipse can only happen at which phase?", choices: ["Full moon", "New moon", "First quarter", "Any phase at all"], answer: 0, why: "Only at full moon are the Sun, Earth, and Moon lined up in the right order for the Moon to pass through Earth's shadow." }
+      ]
+    },
+    tides: {
+      title: "Ocean Tides",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Why the Moon raises tides",
+      intro: "The Moon doesn't pull Earth evenly — and that small difference in pull is enough to slosh whole " +
+        "oceans into bulges.",
+      explain:
+        "<p><b>Differential force.</b> Earth has real size, so the Moon pulls harder on the near side than on " +
+        "Earth's center, and harder on the center than on the far side. That mismatch stretches Earth very " +
+        "slightly toward the Moon — and raises two <span class=\"term\">tidal bulges</span>, one facing the " +
+        "Moon and one facing directly away.</p>" +
+        "<p>As Earth spins through those two fixed bulges, most coastlines get <b>two high tides and two low " +
+        "tides</b> a day.</p>" +
+        "<p>The Sun raises tides too (under half as strongly as the Moon). Lined up at new or full moon, their " +
+        "pulls add for extra-large <span class=\"term\">spring tides</span>; at right angles, near the quarter " +
+        "moons, they partly cancel for smaller <span class=\"term\">neap tides</span>.</p>",
+      diagram: "tide-bulge",
+      showLead: "Drag the slider to change the angle between the Sun and the Moon, and watch the bulge react.",
+      matchKey: "tidesmatch", matchLabels: ["Idea", "What it means"],
+      recap: "The Moon's <b>differential pull</b> (stronger on Earth's near side than its far side) raises " +
+        "<b>two</b> tidal bulges. Earth's spin carries most coastlines through both every day — two highs, two " +
+        "lows. Sun+Moon aligned (new/full moon) → <b>spring tide</b>; Sun+Moon at right angles (quarter moons) → " +
+        "<b>neap tide</b>.",
+      questions: [
+        { q: "What is the fundamental cause of ocean tides?", choices: ["The Moon's (and Sun's) differential gravitational pull across Earth's size", "Wind blowing over the ocean", "Earth's rotation, with no outside influence needed", "Ocean currents carrying heat from the tropics"], answer: 0, why: "Because Earth has size, the Moon's pull is stronger on the near side than the far side — that mismatch is what raises the tides." },
+        { q: "Why are there tidal bulges on BOTH sides of Earth, not just the side facing the Moon?", choices: ["The near side is pulled harder than the center, and the center harder than the far side — both differences create a bulge", "The Moon actually orbits Earth twice a day", "Water is attracted equally to both the Moon and Sun", "It's a measurement error — there is really only one bulge"], answer: 0, why: "The differential force creates a stretch in both directions: toward the Moon on the near side, and away from it (relatively) on the far side." },
+        { q: "Why does a coastline typically get two high tides a day, not one?", choices: ["Earth's rotation carries it through both tidal bulges roughly every 24 hours", "The Moon circles Earth twice daily", "The Sun rises and sets twice a day", "Ocean water refills from rain twice daily"], answer: 0, why: "There are two bulges at any instant (near and far side); spinning Earth carries any one location through both of them each day." },
+        { q: "A spring tide happens when…", choices: ["The Sun and Moon are aligned, at new or full moon", "It is literally the spring season", "The Moon is at first or third quarter", "There is a lunar eclipse"], answer: 0, why: "Alignment (new or full moon) lets the Sun's and Moon's tide-raising pulls add together for extra-large tides — the name has nothing to do with the season." },
+        { q: "A neap tide happens when…", choices: ["The Sun and Moon pull at right angles, near first/third quarter", "The Moon is closest to Earth", "It's a new moon", "There is a total solar eclipse"], answer: 0, why: "At right angles, the Sun's pull partly cancels the Moon's, producing smaller-than-usual tides." },
+        { q: "Over very long timescales, tidal friction is doing what to Earth and the Moon?", choices: ["Slowing Earth's spin while the Moon slowly spirals outward", "Speeding up Earth's spin while the Moon spirals inward", "Having no long-term effect on either", "Only affecting the Moon, not Earth"], answer: 0, why: "Conservation of angular momentum means as tidal friction saps Earth's spin, that momentum is transferred to the Moon's orbit, pushing it slowly outward (~3.8 cm/year)." }
+      ]
+    },
+    eclipses: {
+      title: "Eclipses",
+      eyebrow: "Study tool · Chapter 4",
+      h1: "Solar and lunar eclipses",
+      intro: "The Sun and Moon happen to look almost exactly the same size in our sky — which is exactly what " +
+        "makes total eclipses possible.",
+      explain:
+        "<p><b>A coincidence of scale.</b> The Sun's diameter is about 400 times the Moon's — but it's also " +
+        "about 400 times farther away, so both work out to nearly the same <b>angular size</b> in our sky, " +
+        "about ½°.</p>" +
+        "<p>A shadow has a dark inner <span class=\"term\">umbra</span> (light fully blocked) and a lighter " +
+        "outer <span class=\"term\">penumbra</span> (light partly blocked). A <span class=\"term\">solar " +
+        "eclipse</span> is the Moon's shadow falling on Earth (only at new moon); a " +
+        "<span class=\"term\">lunar eclipse</span> is the Moon entering Earth's shadow (only at full moon).</p>" +
+        "<p>Eclipses aren't monthly because the Moon's orbit is tilted about 5° from Earth's orbital plane — an " +
+        "eclipse needs the two paths to actually cross, which happens only about twice a year.</p>",
+      diagram: "eclipse-picker",
+      showLead: "Tap a kind of eclipse to see its geometry and how it looks.",
+      matchKey: "eclipsematch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Solar eclipse</b> (new moon only): Moon's shadow on Earth — total inside the umbra, partial in " +
+        "the penumbra, annular if the Moon looks a touch too small to fully cover the Sun. <b>Lunar eclipse</b> " +
+        "(full moon only): Moon inside Earth's shadow, visible from the whole night side of Earth at once. " +
+        "Neither happens every month because the Moon's orbit is tilted ~5° from Earth's.",
+      questions: [
+        { q: "Why do the Sun and Moon appear almost the same size in our sky?", choices: ["The Sun is ~400× larger in diameter but also ~400× farther away", "They are physically the same size", "It's an illusion caused by the atmosphere", "The Moon is slowly growing"], answer: 0, why: "Those two 400× factors cancel out, giving both bodies nearly the same angular size, about ½°." },
+        { q: "A solar eclipse can only occur at which Moon phase?", choices: ["New moon", "Full moon", "First quarter", "Any phase"], answer: 0, why: "Only at new moon does the Moon pass between Earth and the Sun." },
+        { q: "A lunar eclipse can only occur at which Moon phase?", choices: ["Full moon", "New moon", "Third quarter", "Any phase"], answer: 0, why: "Only at full moon are Sun, Earth, and Moon lined up for the Moon to enter Earth's shadow." },
+        { q: "What's the difference between the umbra and the penumbra?", choices: ["The umbra fully blocks light; the penumbra only partly blocks it", "The umbra is outside the shadow; the penumbra is inside it", "They are two names for the same region", "The umbra only forms during lunar eclipses"], answer: 0, why: "The umbra is the shadow's dark core; the penumbra is the lighter, partial-shadow region around it." },
+        { q: "Why isn't there a solar and lunar eclipse every single month?", choices: ["The Moon's orbit is tilted about 5° from Earth's orbital plane", "The Sun is usually too far away", "Earth's atmosphere blocks most eclipses", "Eclipses actually do happen every month unnoticed"], answer: 0, why: "That tilt usually carries the Moon above or below the Sun's path at new and full moon; eclipses need the orbital planes to cross, which happens about twice a year." },
+        { q: "What makes an eclipse 'annular' rather than 'total'?", choices: ["The Moon is a little farther from Earth and looks too small to fully cover the Sun", "The Moon is unusually close to Earth", "It only happens during a lunar eclipse", "The Sun is partly hidden behind clouds"], answer: 0, why: "At greater-than-average distance, the Moon's disk looks slightly smaller than the Sun's, leaving a bright ring visible even at perfect alignment." }
       ]
     }
   };
@@ -3836,7 +4070,14 @@
     "t/newton3": ["newton3", function () { renderLawTool(LAW_TOOLS.newton3); }],
     "t/gravitation": ["gravitation", function () { renderLawTool(LAW_TOOLS.gravitation); }],
     "t/physicists": ["physicists", function () { renderPhysicists(); }],
-    "t/sizesort": ["sizesort", function () { renderSizeSort(); }]
+    "t/sizesort": ["sizesort", function () { renderSizeSort(); }],
+    "t/skycoords": ["skycoords", function () { renderLawTool(CH4_TOOLS.skycoords); }],
+    "t/seasons": ["seasons", function () { renderLawTool(CH4_TOOLS.seasons); }],
+    "t/keepingtime": ["keepingtime", function () { renderLawTool(CH4_TOOLS.keepingtime); }],
+    "t/calendar4": ["calendar4", function () { renderLawTool(CH4_TOOLS.calendar4); }],
+    "t/moonphases": ["moonphases", function () { renderLawTool(CH4_TOOLS.moonphases); }],
+    "t/tides": ["tides", function () { renderLawTool(CH4_TOOLS.tides); }],
+    "t/eclipses": ["eclipses", function () { renderLawTool(CH4_TOOLS.eclipses); }]
   };
 
   function route() {

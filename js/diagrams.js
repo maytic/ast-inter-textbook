@@ -2298,5 +2298,236 @@
   D["math-weigh"] = function (host) { stepMath(host, CFG_WEIGH); };
   D["math-gravitation"] = function (host) { stepMath(host, CFG_GRAVITATION); };
 
+  /* =========================================================================
+     CHAPTER 4 — Earth, Moon, and Sky
+     ========================================================================= */
+
+  /* ---- 4.5  Why the Moon changes phase ---------------------------- */
+  D["moon-phase-wheel"] = function (host) {
+    var r = frame(host, "Why the Moon changes phase",
+      "Drag the slider (or press Play) to move the Moon around its orbit.",
+      "The Moon is always half lit by the Sun. As it swings around Earth, we see different amounts of that lit half — that's the whole secret of the phases. (The Sun is drawn nearby, but its light really arrives as near-enough parallel rays from far off to the right.)");
+    var Ox = 118, Oy = 148, R = 92;
+    var s = svg(r.stage, 340, 260);
+    s.appendChild(S("circle", { cx: Ox, cy: Oy, r: R, "class": "dg-orbit" }));
+    var sunG = S("g", {});
+    sunG.appendChild(S("circle", { cx: 320, cy: Oy, r: 11, "class": "dg-sun" }));
+    for (var i = -1; i <= 1; i++) {
+      sunG.appendChild(S("line", { x1: 296, y1: Oy + i * 16, x2: 272, y2: Oy + i * 16, "class": "dg-ray3" }));
+    }
+    s.appendChild(sunG);
+    s.appendChild(T(320, Oy + 28, "Sun’s light", "dg-lbl-mid"));
+    var earth = S("circle", { cx: Ox, cy: Oy, r: 14, "class": "dg-earth" });
+    var sight = S("line", { "class": "dg-sight" });
+    var moonDot = S("circle", { r: 6, style: "fill:var(--text-dim)" });
+    [sight, earth, moonDot, T(Ox, Oy + 4, "🌍", "dg-lbl-mid")].forEach(function (n) { s.appendChild(n); });
+    [[0, "New"], [90, "1st Q"], [180, "Full"], [270, "3rd Q"]].forEach(function (tk) {
+      var a = -tk[0] * Math.PI / 180;
+      var lbl = T(Ox + (R + 15) * Math.cos(a), Oy + (R + 15) * Math.sin(a) + 3, tk[1], "dg-lbl-mid");
+      s.appendChild(lbl);
+    });
+    var Px = 56, Py = 38, PR = 25;
+    s.appendChild(S("circle", { cx: Px, cy: Py, r: PR + 4, style: "fill:none;stroke:var(--border);stroke-dasharray:2 2" }));
+    var back = S("circle", { cx: Px, cy: Py, r: PR, style: "fill:var(--panel-2);stroke:var(--border)" });
+    var lit = S("path", { style: "fill:#f2dca6" });
+    var ring = S("circle", { cx: Px, cy: Py, r: PR, style: "fill:none;stroke:var(--border)" });
+    [back, lit, ring, T(Px, Py + PR + 15, "seen from Earth", "dg-lbl-mid")].forEach(function (n) { s.appendChild(n); });
+
+    function fmtClock(hr) {
+      hr = ((hr % 24) + 24) % 24;
+      var hh = Math.floor(hr), mm = Math.round((hr - hh) * 60);
+      if (mm === 60) { mm = 0; hh = (hh + 1) % 24; }
+      var ap = hh < 12 ? "am" : "pm";
+      var h12 = hh % 12; if (h12 === 0) h12 = 12;
+      return h12 + (mm ? ":" + (mm < 10 ? "0" : "") + mm : "") + " " + ap;
+    }
+    function phaseName(theta) {
+      if (theta < 8 || theta > 352) return "New moon";
+      if (theta < 82) return "Waxing crescent";
+      if (theta < 98) return "First quarter";
+      if (theta < 172) return "Waxing gibbous";
+      if (theta < 188) return "Full moon";
+      if (theta < 262) return "Waning gibbous";
+      if (theta < 278) return "Third quarter";
+      return "Waning crescent";
+    }
+    function draw(theta) {
+      theta = ((theta % 360) + 360) % 360;
+      var a = -theta * Math.PI / 180;
+      var mx = Ox + R * Math.cos(a), my = Oy + R * Math.sin(a);
+      moonDot.setAttribute("cx", mx); moonDot.setAttribute("cy", my);
+      sight.setAttribute("x1", Ox); sight.setAttribute("y1", Oy);
+      sight.setAttribute("x2", mx); sight.setAttribute("y2", my);
+      var k = (1 - Math.cos(theta * Math.PI / 180)) / 2;
+      var litRight = theta > 0 && theta < 180;
+      lit.setAttribute("d", phasePath(Px, Py, PR, k, litRight));
+      var offsetH = theta / 360 * 24;
+      r.readout.innerHTML = "<b>" + phaseName(theta) + "</b> — using a typical 6:00 am sunrise and 6:00 pm " +
+        "sunset, this Moon rises around <b>" + fmtClock(6 + offsetH) + "</b> and sets around <b>" +
+        fmtClock(18 + offsetH) + "</b>.";
+    }
+    var sl = slider(r.controls, "Position in orbit", 0, 359, 45, 1, function (v) { draw(v); });
+    var pb = playBtn(r.controls, function () {
+      var v = (parseFloat(sl.input.value) + 1.2) % 360; sl.input.value = v; draw(v);
+    });
+    sl.input.addEventListener("input", function () { pb.stop(); });
+    var quick = E("div", { "class": "dg-chips" });
+    var quickVals = [0, 90, 180, 270];
+    ["New", "1st Q", "Full", "3rd Q"].forEach(function (label) {
+      quick.appendChild(E("button", { type: "button", text: label, "class": "dg-chip" }));
+    });
+    quick.querySelectorAll("button").forEach(function (b, i) {
+      b.addEventListener("click", function () { pb.stop(); sl.input.value = quickVals[i]; draw(quickVals[i]); });
+    });
+    r.controls.appendChild(quick);
+    draw(45);
+  };
+
+  /* ---- 4.6  Spring tides and neap tides ---------------------------- */
+  D["tide-bulge"] = function (host) {
+    var r = frame(host, "Spring tides and neap tides",
+      "Drag the slider to change the angle between the Sun and the Moon.",
+      "The Moon always stretches the ocean into a bulge on both the near and far side of Earth. Line the Sun up with the Moon (0° or 180°) and its pull reinforces that bulge for a spring tide. Put the Sun at right angles (90°) and its pull partly cancels the Moon's, for a smaller neap tide.");
+    var Ox = 150, Oy = 122, base = 44;
+    var s = svg(r.stage, 320, 244);
+    var bulge = S("ellipse", { cx: Ox, cy: Oy, "class": "dg-globe" });
+    var earth = S("circle", { cx: Ox, cy: Oy, r: 26, "class": "dg-earth" });
+    var moonLine = S("line", { "class": "dg-ray3" });
+    var moonHead = S("path", { "class": "dg-rayhead" });
+    var sunLine = S("line", { "class": "dg-ray3" });
+    var sunHead = S("path", { "class": "dg-rayhead" });
+    var moonLbl = T(0, 0, "Moon", "dg-lbl");
+    var sunLbl = T(0, 0, "Sun", "dg-lbl");
+    [bulge, earth, moonLine, moonHead, sunLine, sunHead, moonLbl, sunLbl].forEach(function (n) { s.appendChild(n); });
+
+    function place(lineEl, headEl, lblEl, ang, len, text) {
+      var x2 = Ox + len * Math.cos(ang), y2 = Oy + len * Math.sin(ang);
+      lineEl.setAttribute("x1", Ox); lineEl.setAttribute("y1", Oy);
+      lineEl.setAttribute("x2", x2); lineEl.setAttribute("y2", y2);
+      var bx = x2 - 9 * Math.cos(ang), by = y2 - 9 * Math.sin(ang);
+      var px = -Math.sin(ang), py = Math.cos(ang);
+      headEl.setAttribute("d", "M " + x2 + " " + y2 + " L " + (bx + px * 5) + " " + (by + py * 5) +
+        " L " + (bx - px * 5) + " " + (by - py * 5) + " Z");
+      lblEl.setAttribute("x", x2 + 10 * Math.cos(ang) - text.length * 2.6);
+      lblEl.setAttribute("y", y2 + 10 * Math.sin(ang) + 3);
+    }
+    function draw(sunAngleDeg) {
+      var sunRad = sunAngleDeg * Math.PI / 180;
+      var elong = Math.cos(2 * sunRad);
+      var rx = base * (1 + 0.30 * elong);
+      var ry = base * (1 - 0.14 * elong);
+      bulge.setAttribute("rx", rx); bulge.setAttribute("ry", ry);
+      place(moonLine, moonHead, moonLbl, 0, rx + 40, "Moon");
+      place(sunLine, sunHead, sunLbl, sunRad, 92, "Sun");
+      r.readout.innerHTML = (sunAngleDeg < 20 || sunAngleDeg > 160)
+        ? "<b>Spring tide</b> — Sun and Moon are nearly lined up (as at new moon or full moon), so their pulls add together for extra-large tides."
+        : (sunAngleDeg > 70 && sunAngleDeg < 110)
+        ? "<b>Neap tide</b> — Sun and Moon pull at roughly right angles (as at first or third quarter), so the Sun's pull partly cancels the Moon's, giving smaller tides."
+        : "Somewhere between a spring tide and a neap tide.";
+    }
+    slider(r.controls, "Angle between Sun and Moon (°)", 0, 180, 0, 1, function (v) { draw(v); });
+    draw(0);
+  };
+
+  /* ---- 4.7  Pick an eclipse ----------------------------------------- */
+  D["eclipse-picker"] = function (host) {
+    var r = frame(host, "Solar eclipse or lunar eclipse?",
+      "Tap a kind of eclipse to see how it happens.",
+      "A solar eclipse is the Moon's shadow falling on Earth; a lunar eclipse is the Moon moving into Earth's shadow. The dark umbra gives a total eclipse; the lighter penumbra gives a partial one.");
+    var box = E("div");
+    r.stage.appendChild(box);
+    var INFO = {
+      total_solar: { img: "fig-4-21.jpg", cap: "Figure 4.21 — position 1 sits inside the Moon's dark umbra.",
+        text: "<b>Total solar eclipse:</b> you are standing in the small, dark umbra of the Moon's shadow (position 1). The Moon completely covers the Sun's bright disk, and for a few minutes the Sun's corona flashes into view." },
+      partial_solar: { img: "fig-4-21.jpg", cap: "Figure 4.21 — positions 2 and 3 sit inside the lighter penumbra.",
+        text: "<b>Partial solar eclipse:</b> you are in the Moon's lighter penumbra (positions 2 or 3), so only part of the Sun's disk is covered. This is visible from a much wider area than a total eclipse." },
+      annular_solar: { img: "fig-4-21.jpg", cap: "Figure 4.21 — position 4, with the Moon a little farther from Earth.",
+        text: "<b>Annular solar eclipse:</b> the Moon is a bit farther from Earth than usual (position 4), so it looks too small to fully cover the Sun — a bright ring (annulus) of sunlight stays visible all around it." },
+      total_lunar: { img: "fig-4-24.jpg", cap: "Figure 4.24 — the full moon passing completely into Earth's umbra.",
+        text: "<b>Total lunar eclipse:</b> the full moon passes completely into Earth's dark umbra. It doesn't disappear — sunlight bent through Earth's atmosphere usually still lights it a dull coppery red." },
+      partial_lunar: { img: "fig-4-24.jpg", cap: "Figure 4.24 — only part of the Moon crossing the umbra.",
+        text: "<b>Partial lunar eclipse:</b> only part of the full moon passes into Earth's dark umbra, so only part of its disk darkens." }
+    };
+    function show(key) {
+      clr(box);
+      var info = INFO[key];
+      box.appendChild(E("figure", { "class": "tb-figure" }, [
+        E("img", { src: "img/" + info.img, alt: info.cap, loading: "lazy" }),
+        E("figcaption", { text: info.cap })
+      ]));
+      r.readout.innerHTML = info.text;
+    }
+    bigPick(r.controls, [
+      { label: "☀️ Total solar", value: "total_solar" },
+      { label: "☀️ Partial solar", value: "partial_solar" },
+      { label: "☀️ Annular solar", value: "annular_solar" },
+      { label: "🌕 Total lunar", value: "total_lunar" },
+      { label: "🌕 Partial lunar", value: "partial_lunar" }
+    ], 0, function (v) { show(v); });
+    show("total_solar");
+  };
+
+  /* ---- 4.3  Stars rise about 4 minutes earlier every day ------------ */
+  D["star-rise-calc"] = function (host) {
+    var r = frame(host, "Stars rise about 4 minutes earlier every day",
+      "Slide to pick how many days from now.",
+      "Clocks track the Sun, but Earth also moves along its orbit each day, so it takes about 4 extra minutes of rotation to bring the Sun back overhead — and the stars get 4 minutes further ahead of it every day.");
+    var big = E("p", { style: "text-align:center;font-size:1.3em;margin:14px 0;line-height:1.6" });
+    r.stage.appendChild(big);
+    function fmt(totalMin) {
+      totalMin = ((Math.round(totalMin) % 1440) + 1440) % 1440;
+      var hh = Math.floor(totalMin / 60), mm = totalMin % 60;
+      var ap = hh < 12 ? "am" : "pm";
+      var h12 = hh % 12; if (h12 === 0) h12 = 12;
+      return h12 + ":" + (mm < 10 ? "0" : "") + mm + " " + ap;
+    }
+    var refMin = 20 * 60; // a star rising at 8:00 pm tonight, as a fixed example
+    function draw(days) {
+      var minutesEarlier = days * 4;
+      big.innerHTML = "⭐ rises at <b>" + fmt(refMin) + "</b> tonight<br>&darr;<br>rises at <b>" +
+        fmt(refMin - minutesEarlier) + "</b> in " + days + " day" + (days === 1 ? "" : "s");
+      var hrs = minutesEarlier / 60;
+      r.readout.innerHTML = "That's about <b>" +
+        (minutesEarlier < 60 ? Math.round(minutesEarlier) + " minutes" : (Math.round(hrs * 10) / 10) + " hours") +
+        "</b> earlier than tonight — 4 minutes earlier for every day that passes, or about 2 hours a month.";
+    }
+    slider(r.controls, "Days from now", 0, 180, 90, 1, function (v) { draw(v); });
+    draw(90);
+  };
+
+  /* ---- 4.4  Is it a leap year? --------------------------------------- */
+  D["leapyear-check"] = function (host) {
+    var r = frame(host, "Is it a leap year?",
+      "Type any year and see how the Gregorian rule works it out.",
+      "Rule: a year is a leap year if divisible by 4 — unless it's a century year (divisible by 100), in which case it's a leap year only if it's also divisible by 400.");
+    var wrap = E("div", { style: "display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 4px" });
+    var input = E("input", { type: "number", value: 2000, step: 1, style: "font-size:1.1em;width:8em;padding:6px 8px" });
+    wrap.appendChild(E("label", {}, [E("span", { text: "Year: ", style: "margin-right:6px" }), input]));
+    r.stage.appendChild(wrap);
+    var out = E("div", { "class": "prose" });
+    r.stage.appendChild(out);
+    function check() {
+      var y = Math.round(parseFloat(input.value));
+      if (!isFinite(y)) { out.innerHTML = ""; r.readout.innerHTML = "Type a year."; return; }
+      var by4 = y % 4 === 0, by100 = y % 100 === 0, by400 = y % 400 === 0;
+      var leap = by100 ? by400 : by4;
+      var steps = "<p>Is " + y + " divisible by <b>4</b>? " + (by4 ? "Yes." : "No — so it can't be a leap year.") + "</p>";
+      if (by4) {
+        steps += "<p>Is " + y + " a century year (divisible by <b>100</b>)? " +
+          (by100 ? "Yes." : "No — so it IS a leap year, no further check needed.") + "</p>";
+        if (by100) {
+          steps += "<p>Since it's a century year, is it divisible by <b>400</b>? " +
+            (by400 ? "Yes — it IS a leap year." : "No — so it is NOT a leap year, even though it's divisible by 4.") + "</p>";
+        }
+      }
+      out.innerHTML = steps;
+      r.readout.innerHTML = leap
+        ? "<b>" + y + " is a leap year</b> — 366 days, with a February 29."
+        : "<b>" + y + " is not a leap year</b> — 365 days.";
+    }
+    input.addEventListener("input", check);
+    check();
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();
