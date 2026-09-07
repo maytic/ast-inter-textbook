@@ -475,8 +475,8 @@
         'The fix is the <span class="term">International Date Line</span>, running near ' +
         '<strong>180&deg; longitude</strong> (jogging here and there to avoid splitting island groups and ' +
         'Alaska) mostly down the middle of the Pacific Ocean, where it inconveniences the fewest people. Crossing ' +
-        'it <strong>westward</strong> (further advancing your time) means <strong>subtracting</strong> a day; ' +
-        'crossing it <strong>eastward</strong> means <strong>adding</strong> one. The Imperial Japanese Navy&rsquo;s ' +
+        'it <strong>eastward</strong> (further advancing your time) means <strong>subtracting</strong> a day; ' +
+        'crossing it <strong>westward</strong> means <strong>adding</strong> one. The Imperial Japanese Navy&rsquo;s ' +
         'attack on Pearl Harbor is remembered in the United States as <strong>Sunday, December 7, 1941</strong>, ' +
         'but Japanese students learn it as <strong>Monday, December 8</strong> &mdash; both are the same moment, ' +
         'on opposite sides of the line.</p>' +
@@ -486,7 +486,7 @@
         "Because clocks run on solar time, stars rise about 4 minutes earlier each night — roughly 2 hours earlier per month.",
         "Apparent solar time (sundial time) doesn't tick at a constant rate, because Earth's elliptical orbit and axis tilt make the Sun's apparent motion uneven; mean solar time averages this out to a steady 24-hour day.",
         "Standard time zones (24 of them worldwide by 1900; 4 adopted in the U.S. in 1883, now 6) let a whole region share one clock time instead of continuously resetting watches by longitude. Daylight saving time is just standard time plus one hour — it shifts sunlight, but adds none.",
-        "The International Date Line, near 180° longitude, is where the calendar date jumps by a day — subtracted crossing westward, added crossing eastward — so that clock time can keep advancing eastward around the whole globe without contradiction."
+        "The International Date Line, near 180° longitude, is where the calendar date jumps by a day — subtracted crossing eastward, added crossing westward — so that clock time can keep advancing eastward around the whole globe without contradiction."
       ],
       selfCheck: [
         { q: "Why is a solar day about 4 minutes longer than a sidereal day?",
