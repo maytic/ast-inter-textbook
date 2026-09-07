@@ -2413,7 +2413,12 @@
     }
     function draw(sunAngleDeg) {
       var sunRad = sunAngleDeg * Math.PI / 180;
-      var elong = Math.cos(2 * sunRad);
+      // cos²(angle): 1 when Sun and Moon are aligned (0°/180°, reinforcing — spring
+      // tide), smoothly down to 0 at 90° (pulling at right angles cancels out any
+      // extra stretch — neap tide, drawn as a plain circle), never negative so the
+      // bulge always stays stretched along the Moon's fixed direction, never
+      // perpendicular to it.
+      var elong = Math.cos(sunRad) * Math.cos(sunRad);
       var rx = base * (1 + 0.30 * elong);
       var ry = base * (1 - 0.14 * elong);
       bulge.setAttribute("rx", rx); bulge.setAttribute("ry", ry);
