@@ -2534,5 +2534,298 @@
     check();
   };
 
+  /* =========================================================================
+     CHAPTER 5 — Radiation and Spectra
+     ========================================================================= */
+
+  /* wavelength (nm, visible range) -> approximate CSS color */
+  function wavelengthToColor(wl) {
+    var r, g, b;
+    if (wl < 440) { r = -(wl - 440) / (440 - 380); g = 0; b = 1; }
+    else if (wl < 490) { r = 0; g = (wl - 440) / (490 - 440); b = 1; }
+    else if (wl < 510) { r = 0; g = 1; b = -(wl - 510) / (510 - 490); }
+    else if (wl < 580) { r = (wl - 510) / (580 - 510); g = 1; b = 0; }
+    else if (wl < 645) { r = 1; g = -(wl - 645) / (645 - 580); b = 0; }
+    else { r = 1; g = 0; b = 0; }
+    var fade = wl < 420 ? 0.3 + 0.7 * (wl - 380) / (420 - 380) : wl > 700 ? 0.3 + 0.7 * (750 - wl) / (750 - 700) : 1;
+    function ch(v) { return Math.round(255 * Math.max(0, Math.min(1, v)) * fade); }
+    return "rgb(" + ch(r) + "," + ch(g) + "," + ch(b) + ")";
+  }
+  function colorName(wl) {
+    return wl < 450 ? "violet" : wl < 495 ? "blue" : wl < 570 ? "green" : wl < 590 ? "yellow" : wl < 620 ? "orange" : "red";
+  }
+
+  /* ---- 5.1  Wavelength, frequency, and c = λf ------------------------ */
+  D["light-wave"] = function (host) {
+    var r = frame(host, "Wavelength, frequency, and the speed of light",
+      "Slide to change the wavelength. Every wave still crosses the box at the same speed, c.",
+      "Shorter wavelength packs more crests into the same stretch of space — a higher frequency — even though the wave still travels at speed c. That's c = λf.");
+    var s = svg(r.stage, 360, 140);
+    var path = S("path", { style: "fill:none;stroke-width:3" });
+    var mid = S("line", { x1: 8, y1: 70, x2: 352, y2: 70, "class": "dg-ground" });
+    s.appendChild(mid); s.appendChild(path);
+    var W = 344, x0 = 8;
+    function draw(wl) {
+      var px = 60 * (wl / 550); // crest-to-crest pixels, scaled so visible range looks reasonable
+      var amp = 44, pts = [], n = Math.ceil(W / px) + 1;
+      for (var i = 0; i <= n; i++) {
+        var x = x0 + i * px * 0.5;
+        if (x > x0 + W) x = x0 + W;
+        var y = 70 - amp * Math.sin((x - x0) / px * 2 * Math.PI);
+        pts.push((i === 0 ? "M " : "L ") + x.toFixed(1) + " " + y.toFixed(1));
+        if (x >= x0 + W) break;
+      }
+      path.setAttribute("d", pts.join(" "));
+      var col = wavelengthToColor(wl);
+      path.setAttribute("style", "fill:none;stroke-width:3;stroke:" + col);
+      var crests = (W / px).toFixed(1);
+      var freqHz = (3e8 / (wl * 1e-9));
+      var freqTHz = (freqHz / 1e12).toFixed(2);
+      r.readout.innerHTML = "<b>λ = " + wl + " nm</b> (" + colorName(wl) + ") &mdash; about <b>" + crests +
+        "</b> crests fit in this box. Frequency f = c &divide; λ &asymp; <b>" + freqTHz + " THz</b> (" +
+        freqTHz + " &times; 10<sup>12</sup> Hz). Speed is always c = 300,000 km/s.";
+    }
+    slider(r.controls, "Wavelength (nm)", 400, 700, 550, 5, function (v) { draw(v); });
+    draw(550);
+  };
+
+  /* ---- 5.2  Blackbody curves and Wien's law --------------------------- */
+  D["blackbody-curve"] = function (host) {
+    var r = frame(host, "A blackbody's spectrum shifts with temperature",
+      "Slide the temperature. Watch the peak move and the curve grow.",
+      "Wien's law: hotter objects peak at shorter (bluer) wavelengths. The Stefan-Boltzmann law: hotter objects radiate a LOT more power overall — power grows with T⁴.");
+    var W = 344, H = 190, x0 = 10, y0 = 166;
+    var s = svg(r.stage, W + 16, H + 20);
+    s.appendChild(S("line", { x1: x0, y1: y0, x2: x0 + W, y2: y0, "class": "dg-ground" }));
+    s.appendChild(S("line", { x1: x0, y1: y0, x2: x0, y2: 6, "class": "dg-ground" }));
+    var visBand = S("rect", { y: 6, height: y0 - 6, style: "fill:color-mix(in srgb, var(--accent) 10%, transparent)" });
+    var curve = S("path", { style: "fill:none;stroke-width:2.5;stroke:var(--warn)" });
+    var peakDot = S("circle", { r: 4, style: "fill:var(--bad)" });
+    var peakLine = S("line", { "class": "dg-dash" });
+    s.appendChild(visBand); s.appendChild(curve); s.appendChild(peakLine); s.appendChild(peakDot);
+    s.appendChild(T(x0 + 2, y0 + 14, "400 nm", "dg-lbl"));
+    s.appendChild(T(x0 + W - 34, y0 + 14, "3000 nm", "dg-lbl"));
+    var maxNM = 3000;
+    function xFor(nm) { return x0 + Math.min(1, nm / maxNM) * W; }
+    function draw(T) {
+      var peak = 2.9e6 / T; // Wien's law, nm
+      var vb0 = xFor(400), vb1 = xFor(700);
+      visBand.setAttribute("x", vb0); visBand.setAttribute("width", Math.max(0, vb1 - vb0));
+      var pts = [], N = 120;
+      var peakHeight = Math.min(1, Math.pow(T / 12000, 4) * 6 + 0.06);
+      for (var i = 0; i <= N; i++) {
+        var nm = 30 + (maxNM - 30) * (i / N);
+        var u = nm / peak;
+        // simple bump function peaking at u=1, falling off both sides (not literal Planck's law)
+        var val = Math.pow(u, 3) * Math.exp(3 - 3 * u);
+        var y = y0 - Math.max(0, Math.min(1, val)) * peakHeight * (y0 - 10);
+        pts.push((i === 0 ? "M " : "L ") + xFor(nm).toFixed(1) + " " + y.toFixed(1));
+      }
+      curve.setAttribute("d", pts.join(" "));
+      var px = xFor(peak);
+      var uPeak = Math.pow(1, 3) * Math.exp(0);
+      var py = y0 - Math.min(1, uPeak) * peakHeight * (y0 - 10);
+      peakDot.setAttribute("cx", px); peakDot.setAttribute("cy", py);
+      peakLine.setAttribute("x1", px); peakLine.setAttribute("x2", px);
+      peakLine.setAttribute("y1", y0); peakLine.setAttribute("y2", py);
+      var band = peak < 400 ? "ultraviolet" : peak <= 700 ? "visible light" : peak < 1e6 ? "infrared" : "far infrared";
+      var relPower = Math.pow(T / 5800, 4);
+      r.readout.innerHTML = "<b>T = " + T + " K</b> &mdash; peaks at about <b>" + Math.round(peak) +
+        " nm</b> (" + band + "), by Wien's law. Radiates about <b>" + relPower.toFixed(relPower < 10 ? 1 : 0) +
+        "&times;</b> the Sun's power per square meter (Stefan-Boltzmann law, T<sup>4</sup>).";
+    }
+    slider(r.controls, "Temperature (K)", 2500, 12000, 5800, 100, function (v) { draw(v); });
+    draw(5800);
+  };
+
+  /* ---- 5.3  Continuous, absorption, and emission spectra -------------- */
+  D["spectrum-types"] = function (host) {
+    var r = frame(host, "Three kinds of spectra",
+      "Tap a spectrum type to see how it looks and how it forms.",
+      "A continuous spectrum has every color. An absorption spectrum is a continuous spectrum with a few colors missing (cool gas in front). An emission spectrum shows only the colors a hot, thin gas gives off, on a dark background.");
+    var W = 320, H = 46, x0 = 8;
+    var s = svg(r.stage, W + 16, H + 30);
+    var bg = S("rect", { x: x0, y: 10, width: W, height: H, rx: 4 });
+    var linesG = S("g", {});
+    s.appendChild(bg); s.appendChild(linesG);
+    var LINE_X = [30, 62, 100, 150, 190, 230, 270, 300]; // sample positions across the band
+    var grad = null;
+    function ensureGradient() {
+      if (grad) return;
+      var defs = S("defs", {});
+      grad = S("linearGradient", { id: "ch5-spectrum-grad", x1: "0%", x2: "100%" });
+      var stops = [380, 450, 500, 570, 590, 620, 700];
+      stops.forEach(function (wl, i) {
+        grad.appendChild(S("stop", { offset: (i / (stops.length - 1) * 100) + "%", "stop-color": wavelengthToColor(wl) }));
+      });
+      defs.appendChild(grad);
+      s.insertBefore(defs, s.firstChild);
+    }
+    function draw(kind) {
+      clr(linesG);
+      if (kind === "continuous") {
+        ensureGradient();
+        bg.setAttribute("style", "fill:url(#ch5-spectrum-grad)");
+        r.readout.innerHTML = "<b>Continuous spectrum:</b> a solid or dense gas (like a lightbulb filament) gives off every wavelength — an unbroken rainbow.";
+      } else if (kind === "absorption") {
+        ensureGradient();
+        bg.setAttribute("style", "fill:url(#ch5-spectrum-grad)");
+        LINE_X.forEach(function (x) {
+          linesG.appendChild(S("line", { x1: x0 + x, x2: x0 + x, y1: 10, y2: 10 + H, style: "stroke:#111;stroke-width:2.5;opacity:0.85" }));
+        });
+        r.readout.innerHTML = "<b>Absorption (dark-line) spectrum:</b> a continuous spectrum viewed through a cooler, thinner gas — that gas removes its own specific wavelengths, leaving dark lines.";
+      } else {
+        bg.setAttribute("style", "fill:#0b0b10");
+        LINE_X.forEach(function (x) {
+          var wl = 400 + (x / W) * 300;
+          linesG.appendChild(S("line", { x1: x0 + x, x2: x0 + x, y1: 10, y2: 10 + H, style: "stroke:" + wavelengthToColor(wl) + ";stroke-width:3" }));
+        });
+        r.readout.innerHTML = "<b>Emission (bright-line) spectrum:</b> a hot, thin, glowing gas on its own, with no continuous source behind it — it emits light only at its own specific wavelengths.";
+      }
+    }
+    bigPick(r.controls, [
+      { label: "Continuous", value: "continuous" }, { label: "Absorption", value: "absorption" }, { label: "Emission", value: "emission" }
+    ], 0, function (v) { draw(v); });
+    draw("continuous");
+  };
+
+  /* ---- 5.4  Build an atom: protons, neutrons, electrons --------------- */
+  D["bohr-atom"] = function (host) {
+    var r = frame(host, "Protons, neutrons, and isotopes",
+      "Tap an atom to build it. The number of protons picks the element; neutrons make it a different isotope.",
+      "The number of PROTONS decides the element — hydrogen always has 1, helium always has 2. Atoms of the same element with different numbers of NEUTRONS are called isotopes.");
+    var s = svg(r.stage, 300, 220);
+    var Cx = 150, Cy = 110;
+    var ATOMS = {
+      protium: { name: "Hydrogen-1 (protium)", p: 1, n: 0, e: 1 },
+      deuterium: { name: "Hydrogen-2 (deuterium)", p: 1, n: 1, e: 1 },
+      tritium: { name: "Hydrogen-3 (tritium)", p: 1, n: 2, e: 1 },
+      helium: { name: "Helium-4", p: 2, n: 2, e: 2 }
+    };
+    function draw(key) {
+      clr(s);
+      var a = ATOMS[key];
+      var orbitR = 90;
+      s.appendChild(S("circle", { cx: Cx, cy: Cy, r: orbitR, "class": "dg-orbit" }));
+      // nucleus: cluster protons (red) and neutrons (gray) close together
+      var total = a.p + a.n, i = 0;
+      var nucBits = [];
+      for (var pi = 0; pi < a.p; pi++) nucBits.push("p");
+      for (var ni = 0; ni < a.n; ni++) nucBits.push("n");
+      nucBits.forEach(function (kind) {
+        var ang = (i / Math.max(1, total)) * 2 * Math.PI, rr = total > 1 ? 8 : 0;
+        var nx = Cx + rr * Math.cos(ang), ny = Cy + rr * Math.sin(ang);
+        s.appendChild(S("circle", { cx: nx, cy: ny, r: 9, style: kind === "p" ? "fill:var(--bad)" : "fill:var(--text-dim)" }));
+        i++;
+      });
+      // electrons around the orbit, evenly spaced
+      for (var ei = 0; ei < a.e; ei++) {
+        var eang = (ei / a.e) * 2 * Math.PI - Math.PI / 2;
+        var ex = Cx + orbitR * Math.cos(eang), ey = Cy + orbitR * Math.sin(eang);
+        s.appendChild(S("circle", { cx: ex, cy: ey, r: 7, "class": "dg-mars" }));
+      }
+      s.appendChild(T(Cx, Cy + orbitR + 24, a.name, "dg-lbl-mid"));
+      r.readout.innerHTML = "<b>" + a.name + ":</b> " + a.p + " proton" + (a.p === 1 ? "" : "s") + " (red), " +
+        a.n + " neutron" + (a.n === 1 ? "" : "s") + " (gray), " + a.e + " electron" + (a.e === 1 ? "" : "s") + " (orbiting). " +
+        "Net charge is <b>zero</b> — protons and electrons balance.";
+    }
+    bigPick(r.controls, [
+      { label: "¹H protium", value: "protium" }, { label: "²H deuterium", value: "deuterium" },
+      { label: "³H tritium", value: "tritium" }, { label: "Helium-4", value: "helium" }
+    ], 0, function (v) { draw(v); });
+    draw("protium");
+  };
+
+  /* ---- 5.5  Bohr energy levels: absorb / emit a photon ----------------- */
+  D["energy-levels"] = function (host) {
+    var r = frame(host, "Jumping between energy levels",
+      "Tap a jump. Absorbing a photon lifts the electron up; dropping down emits one.",
+      "Jumps to/from the ground state (n=1) are the Lyman series (ultraviolet). Jumps to/from n=2 are the Balmer series (visible light) — the one that first led Bohr to his model.");
+    var W = 300, H = 210, x0 = 40;
+    var s = svg(r.stage, W + 20, H + 10);
+    var LEVELS = [1, 2, 3, 4, 5]; // n
+    function yFor(n) { return H - 10 - (H - 30) * (1 - 1 / (n * n)) / (1 - 1 / 25); }
+    LEVELS.forEach(function (n) {
+      var y = yFor(n);
+      s.appendChild(S("line", { x1: x0, y1: y, x2: x0 + W - 60, y2: y, "class": "dg-ground" }));
+      s.appendChild(T(x0 + W - 54, y + 4, "n=" + n, "dg-lbl"));
+    });
+    var arrow = S("line", { style: "stroke-width:3" });
+    var head = S("path", {});
+    s.appendChild(arrow); s.appendChild(head);
+    var JUMPS = {
+      lyman21: { from: 2, to: 1, series: "Lyman", band: "ultraviolet" },
+      lyman31: { from: 3, to: 1, series: "Lyman", band: "ultraviolet" },
+      balmer32: { from: 3, to: 2, series: "Balmer", band: "visible (H-alpha, 656 nm, red)" },
+      balmer42: { from: 4, to: 2, series: "Balmer", band: "visible (H-beta, 486 nm, blue-green)" }
+    };
+    function draw(key, mode) {
+      var j = JUMPS[key];
+      var lo = Math.min(j.from, j.to), hi = Math.max(j.from, j.to);
+      var yLo = yFor(lo), yHi = yFor(hi);
+      var x = x0 + 60;
+      var emitting = mode === "emit"; // emit: hi -> lo (down); absorb: lo -> hi (up)
+      var yStart = emitting ? yHi : yLo, yEnd = emitting ? yLo : yHi;
+      arrow.setAttribute("x1", x); arrow.setAttribute("x2", x);
+      arrow.setAttribute("y1", yStart); arrow.setAttribute("y2", yEnd);
+      arrow.setAttribute("style", "stroke-width:3;stroke:" + (emitting ? "var(--warn)" : "var(--accent)"));
+      var dir = yEnd > yStart ? 1 : -1;
+      head.setAttribute("d", "M " + (x - 6) + " " + (yEnd - dir * 10) + " L " + x + " " + yEnd + " L " + (x + 6) + " " + (yEnd - dir * 10));
+      head.setAttribute("style", "fill:none;stroke-width:3;stroke:" + (emitting ? "var(--warn)" : "var(--accent)"));
+      r.readout.innerHTML = emitting
+        ? "<b>Emitting:</b> the electron drops from n=" + hi + " to n=" + lo + ", giving off a " + j.series +
+          "-series photon of " + j.band + " light."
+        : "<b>Absorbing:</b> the electron jumps from n=" + lo + " to n=" + hi + " after absorbing a " + j.series +
+          "-series photon of " + j.band + " light.";
+    }
+    var modeRow = E("div", { "class": "dg-toggle" });
+    var bAbs = E("button", { type: "button", "class": "on", text: "Absorb (jump up)" });
+    var bEmit = E("button", { type: "button", text: "Emit (fall down)" });
+    modeRow.appendChild(bAbs); modeRow.appendChild(bEmit);
+    r.controls.appendChild(modeRow);
+    var curKey = "balmer32", curMode = "absorb";
+    bAbs.onclick = function () { curMode = "absorb"; bAbs.className = "on"; bEmit.className = ""; draw(curKey, curMode); };
+    bEmit.onclick = function () { curMode = "emit"; bEmit.className = "on"; bAbs.className = ""; draw(curKey, curMode); };
+    bigPick(r.controls, [
+      { label: "Lyman: 2→1", value: "lyman21" }, { label: "Lyman: 3→1", value: "lyman31" },
+      { label: "Balmer: 3→2", value: "balmer32" }, { label: "Balmer: 4→2", value: "balmer42" }
+    ], 2, function (v) { curKey = v; draw(curKey, curMode); });
+    draw(curKey, curMode);
+  };
+
+  /* ---- 5.6  The Doppler effect: blueshift and redshift ----------------- */
+  D["doppler-waves"] = function (host) {
+    var r = frame(host, "A moving source squeezes waves one way, stretches them the other",
+      "Slide to move the source toward or away from you. Watch the crests bunch up or spread out.",
+      "Toward the approaching side, wavelengths shorten (blueshift). Toward the receding side, they lengthen (redshift). Sideways, there's no shift at all.");
+    var W = 340, H = 170, Cx = W / 2 + 4, Cy = H / 2 + 4;
+    var s = svg(r.stage, W + 16, H + 16);
+    var ringsG = S("g", {});
+    s.appendChild(ringsG);
+    s.appendChild(T(10, Cy + 4, "← approaching (blueshift)", "dg-lbl"));
+    s.appendChild(T(W - 4, Cy + 4, "receding → (redshift)", "dg-lbl"));
+    function draw(vFrac) {
+      clr(ringsG);
+      var nRings = 5, baseR = 20;
+      for (var i = 1; i <= nRings; i++) {
+        var r0 = baseR * i;
+        // source has moved vFrac*r0 toward the "receding" side by the time this ring reached radius r0,
+        // so the ring center shifts opposite (toward the approaching side) — approximate visualization.
+        var shift = -vFrac * r0 * 0.6;
+        ringsG.appendChild(S("ellipse", {
+          cx: Cx + shift, cy: Cy, rx: Math.max(2, r0), ry: Math.max(2, r0),
+          style: "fill:none;stroke:var(--accent);stroke-width:1.5;opacity:" + (0.35 + 0.5 * (i / nRings))
+        }));
+      }
+      ringsG.appendChild(S("circle", { cx: Cx, cy: Cy, r: 6, "class": "dg-sun" }));
+      var speedKms = Math.round(vFrac * 3e5 * 0.02); // illustrative scale, not to physical scale
+      var word = vFrac > 0.03 ? "receding — redshifted" : vFrac < -0.03 ? "approaching — blueshifted" : "no radial motion — no shift";
+      r.readout.innerHTML = "<b>Radial velocity:</b> " + (speedKms === 0 ? "0" : (speedKms > 0 ? "+" : "") + speedKms) +
+        " km/s (illustrative) &mdash; the source is <b>" + word + "</b>. An observer directly to the side (top or bottom) sees no shift at all.";
+    }
+    slider(r.controls, "← toward … away →", -100, 100, 0, 5, function (v) { draw(v / 100); });
+    draw(0);
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();

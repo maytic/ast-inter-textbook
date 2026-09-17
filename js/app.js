@@ -67,7 +67,13 @@
     calendar4: ["t/calendar4", "The Calendar", "Julian, Gregorian, and the leap-year rule"],
     moonphases: ["t/moonphases", "Phases of the Moon", "New, crescent, quarter, gibbous, full — and why"],
     tides: ["t/tides", "Ocean Tides", "Spring tides, neap tides, and the pull of the Moon"],
-    eclipses: ["t/eclipses", "Eclipses", "Solar and lunar eclipses, total, partial, and annular"]
+    eclipses: ["t/eclipses", "Eclipses", "Solar and lunar eclipses, total, partial, and annular"],
+    lightwaves: ["t/lightwaves", "The Behavior of Light", "Wavelength, frequency, photons, and the inverse square law"],
+    emspectrum: ["t/emspectrum", "The EM Spectrum", "Gamma rays to radio waves — and the laws of radiation"],
+    spectroscopy: ["t/spectroscopy", "Spectroscopy", "Prisms, dispersion, and continuous/absorption/emission spectra"],
+    atomstructure: ["t/atomstructure", "The Structure of the Atom", "Protons, neutrons, isotopes, and the Bohr atom"],
+    spectrallines: ["t/spectrallines", "Formation of Spectral Lines", "Energy levels, excitation, and ionization"],
+    doppler: ["t/doppler", "The Doppler Effect", "Blueshift, redshift, and radial velocity"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -2890,6 +2896,197 @@
     }
   };
 
+  var CH5_TOOLS = {
+    lightwaves: {
+      title: "The Behavior of Light",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "Waves, photons, and the inverse square law",
+      intro: "Light is an electromagnetic wave — but it also behaves like a particle, a <b>photon</b>. " +
+        "Wavelength and frequency trade off (c = &lambda;f), and brightness fades with the <b>square</b> of " +
+        "distance.",
+      explain:
+        "<p><b>Light is a wave of changing electric and magnetic fields</b> &mdash; Maxwell showed that " +
+        "oscillating electric charges send this disturbance outward at exactly the speed of light, so light is " +
+        "one form of <b>electromagnetic radiation</b>.</p>" +
+        "<p>A wave's <b>wavelength</b> (crest-to-crest distance) and <b>frequency</b> (crests per second) " +
+        "always multiply out to the same speed: <b>c = &lambda; &times; f</b>. So a shorter wavelength always " +
+        "means a higher frequency.</p>" +
+        "<p>Light also behaves like a <b>photon</b> &mdash; a packet of energy. A photon's energy rises with " +
+        "its frequency, so violet light carries more energy per photon than red light.</p>" +
+        "<p><b>Why it matters:</b> light spreading out from a source covers more area the farther it travels, " +
+        "so brightness fades with the <b>square</b> of the distance &mdash; the same inverse square law that " +
+        "governs gravity.</p>",
+      diagram: "light-wave",
+      showLead: "Slide the wavelength and watch the wave stretch or squeeze — and its frequency change.",
+      matchKey: "lightwavesmatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>c = &lambda;f:</b> every electromagnetic wave travels at the same speed, so wavelength and " +
+        "frequency trade off. Light also behaves as a <b>photon</b>, with energy proportional to frequency. " +
+        "Brightness falls off as the <b>inverse square</b> of distance.",
+      questions: [
+        { q: "What does c = λf tell you about a wave with a very short wavelength?", choices: ["It has a high frequency", "It has a low frequency", "It travels faster than other waves", "It carries no energy"], answer: 0, why: "Since c is fixed, a shorter wavelength must pair with a higher frequency." },
+        { q: "Which carries more energy: a violet-light photon or a red-light photon?", choices: ["Violet", "Red", "They're equal", "Neither — light has no particle energy"], answer: 0, why: "Photon energy rises with frequency, and violet light has a higher frequency than red." },
+        { q: "Move twice as far from a lamp. How much dimmer does it look?", choices: ["4 times dimmer", "2 times dimmer", "Twice as bright", "No change"], answer: 0, why: "Brightness falls off as the square of distance — 2² = 4." },
+        { q: "What did Maxwell conclude about light?", choices: ["It is a form of electromagnetic radiation", "It is a stream of sound waves", "It needs the 'aether' to travel", "It never behaves like a particle"], answer: 0, why: "Maxwell's calculated wave speed matched the known speed of light, so he proposed light is electromagnetic radiation." },
+        { q: "What is a photon?", choices: ["A discrete packet of electromagnetic energy", "A type of electron", "A unit of temperature", "A kind of radio antenna"], answer: 0, why: "A photon is light's particle-like packet of energy." },
+        { q: "Why don't electromagnetic waves need a medium like air or water to travel through?", choices: ["Their electric and magnetic fields regenerate each other as they go", "They are much lighter than sound waves", "They only travel through the 'aether'", "They actually can't cross empty space"], answer: 0, why: "A changing electric field creates a magnetic field and vice versa, letting the wave propagate through a vacuum with nothing to carry it." }
+      ]
+    },
+    emspectrum: {
+      title: "The Electromagnetic Spectrum",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "From gamma rays to radio waves",
+      intro: "The spectrum runs from ultra-energetic <b>gamma rays</b> to gentle <b>radio waves</b> — and an " +
+        "object's temperature decides where it shines brightest.",
+      explain:
+        "<p>The electromagnetic spectrum is one continuous family of waves, split by wavelength into " +
+        "<b>gamma rays, X-rays, ultraviolet, visible light, infrared, microwaves,</b> and <b>radio waves</b> " +
+        "&mdash; shortest to longest.</p>" +
+        "<p>Earth's atmosphere only lets <b>visible light</b> and some <b>radio</b> waves through to the " +
+        "ground; everything else has to be observed from space or from high, dry places.</p>" +
+        "<p><b>Wien's law</b> says a hotter object peaks at a <b>shorter</b> wavelength &mdash; hotter stars " +
+        "look bluer, cooler stars look redder. The <b>Stefan-Boltzmann law</b> says a hotter object radiates " +
+        "far more total power: power grows with <b>temperature to the 4th power</b>.</p>",
+      diagram: "blackbody-curve",
+      showLead: "Slide the temperature and watch the peak shift and the curve grow.",
+      matchKey: "emspectrummatch", matchLabels: ["Band or law", "What it means"],
+      recap: "<b>The spectrum:</b> gamma &rarr; X-ray &rarr; ultraviolet &rarr; visible &rarr; infrared &rarr; " +
+        "microwave &rarr; radio, shortest to longest wavelength. <b>Wien's law:</b> hotter = shorter peak " +
+        "wavelength. <b>Stefan-Boltzmann law:</b> power &prop; T&#8308;.",
+      questions: [
+        { q: "Which band has the shortest wavelength?", choices: ["Gamma rays", "Radio waves", "Infrared", "Visible light"], answer: 0, why: "Gamma rays sit at the extreme short-wavelength end of the spectrum." },
+        { q: "Which bands can reach Earth's surface?", choices: ["Visible light and some radio waves", "Gamma rays and X-rays", "Only radio waves", "All bands equally"], answer: 0, why: "Earth's atmosphere absorbs most other bands before they reach the ground." },
+        { q: "A star peaks at a shorter wavelength than the Sun. What does that mean?", choices: ["It's hotter than the Sun", "It's cooler than the Sun", "It's farther away", "It's the same temperature"], answer: 0, why: "Wien's law: a shorter peak wavelength means a higher temperature." },
+        { q: "If a star's temperature doubles, how much more power does it radiate per square meter?", choices: ["16 times more", "2 times more", "4 times more", "No change"], answer: 0, why: "Stefan-Boltzmann law: power ∝ T⁴, so doubling T gives 2⁴ = 16 times the power." },
+        { q: "Why must astronomers observe X-rays from space?", choices: ["Earth's atmosphere absorbs them before they reach the ground", "X-rays don't actually reach Earth's solar system", "X-ray telescopes are too heavy for the ground", "X-rays travel slower than light"], answer: 0, why: "The atmosphere blocks X-rays, fortunately for our health." },
+        { q: "What is a blackbody?", choices: ["An idealized object that absorbs all radiation and re-emits based on temperature", "Any object that looks black", "A star that has died", "An object with no temperature"], answer: 0, why: "A blackbody is an idealized total absorber/emitter — real stars behave nearly like one." }
+      ]
+    },
+    spectroscopy: {
+      title: "Spectroscopy in Astronomy",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "Reading a star's spectrum",
+      intro: "A prism spreads light into a spectrum — and whether that spectrum is <b>continuous</b>, has " +
+        "<b>dark lines</b>, or shows only <b>bright lines</b> tells astronomers what a gas is made of.",
+      explain:
+        "<p>Isaac Newton (1672) showed a prism spreads white sunlight into a full rainbow &mdash; different " +
+        "wavelengths <b>refract</b> (bend) by different amounts, a spreading called <b>dispersion</b>.</p>" +
+        "<p>There are three types of spectra: a <b>continuous spectrum</b> (every color, from a solid or dense " +
+        "gas), a <b>dark-line (absorption) spectrum</b> (a continuous spectrum viewed through a cooler, " +
+        "thinner gas), and a <b>bright-line (emission) spectrum</b> (only certain wavelengths, from a hot thin " +
+        "glowing gas alone).</p>" +
+        "<p>Each element leaves its own unique pattern of lines &mdash; a <b>spectral signature</b> &mdash; " +
+        "which is how astronomers identify what a star or galaxy is made of without ever visiting it.</p>",
+      diagram: "spectrum-types",
+      showLead: "Tap each type of spectrum and see how it looks.",
+      matchKey: "spectroscopymatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Continuous</b> spectrum = every color. <b>Absorption</b> spectrum = dark lines missing from a " +
+        "continuous spectrum. <b>Emission</b> spectrum = only bright lines. Each element's pattern is a unique " +
+        "<b>spectral signature</b>.",
+      questions: [
+        { q: "What did Newton's prism experiment show?", choices: ["White sunlight is a mixture of all colors", "Light only travels in straight lines", "Stars are made of gas", "Light has no wave properties"], answer: 0, why: "The prism spread sunlight into a full rainbow, showing it's a mixture of every visible wavelength." },
+        { q: "What produces an absorption (dark-line) spectrum?", choices: ["A continuous spectrum viewed through a cooler, thinner gas", "A hot, thin gas glowing on its own", "A solid object at high temperature", "Light with no source at all"], answer: 0, why: "The cooler gas absorbs its own specific wavelengths, leaving dark lines in the continuous spectrum behind it." },
+        { q: "What produces an emission (bright-line) spectrum?", choices: ["A hot, thin gas glowing on its own, with no continuous source behind it", "A continuous spectrum with lines removed", "Sunlight passing through a prism", "A blackbody at room temperature"], answer: 0, why: "A hot, thin gas by itself emits light only at its own specific wavelengths — bright lines with nothing behind them." },
+        { q: "What is a spectral signature?", choices: ["The unique pattern of lines produced by a chemical element", "A star's total brightness", "A telescope's serial number", "The color of an astronomer's notebook"], answer: 0, why: "Every element absorbs and emits its own unmistakable set of wavelengths." },
+        { q: "Who first identified an element (sodium) in the Sun by its spectrum, and when?", choices: ["Gustav Kirchhoff, 1860", "Isaac Newton, 1672", "Joseph Fraunhofer, 1815", "William Wollaston, 1802"], answer: 0, why: "Kirchhoff was first to match a spectral signature to a specific element in the Sun." },
+        { q: "What is dispersion?", choices: ["Different wavelengths of light bending by different amounts", "Light traveling faster in a vacuum", "Two spectra canceling out", "A star losing its outer layers"], answer: 0, why: "Dispersion is why a prism spreads white light into its component colors — each wavelength refracts by a different amount." }
+      ]
+    },
+    atomstructure: {
+      title: "The Structure of the Atom",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "Protons, neutrons, electrons, and Bohr's fix",
+      intro: "Rutherford found a tiny, dense <b>nucleus</b> at an atom's center. Bohr then explained why its " +
+        "orbiting electrons don't simply spiral in and destroy the atom.",
+      explain:
+        "<p>J. J. Thomson discovered the <b>electron</b> in 1897. In 1911, Ernest Rutherford fired particles at " +
+        "gold foil and found that about 1 in 8000 bounced straight back &mdash; proof that an atom's mass and " +
+        "positive charge are packed into a tiny central <b>nucleus</b>, with electrons orbiting the mostly " +
+        "empty space around it.</p>" +
+        "<p>The number of <b>protons</b> defines the element; the number of <b>neutrons</b> can vary, giving " +
+        "different <b>isotopes</b> of the same element.</p>" +
+        "<p>Rutherford's model had a flaw: an orbiting electron should radiate energy and spiral into the " +
+        "nucleus almost instantly. Niels Bohr fixed this by proposing electrons can only occupy certain fixed " +
+        "<b>energy levels</b>, absorbing or emitting a <b>photon</b> (E = hf) only when jumping between " +
+        "them.</p>",
+      diagram: "bohr-atom",
+      showLead: "Tap an atom to build it and see its protons, neutrons, and electrons.",
+      matchKey: "atomstructurematch", matchLabels: ["Term", "Meaning"],
+      recap: "Protons define the <b>element</b>; neutrons can vary, giving <b>isotopes</b>. Bohr's model: " +
+        "electrons occupy fixed <b>energy levels</b>, absorbing/emitting a photon (<b>E = hf</b>) only when " +
+        "jumping between them.",
+      questions: [
+        { q: "What defines which element an atom is?", choices: ["Its number of protons", "Its number of neutrons", "Its number of electrons at any moment", "Its overall size"], answer: 0, why: "Protons alone define the element — hydrogen always has 1, helium always has 2." },
+        { q: "What are isotopes?", choices: ["Versions of the same element with different numbers of neutrons", "Different elements with the same mass", "Atoms with no electrons", "Charged atoms"], answer: 0, why: "Isotopes share the same proton count (same element) but differ in neutron count." },
+        { q: "What did Rutherford's gold foil experiment show?", choices: ["An atom's mass and charge are concentrated in a tiny nucleus", "Atoms have no internal parts", "Gold is not a real element", "Electrons live inside the nucleus"], answer: 0, why: "Because some particles bounced almost straight back, the nucleus had to be tiny, dense, and positively charged." },
+        { q: "What problem did Bohr's model solve?", choices: ["Why orbiting electrons don't spiral into the nucleus", "Why atoms have mass", "Why some elements are metals", "Why the nucleus has neutrons"], answer: 0, why: "Bohr proposed fixed energy levels where an electron radiates nothing, fixing the instability predicted by classical theory." },
+        { q: "According to E = hf, a higher-frequency photon has:", choices: ["More energy", "Less energy", "The same energy as any other photon", "No wavelength"], answer: 0, why: "Planck's formula ties photon energy directly to frequency." },
+        { q: "How many electrons does a helium atom have when neutral?", choices: ["2", "1", "4", "0"], answer: 0, why: "A neutral helium atom has 2 protons and 2 electrons, balancing its charge." }
+      ]
+    },
+    spectrallines: {
+      title: "Formation of Spectral Lines",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "Why atoms absorb and emit only certain colors",
+      intro: "An electron jumping between energy levels absorbs or emits a photon of one exact energy — which " +
+        "is why each element's spectrum is a unique fingerprint.",
+      explain:
+        "<p>A hydrogen electron jumping from its 2nd to 3rd orbit absorbs a photon of exactly <b>656 nm</b> " +
+        "&mdash; no other wavelength will do. Jumps to/from the ground state (n=1) form the <b>Lyman " +
+        "series</b> (ultraviolet); jumps to/from n=2 form the <b>Balmer series</b> (visible light).</p>" +
+        "<p>An atom's lowest energy is its <b>ground state</b>. Absorbing energy <b>excites</b> it to a higher " +
+        "level; it typically drops back within about a hundred-millionth of a second, emitting a photon.</p>" +
+        "<p>Enough energy can knock an electron completely free &mdash; <b>ionization</b>. Hydrogen can be " +
+        "ionized once, helium twice, oxygen up to eight times. How much of a gas is ionized depends on its " +
+        "temperature and density.</p>",
+      diagram: "energy-levels",
+      showLead: "Tap a jump and switch between absorbing and emitting.",
+      matchKey: "spectrallinesmatch", matchLabels: ["Term", "Meaning"],
+      recap: "Jumps to/from n=1 = <b>Lyman series</b> (UV); jumps to/from n=2 = <b>Balmer series</b> " +
+        "(visible). <b>Excitation</b> = absorbing energy to rise a level; <b>ionization</b> = losing an " +
+        "electron completely.",
+      questions: [
+        { q: "Why does hydrogen absorb light specifically at 656 nm?", choices: ["That photon has exactly the energy to lift an electron from the 2nd to 3rd orbit", "656 nm is hydrogen's natural color", "Hydrogen absorbs every visible wavelength equally", "656 nm ionizes hydrogen"], answer: 0, why: "Only a photon of that exact energy matches the gap between hydrogen's 2nd and 3rd orbits." },
+        { q: "The Lyman series involves transitions to/from which level?", choices: ["n=1 (ground state)", "n=2", "n=3", "n=4"], answer: 0, why: "Lyman series = transitions to/from the ground state, n=1, producing ultraviolet photons." },
+        { q: "The Balmer series produces which kind of light?", choices: ["Visible light", "X-rays", "Radio waves", "Gamma rays"], answer: 0, why: "Balmer series transitions (to/from n=2) happen to produce visible-light photons." },
+        { q: "What is ionization?", choices: ["Removing an electron completely from an atom", "Moving an electron to a lower level", "Adding a neutron", "Cooling a gas"], answer: 0, why: "Ionization knocks an electron entirely free, leaving a charged ion." },
+        { q: "How many times can a helium atom be ionized?", choices: ["Twice", "Once", "Never", "Four times"], answer: 0, why: "Helium has 2 electrons, so it can be ionized twice." },
+        { q: "What is an atom's ground state?", choices: ["Its lowest possible energy level", "Its most excited state", "The state where it's ionized", "A state that doesn't really exist"], answer: 0, why: "The ground state is the lowest-energy configuration an atom's electrons can have." }
+      ]
+    },
+    doppler: {
+      title: "The Doppler Effect",
+      eyebrow: "Study tool · Chapter 5",
+      h1: "Blueshift, redshift, and radial velocity",
+      intro: "A moving source squeezes its waves together on the approaching side and stretches them out on " +
+        "the receding side — letting astronomers measure speed from a spectrum alone.",
+      explain:
+        "<p>Christian Doppler (1842) showed that a wave source moving toward you compresses its waves (shorter " +
+        "wavelength, higher frequency); moving away, it stretches them (longer wavelength, lower frequency). " +
+        "Sideways motion produces <b>no shift</b> at all &mdash; only <b>radial velocity</b> (motion straight " +
+        "toward or away) matters.</p>" +
+        "<p>For light, a wavelength decrease is a <b>blueshift</b> (approaching); an increase is a " +
+        "<b>redshift</b> (receding). The size of the shift gives the speed: <b>v = c &times; (&Delta;&lambda; " +
+        "&divide; &lambda;)</b>.</p>" +
+        "<p>Because the whole pattern of an element's lines shifts together, rather than scrambling, " +
+        "astronomers can still identify the element <em>and</em> read off the object's speed from the same " +
+        "spectrum.</p>",
+      diagram: "doppler-waves",
+      showLead: "Slide the source's velocity and watch the wave crests bunch up or spread out.",
+      matchKey: "dopplermatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>Blueshift</b> = wavelength shortened (approaching). <b>Redshift</b> = wavelength lengthened " +
+        "(receding). <b>v = c &times; (&Delta;&lambda; &divide; &lambda;)</b>. Only <b>radial velocity</b> " +
+        "(toward/away) causes a shift — sideways motion doesn't.",
+      questions: [
+        { q: "A spectral line is observed at a longer wavelength than its rest wavelength. What does this mean?", choices: ["The source is receding (redshifted)", "The source is approaching (blueshifted)", "The source isn't moving", "The source is hotter than normal"], answer: 0, why: "A longer observed wavelength is a redshift, meaning the source is moving away." },
+        { q: "What kind of motion produces no Doppler shift?", choices: ["Motion exactly sideways (perpendicular) to the line of sight", "Motion straight toward the observer", "Motion straight away from the observer", "There's no such motion — everything shifts"], answer: 0, why: "Only radial motion (toward/away) causes a Doppler shift; purely sideways motion doesn't." },
+        { q: "In v = c × (Δλ ÷ λ), what does λ represent?", choices: ["The line's rest (unshifted) wavelength", "The star's distance", "The star's temperature", "The speed of light"], answer: 0, why: "λ is the known, unmoving rest wavelength of the spectral line being measured." },
+        { q: "Who first tested the Doppler effect, and how?", choices: ["Christian Doppler, using musicians on a moving railroad car", "Isaac Newton, using a prism", "Niels Bohr, using hydrogen gas", "Max Planck, using a blackbody"], answer: 0, why: "Doppler's 1842 experiment used musicians playing fixed notes on a moving train car." },
+        { q: "Why can astronomers still identify elements in a fast-moving, redshifted star?", choices: ["The whole pattern of lines shifts together, staying recognizable", "Fast-moving stars don't actually show a shift", "Only slow stars have spectral lines", "Element identification doesn't use spectra"], answer: 0, why: "The Doppler effect shifts an entire line pattern by the same proportion, so it's still recognizable as that element's signature." },
+        { q: "A hydrogen line normally at 500 nm is observed at 500.1 nm. Is the source approaching or receding?", choices: ["Receding", "Approaching", "Neither — no motion", "Impossible to tell"], answer: 0, why: "The observed wavelength increased (redshift), meaning the source is moving away." }
+      ]
+    }
+  };
+
   /* ---- click-to-load YouTube embed (no contact with Google until played) */
   function videoEmbed(id, label) {
     var wrap = h("div", { class: "video-embed" });
@@ -4077,7 +4274,13 @@
     "t/calendar4": ["calendar4", function () { renderLawTool(CH4_TOOLS.calendar4); }],
     "t/moonphases": ["moonphases", function () { renderLawTool(CH4_TOOLS.moonphases); }],
     "t/tides": ["tides", function () { renderLawTool(CH4_TOOLS.tides); }],
-    "t/eclipses": ["eclipses", function () { renderLawTool(CH4_TOOLS.eclipses); }]
+    "t/eclipses": ["eclipses", function () { renderLawTool(CH4_TOOLS.eclipses); }],
+    "t/lightwaves": ["lightwaves", function () { renderLawTool(CH5_TOOLS.lightwaves); }],
+    "t/emspectrum": ["emspectrum", function () { renderLawTool(CH5_TOOLS.emspectrum); }],
+    "t/spectroscopy": ["spectroscopy", function () { renderLawTool(CH5_TOOLS.spectroscopy); }],
+    "t/atomstructure": ["atomstructure", function () { renderLawTool(CH5_TOOLS.atomstructure); }],
+    "t/spectrallines": ["spectrallines", function () { renderLawTool(CH5_TOOLS.spectrallines); }],
+    "t/doppler": ["doppler", function () { renderLawTool(CH5_TOOLS.doppler); }]
   };
 
   function route() {
