@@ -2558,35 +2558,76 @@
   /* ---- 5.1  Wavelength, frequency, and c = λf ------------------------ */
   D["light-wave"] = function (host) {
     var r = frame(host, "Wavelength, frequency, and the speed of light",
-      "Slide to change the wavelength. Every wave still crosses the box at the same speed, c.",
+      "Slide to change the wavelength. Watch the beam itself shrink and stretch — and change color.",
       "Shorter wavelength packs more crests into the same stretch of space — a higher frequency — even though the wave still travels at speed c. That's c = λf.");
-    var s = svg(r.stage, 360, 140);
-    var path = S("path", { style: "fill:none;stroke-width:3" });
-    var mid = S("line", { x1: 8, y1: 70, x2: 352, y2: 70, "class": "dg-ground" });
-    s.appendChild(mid); s.appendChild(path);
-    var W = 344, x0 = 8;
-    function draw(wl) {
+    var W = 344, x0 = 8, y0 = 66;
+    var s = svg(r.stage, 360, 176);
+    var mid = S("line", { x1: x0, y1: y0, x2: x0 + W, y2: y0, "class": "dg-ground" });
+    var fillPath = S("path", { style: "stroke:none" });
+    var glow1 = S("path", { style: "fill:none;stroke-width:16;stroke-linecap:round" });
+    var glow2 = S("path", { style: "fill:none;stroke-width:9;stroke-linecap:round" });
+    var core = S("path", { style: "fill:none;stroke-width:3;stroke-linecap:round" });
+    var beamBg = S("rect", { x: x0, y: 130, width: W, height: 26, rx: 8, style: "fill:var(--panel-2);stroke:var(--border)" });
+    var beam = S("rect", { x: x0, y: 130, width: W, height: 26, rx: 8 });
+    var beamLbl = T(x0 + W / 2, 130 + 17, "", "dg-lbl-mid");
+    beamLbl.setAttribute("style", "font-weight:700");
+    [mid, fillPath, glow1, glow2, core, beamBg, beam, beamLbl].forEach(function (n) { s.appendChild(n); });
+
+    var curWL = 550, phase = 0;
+    var PIXEL_SPEED = 26; // px/sec the traveling pattern moves — the SAME for every wavelength (that's "c")
+
+    function shape(wl, ph) {
       var px = 60 * (wl / 550); // crest-to-crest pixels, scaled so visible range looks reasonable
-      var amp = 44, pts = [], n = Math.ceil(W / px) + 1;
+      var amp = 40, pts = [], fpts = [];
+      var n = Math.ceil((W / px) * 8);
       for (var i = 0; i <= n; i++) {
-        var x = x0 + i * px * 0.5;
-        if (x > x0 + W) x = x0 + W;
-        var y = 70 - amp * Math.sin((x - x0) / px * 2 * Math.PI);
+        var x = x0 + (i / n) * W;
+        var y = y0 - amp * Math.sin((x - x0) / px * 2 * Math.PI - ph);
         pts.push((i === 0 ? "M " : "L ") + x.toFixed(1) + " " + y.toFixed(1));
-        if (x >= x0 + W) break;
+        fpts.push(x.toFixed(1) + " " + y.toFixed(1));
       }
-      path.setAttribute("d", pts.join(" "));
-      var col = wavelengthToColor(wl);
-      path.setAttribute("style", "fill:none;stroke-width:3;stroke:" + col);
+      var wave = pts.join(" ");
+      var area = "M " + x0 + " " + y0 + " L " + fpts.join(" L ") + " L " + (x0 + W) + " " + y0 + " Z";
+      return { wave: wave, area: area, px: px };
+    }
+
+    function paint() {
+      var g = shape(curWL, phase);
+      fillPath.setAttribute("d", g.area);
+      glow1.setAttribute("d", g.wave);
+      glow2.setAttribute("d", g.wave);
+      core.setAttribute("d", g.wave);
+      var col = wavelengthToColor(curWL);
+      fillPath.setAttribute("style", "stroke:none;fill:" + col + ";opacity:0.16");
+      glow1.setAttribute("style", "fill:none;stroke-width:16;stroke-linecap:round;stroke:" + col + ";opacity:0.25");
+      glow2.setAttribute("style", "fill:none;stroke-width:9;stroke-linecap:round;stroke:" + col + ";opacity:0.45");
+      core.setAttribute("style", "fill:none;stroke-width:3;stroke-linecap:round;stroke:" + col);
+      beam.setAttribute("style", "fill:" + col);
+      beamLbl.textContent = colorName(curWL) + " light";
+      beamLbl.setAttribute("style", "font-weight:700;fill:" +
+        (curWL > 480 && curWL < 600 ? "#111" : "#fff"));
+    }
+    function updateReadout() {
+      var px = shape(curWL, 0).px;
       var crests = (W / px).toFixed(1);
-      var freqHz = (3e8 / (wl * 1e-9));
+      var freqHz = (3e8 / (curWL * 1e-9));
       var freqTHz = (freqHz / 1e12).toFixed(2);
-      r.readout.innerHTML = "<b>λ = " + wl + " nm</b> (" + colorName(wl) + ") &mdash; about <b>" + crests +
+      r.readout.innerHTML = "<b>λ = " + curWL + " nm</b> (" + colorName(curWL) + ") &mdash; about <b>" + crests +
         "</b> crests fit in this box. Frequency f = c &divide; λ &asymp; <b>" + freqTHz + " THz</b> (" +
         freqTHz + " &times; 10<sup>12</sup> Hz). Speed is always c = 300,000 km/s.";
     }
-    slider(r.controls, "Wavelength (nm)", 400, 700, 550, 5, function (v) { draw(v); });
-    draw(550);
+    slider(r.controls, "Wavelength (nm)", 400, 700, 550, 5, function (v) { curWL = v; paint(); updateReadout(); });
+    var last = null;
+    autoTicker(r.controls, function () {
+      var now = Date.now();
+      var dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      var px = shape(curWL, 0).px;
+      phase = (phase + (2 * Math.PI * PIXEL_SPEED * dt) / px) % (2 * Math.PI);
+      paint();
+    });
+    paint();
+    updateReadout();
   };
 
   /* ---- 5.2  Blackbody curves and Wien's law --------------------------- */
@@ -2596,13 +2637,22 @@
       "Wien's law: hotter objects peak at shorter (bluer) wavelengths. The Stefan-Boltzmann law: hotter objects radiate a LOT more power overall — power grows with T⁴.");
     var W = 344, H = 190, x0 = 10, y0 = 166;
     var s = svg(r.stage, W + 16, H + 20);
+    var defs = S("defs", {});
+    var visGrad = S("linearGradient", { id: "ch5-bb-visband", x1: "0%", x2: "100%", y1: "0%", y2: "0%" });
+    [380, 420, 460, 500, 540, 570, 590, 620, 700].forEach(function (wl, i, arr) {
+      visGrad.appendChild(S("stop", { offset: (i / (arr.length - 1) * 100) + "%", "stop-color": wavelengthToColor(wl) }));
+    });
+    defs.appendChild(visGrad);
+    s.appendChild(defs);
     s.appendChild(S("line", { x1: x0, y1: y0, x2: x0 + W, y2: y0, "class": "dg-ground" }));
     s.appendChild(S("line", { x1: x0, y1: y0, x2: x0, y2: 6, "class": "dg-ground" }));
-    var visBand = S("rect", { y: 6, height: y0 - 6, style: "fill:color-mix(in srgb, var(--accent) 10%, transparent)" });
+    var visBand = S("rect", { y: 6, height: y0 - 6, style: "fill:url(#ch5-bb-visband);opacity:0.55" });
+    var visLbl = T(0, 20, "visible", "dg-lbl");
+    visLbl.setAttribute("style", "font-weight:700;paint-order:stroke;stroke:var(--bg);stroke-width:3px");
     var curve = S("path", { style: "fill:none;stroke-width:2.5;stroke:var(--warn)" });
     var peakDot = S("circle", { r: 4, style: "fill:var(--bad)" });
     var peakLine = S("line", { "class": "dg-dash" });
-    s.appendChild(visBand); s.appendChild(curve); s.appendChild(peakLine); s.appendChild(peakDot);
+    s.appendChild(visBand); s.appendChild(visLbl); s.appendChild(curve); s.appendChild(peakLine); s.appendChild(peakDot);
     s.appendChild(T(x0 + 2, y0 + 14, "400 nm", "dg-lbl"));
     s.appendChild(T(x0 + W - 34, y0 + 14, "3000 nm", "dg-lbl"));
     var maxNM = 3000;
@@ -2611,6 +2661,8 @@
       var peak = 2.9e6 / T; // Wien's law, nm
       var vb0 = xFor(400), vb1 = xFor(700);
       visBand.setAttribute("x", vb0); visBand.setAttribute("width", Math.max(0, vb1 - vb0));
+      visLbl.setAttribute("x", (vb0 + vb1) / 2); visLbl.setAttribute("y", 20);
+      visLbl.setAttribute("text-anchor", "middle");
       var pts = [], N = 120;
       var peakHeight = Math.min(1, Math.pow(T / 12000, 4) * 6 + 0.06);
       for (var i = 0; i <= N; i++) {
@@ -2694,7 +2746,15 @@
     var r = frame(host, "Protons, neutrons, and isotopes",
       "Tap an atom to build it. The number of protons picks the element; neutrons make it a different isotope.",
       "The number of PROTONS decides the element — hydrogen always has 1, helium always has 2. Atoms of the same element with different numbers of NEUTRONS are called isotopes.");
-    var s = svg(r.stage, 300, 220);
+    var s = svg(r.stage, 300, 246);
+    r.stage.appendChild(E("div", {
+      style: "display:inline-grid;grid-template-columns:auto auto;column-gap:8px;row-gap:3px;" +
+        "justify-content:center;margin-top:4px;font-size:.9em;color:var(--text-dim);width:100%;text-align:left",
+      html:
+        "<b style=\"color:var(--bad);text-align:center\">+</b><span>proton</span>" +
+        "<b style=\"color:var(--text-dim);text-align:center\">n</b><span>neutron</span>" +
+        "<b style=\"text-align:center\">−</b><span>electron</span>"
+    }));
     var Cx = 150, Cy = 110;
     var ATOMS = {
       protium: { name: "Hydrogen-1 (protium)", p: 1, n: 0, e: 1 },
@@ -2702,31 +2762,47 @@
       tritium: { name: "Hydrogen-3 (tritium)", p: 1, n: 2, e: 1 },
       helium: { name: "Helium-4", p: 2, n: 2, e: 2 }
     };
+    function labeledDot(cx, cy, r, fillStyle, label, labelStyle) {
+      var g = S("g", {});
+      g.appendChild(S("circle", { cx: cx, cy: cy, r: r, style: fillStyle }));
+      var t = S("text", { x: cx, y: cy, "text-anchor": "middle", "dominant-baseline": "central", style: labelStyle });
+      t.textContent = label;
+      g.appendChild(t);
+      return g;
+    }
     function draw(key) {
       clr(s);
       var a = ATOMS[key];
       var orbitR = 90;
       s.appendChild(S("circle", { cx: Cx, cy: Cy, r: orbitR, "class": "dg-orbit" }));
-      // nucleus: cluster protons (red) and neutrons (gray) close together
+      // nucleus: cluster protons (red, "+") and neutrons (gray, "n") close together, spaced so they just touch
       var total = a.p + a.n, i = 0;
       var nucBits = [];
       for (var pi = 0; pi < a.p; pi++) nucBits.push("p");
       for (var ni = 0; ni < a.n; ni++) nucBits.push("n");
+      var NUC_R = 11, E_R = 9;
+      var rr = total > 1 ? NUC_R / Math.sin(Math.PI / total) : 0;
+      var nucLabelStyle = "font:800 15px system-ui,sans-serif;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:2.5px";
       nucBits.forEach(function (kind) {
-        var ang = (i / Math.max(1, total)) * 2 * Math.PI, rr = total > 1 ? 8 : 0;
+        var ang = (i / Math.max(1, total)) * 2 * Math.PI;
         var nx = Cx + rr * Math.cos(ang), ny = Cy + rr * Math.sin(ang);
-        s.appendChild(S("circle", { cx: nx, cy: ny, r: 9, style: kind === "p" ? "fill:var(--bad)" : "fill:var(--text-dim)" }));
+        s.appendChild(labeledDot(nx, ny, NUC_R, kind === "p" ? "fill:var(--bad)" : "fill:var(--text-dim)",
+          kind === "p" ? "+" : "n", nucLabelStyle));
         i++;
       });
-      // electrons around the orbit, evenly spaced
+      // electrons around the orbit, evenly spaced, each labeled "−"
+      var eLabelStyle = "font:800 14px system-ui,sans-serif;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:2.5px";
       for (var ei = 0; ei < a.e; ei++) {
         var eang = (ei / a.e) * 2 * Math.PI - Math.PI / 2;
         var ex = Cx + orbitR * Math.cos(eang), ey = Cy + orbitR * Math.sin(eang);
-        s.appendChild(S("circle", { cx: ex, cy: ey, r: 7, "class": "dg-mars" }));
+        s.appendChild(labeledDot(ex, ey, E_R, null, "−", eLabelStyle));
+        s.lastChild.firstChild.setAttribute("class", "dg-mars");
       }
-      s.appendChild(T(Cx, Cy + orbitR + 24, a.name, "dg-lbl-mid"));
-      r.readout.innerHTML = "<b>" + a.name + ":</b> " + a.p + " proton" + (a.p === 1 ? "" : "s") + " (red), " +
-        a.n + " neutron" + (a.n === 1 ? "" : "s") + " (gray), " + a.e + " electron" + (a.e === 1 ? "" : "s") + " (orbiting). " +
+      var nameLbl = T(Cx, Cy + orbitR + 26, a.name, "dg-lbl-mid");
+      nameLbl.setAttribute("style", "font:700 15px system-ui,sans-serif;fill:var(--text)");
+      s.appendChild(nameLbl);
+      r.readout.innerHTML = "<b>" + a.name + ":</b> " + a.p + " proton" + (a.p === 1 ? "" : "s") + " (+), " +
+        a.n + " neutron" + (a.n === 1 ? "" : "s") + " (n), " + a.e + " electron" + (a.e === 1 ? "" : "s") + " (−, orbiting). " +
         "Net charge is <b>zero</b> — protons and electrons balance.";
     }
     bigPick(r.controls, [
@@ -2738,59 +2814,143 @@
 
   /* ---- 5.5  Bohr energy levels: absorb / emit a photon ----------------- */
   D["energy-levels"] = function (host) {
-    var r = frame(host, "Jumping between energy levels",
-      "Tap a jump. Absorbing a photon lifts the electron up; dropping down emits one.",
-      "Jumps to/from the ground state (n=1) are the Lyman series (ultraviolet). Jumps to/from n=2 are the Balmer series (visible light) — the one that first led Bohr to his model.");
-    var W = 300, H = 210, x0 = 40;
-    var s = svg(r.stage, W + 20, H + 10);
-    var LEVELS = [1, 2, 3, 4, 5]; // n
-    function yFor(n) { return H - 10 - (H - 30) * (1 - 1 / (n * n)) / (1 - 1 / 25); }
-    LEVELS.forEach(function (n) {
-      var y = yFor(n);
-      s.appendChild(S("line", { x1: x0, y1: y, x2: x0 + W - 60, y2: y, "class": "dg-ground" }));
-      s.appendChild(T(x0 + W - 54, y + 4, "n=" + n, "dg-lbl"));
-    });
-    var arrow = S("line", { style: "stroke-width:3" });
-    var head = S("path", {});
-    s.appendChild(arrow); s.appendChild(head);
+    var r = frame(host, "Jumping between electron orbits",
+      "Tap a jump, then switch Absorb / Emit. The two orbits involved light up in blue; the rest fade back so they don't distract you.",
+      "Jumps to/from the innermost orbit (n=1) are the Lyman series (ultraviolet — invisible to your eyes). Jumps to/from the second orbit (n=2) are the Balmer series (visible light) — the one that first led Bohr to his model.");
+    var Cx = 140, Cy = 152;
+    var RMIN = 26, RMAX = 122;
+    // evenly spaced rings for clarity — the book's own diagram notes real levels aren't
+    // evenly spaced, but cramming n=2..5 together (as the true 1/n² spacing would) reads
+    // as a blur, so this diagram trades physical precision for a legible teaching picture.
+    function radiusFor(n) { return RMIN + (RMAX - RMIN) * (n - 1) / 4; }
+    var s = svg(r.stage, 300, 300);
+
+    // the nucleus, at the center — a single "+" stands in for the hydrogen nucleus
+    var nucLabelStyle = "font:800 13px system-ui,sans-serif;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:2.5px";
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: 10, style: "fill:var(--bad)" }));
+    var nucTxt = S("text", { x: Cx, y: Cy, "text-anchor": "middle", "dominant-baseline": "central", style: nucLabelStyle });
+    nucTxt.textContent = "+";
+    s.appendChild(nucTxt);
+
+    // orbits n=1..5, drawn as concentric circles — an actual atom, not an abstract ladder.
+    // Labels fan out at increasing angles (away from the 12 o'clock jump lane) so each
+    // one lands in its own clear spot instead of stacking in a single crowded column.
+    // The two rings involved in the current jump are highlighted; the other three fade
+    // into the background so your eye goes straight to what matters.
+    var rings = [], lbls = [];
+    var ACTIVE_RING_STYLE = "fill:color-mix(in srgb, var(--accent) 8%, transparent);stroke:var(--accent);stroke-width:2.5";
+    var DIM_RING_STYLE = "fill:none;stroke:var(--border);stroke-width:1.25;opacity:.4";
+    var ACTIVE_LBL_STYLE = "font:800 14px system-ui,sans-serif;fill:var(--text);paint-order:stroke;stroke:var(--bg);stroke-width:3px";
+    var DIM_LBL_STYLE = "font:600 11px system-ui,sans-serif;fill:var(--text-faint);opacity:.55";
+    for (var n = 1; n <= 5; n++) {
+      var rad = radiusFor(n);
+      var ring = S("circle", { cx: Cx, cy: Cy, r: rad });
+      s.appendChild(ring); rings.push(ring);
+      var ang = (-50 + (n - 1) * 25) * Math.PI / 180, off = rad + 18;
+      var lbl = T(Cx + off * Math.cos(ang), Cy + off * Math.sin(ang), "n=" + n, null);
+      lbl.setAttribute("text-anchor", "middle");
+      lbl.setAttribute("dominant-baseline", "central");
+      s.appendChild(lbl); lbls.push(lbl);
+    }
+    function styleRings(loN, hiN) {
+      for (var i = 0; i < 5; i++) {
+        var active = (i + 1 === loN || i + 1 === hiN);
+        rings[i].setAttribute("style", active ? ACTIVE_RING_STYLE : DIM_RING_STYLE);
+        lbls[i].setAttribute("style", active ? ACTIVE_LBL_STYLE : DIM_LBL_STYLE);
+      }
+    }
+
+    // the jump itself happens straight up from the nucleus (12 o'clock) — a glow behind a
+    // crisp line, ending in a bold filled triangle so the direction of travel is obvious,
+    // plus a plain-English word ("ABSORBING" / "EMITTING") right beside it
+    var jumpGlow = S("line", { x1: Cx, x2: Cx, style: "stroke-width:11;opacity:.3" });
+    var jumpLine = S("line", { x1: Cx, x2: Cx, style: "stroke-width:4" });
+    var jumpHead = S("path", { style: "stroke:none" });
+    var jumpTagBase = "font:800 12px system-ui,sans-serif;paint-order:stroke;stroke:var(--bg);stroke-width:3px";
+    var jumpTag = S("text", { x: Cx + 16, "text-anchor": "start", "dominant-baseline": "central" });
+    s.appendChild(jumpGlow); s.appendChild(jumpLine); s.appendChild(jumpHead); s.appendChild(jumpTag);
+
+    // the electron, drawn on top of everything, physically moving between orbit circles
+    var eLabelStyle = "font:800 13px system-ui,sans-serif;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:2.5px";
+    var electronDot = S("circle", { r: 9, "class": "dg-mars" });
+    var electronTxt = S("text", { "text-anchor": "middle", "dominant-baseline": "central", style: eLabelStyle });
+    electronTxt.textContent = "−";
+    s.appendChild(electronDot); s.appendChild(electronTxt);
+
     var JUMPS = {
-      lyman21: { from: 2, to: 1, series: "Lyman", band: "ultraviolet" },
-      lyman31: { from: 3, to: 1, series: "Lyman", band: "ultraviolet" },
-      balmer32: { from: 3, to: 2, series: "Balmer", band: "visible (H-alpha, 656 nm, red)" },
-      balmer42: { from: 4, to: 2, series: "Balmer", band: "visible (H-beta, 486 nm, blue-green)" }
+      lyman21: { lo: 1, hi: 2, series: "Lyman", visible: false, desc: "ultraviolet — invisible to your eyes" },
+      lyman31: { lo: 1, hi: 3, series: "Lyman", visible: false, desc: "ultraviolet — invisible to your eyes" },
+      balmer32: { lo: 2, hi: 3, series: "Balmer", visible: true, nm: 656, desc: "red light (H-alpha, 656 nm)" },
+      balmer42: { lo: 2, hi: 4, series: "Balmer", visible: true, nm: 486, desc: "blue-green light (H-beta, 486 nm)" }
     };
-    function draw(key, mode) {
+    function photonColor(j) { return j.visible ? wavelengthToColor(j.nm) : "#8b5cf6"; }
+
+    function placeElectron(radAmt) {
+      var y = Cy - radAmt;
+      electronDot.setAttribute("cx", Cx); electronDot.setAttribute("cy", y);
+      electronTxt.setAttribute("x", Cx); electronTxt.setAttribute("y", y);
+    }
+
+    var animId = null;
+    function animateJump(fromN, toN, col, tagText) {
+      if (animId) cancelAnimationFrame(animId);
+      var startR = radiusFor(fromN), endR = radiusFor(toN), t0 = null, DUR = 750;
+      // +1: tip leads upward (jumping outward), wings trail below it toward the nucleus.
+      // -1: tip leads downward (falling inward), wings trail above it, away from the nucleus.
+      var dir = endR > startR ? 1 : -1;
+      jumpGlow.setAttribute("style", "stroke-width:11;stroke:" + col + ";opacity:.3");
+      jumpLine.setAttribute("style", "stroke-width:4;stroke:" + col);
+      jumpHead.setAttribute("style", "fill:" + col + ";stroke:none");
+      jumpTag.setAttribute("style", jumpTagBase + ";fill:" + col);
+      jumpTag.textContent = tagText;
+      function paintAt(curR) {
+        placeElectron(curR);
+        var y0 = Cy - startR, y1 = Cy - curR;
+        jumpGlow.setAttribute("y1", y0); jumpGlow.setAttribute("y2", y1);
+        jumpLine.setAttribute("y1", y0); jumpLine.setAttribute("y2", y1);
+        var wingY = y1 + dir * 15;
+        jumpHead.setAttribute("d", "M " + Cx + " " + y1 + " L " + (Cx - 9) + " " + wingY + " L " + (Cx + 9) + " " + wingY + " Z");
+        jumpTag.setAttribute("y", (y0 + y1) / 2);
+      }
+      paintAt(startR);
+      function step(ts) {
+        if (!document.body.contains(s)) { animId = null; return; }
+        if (!t0) t0 = ts;
+        var t = Math.min(1, (ts - t0) / DUR);
+        var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        paintAt(startR + (endR - startR) * ease);
+        if (t < 1) animId = requestAnimationFrame(step);
+        else animId = null;
+      }
+      animId = requestAnimationFrame(step);
+    }
+
+    function showJump(key, mode) {
       var j = JUMPS[key];
-      var lo = Math.min(j.from, j.to), hi = Math.max(j.from, j.to);
-      var yLo = yFor(lo), yHi = yFor(hi);
-      var x = x0 + 60;
-      var emitting = mode === "emit"; // emit: hi -> lo (down); absorb: lo -> hi (up)
-      var yStart = emitting ? yHi : yLo, yEnd = emitting ? yLo : yHi;
-      arrow.setAttribute("x1", x); arrow.setAttribute("x2", x);
-      arrow.setAttribute("y1", yStart); arrow.setAttribute("y2", yEnd);
-      arrow.setAttribute("style", "stroke-width:3;stroke:" + (emitting ? "var(--warn)" : "var(--accent)"));
-      var dir = yEnd > yStart ? 1 : -1;
-      head.setAttribute("d", "M " + (x - 6) + " " + (yEnd - dir * 10) + " L " + x + " " + yEnd + " L " + (x + 6) + " " + (yEnd - dir * 10));
-      head.setAttribute("style", "fill:none;stroke-width:3;stroke:" + (emitting ? "var(--warn)" : "var(--accent)"));
+      styleRings(j.lo, j.hi);
+      var emitting = mode === "emit"; // emit: hi -> lo (falls inward); absorb: lo -> hi (jumps outward)
+      var fromN = emitting ? j.hi : j.lo, toN = emitting ? j.lo : j.hi;
+      animateJump(fromN, toN, photonColor(j), emitting ? "EMITTING ↓" : "ABSORBING ↑");
       r.readout.innerHTML = emitting
-        ? "<b>Emitting:</b> the electron drops from n=" + hi + " to n=" + lo + ", giving off a " + j.series +
-          "-series photon of " + j.band + " light."
-        : "<b>Absorbing:</b> the electron jumps from n=" + lo + " to n=" + hi + " after absorbing a " + j.series +
-          "-series photon of " + j.band + " light.";
+        ? "<b>Emitting:</b> the electron drops from n=" + fromN + " to n=" + toN + ", giving off a " + j.series +
+          "-series photon — " + j.desc + "."
+        : "<b>Absorbing:</b> the electron jumps from n=" + fromN + " to n=" + toN + " after absorbing a " + j.series +
+          "-series photon — " + j.desc + ".";
     }
     var modeRow = E("div", { "class": "dg-toggle" });
-    var bAbs = E("button", { type: "button", "class": "on", text: "Absorb (jump up)" });
-    var bEmit = E("button", { type: "button", text: "Emit (fall down)" });
+    var bAbs = E("button", { type: "button", "class": "on", text: "Absorb (jump outward)" });
+    var bEmit = E("button", { type: "button", text: "Emit (fall inward)" });
     modeRow.appendChild(bAbs); modeRow.appendChild(bEmit);
     r.controls.appendChild(modeRow);
     var curKey = "balmer32", curMode = "absorb";
-    bAbs.onclick = function () { curMode = "absorb"; bAbs.className = "on"; bEmit.className = ""; draw(curKey, curMode); };
-    bEmit.onclick = function () { curMode = "emit"; bEmit.className = "on"; bAbs.className = ""; draw(curKey, curMode); };
+    bAbs.onclick = function () { curMode = "absorb"; bAbs.className = "on"; bEmit.className = ""; showJump(curKey, curMode); };
+    bEmit.onclick = function () { curMode = "emit"; bEmit.className = "on"; bAbs.className = ""; showJump(curKey, curMode); };
     bigPick(r.controls, [
-      { label: "Lyman: 2→1", value: "lyman21" }, { label: "Lyman: 3→1", value: "lyman31" },
-      { label: "Balmer: 3→2", value: "balmer32" }, { label: "Balmer: 4→2", value: "balmer42" }
-    ], 2, function (v) { curKey = v; draw(curKey, curMode); });
-    draw(curKey, curMode);
+      { label: "Lyman: n=1↔2", value: "lyman21" }, { label: "Lyman: n=1↔3", value: "lyman31" },
+      { label: "Balmer: n=2↔3", value: "balmer32" }, { label: "Balmer: n=2↔4", value: "balmer42" }
+    ], 2, function (v) { curKey = v; showJump(curKey, curMode); });
+    placeElectron(radiusFor(JUMPS[curKey].lo));
+    showJump(curKey, curMode);
   };
 
   /* ---- 5.6  The Doppler effect: blueshift and redshift ----------------- */
