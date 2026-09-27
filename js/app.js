@@ -73,7 +73,13 @@
     spectroscopy: ["t/spectroscopy", "Spectroscopy", "Prisms, dispersion, and continuous/absorption/emission spectra"],
     atomstructure: ["t/atomstructure", "The Structure of the Atom", "Protons, neutrons, isotopes, and the Bohr atom"],
     spectrallines: ["t/spectrallines", "Formation of Spectral Lines", "Energy levels, excitation, and ionization"],
-    doppler: ["t/doppler", "The Doppler Effect", "Blueshift, redshift, and radial velocity"]
+    doppler: ["t/doppler", "The Doppler Effect", "Blueshift, redshift, and radial velocity"],
+    telescopes: ["t/telescopes", "Telescopes", "Light buckets, lenses vs. mirrors, and where the focus goes"],
+    telescopestoday: ["t/telescopestoday", "Telescopes Today", "Giant mirrors, observing sites, seeing, and adaptive optics"],
+    detectors: ["t/detectors", "Detectors and Instruments", "Film vs. CCDs, infrared challenges, and spectrometers"],
+    radiotelescopes: ["t/radiotelescopes", "Radio Telescopes", "Radio dishes, interferometers, and radar"],
+    spaceobs: ["t/spaceobs", "Observing from Space", "Hubble, Webb, Chandra, Fermi — and why we launch them"],
+    futurescopes: ["t/futurescopes", "The Future of Large Telescopes", "Rubin, the ELT, TMT, GMT, and segmented mirrors"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -3087,6 +3093,192 @@
     }
   };
 
+  var CH6_TOOLS = {
+    telescopes: {
+      title: "Telescopes",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Light buckets, lenses, and mirrors",
+      intro: "A telescope's main job is to <b>collect</b> faint light and <b>focus</b> it into an image. The bigger " +
+        "the opening, the more light it catches — and most big telescopes use a <b>mirror</b>, not a lens.",
+      explain:
+        "<p><b>Every observing system has three parts:</b> a <b>telescope</b> to collect the light, an " +
+        "<b>instrument</b> to sort it by wavelength, and a <b>detector</b> to record it.</p>" +
+        "<p>Light collected depends on the <b>area</b> of the main lens or mirror, and area grows with the " +
+        "<b>square</b> of the diameter (the <b>aperture</b>). A 4-meter mirror catches 4&sup2; = <b>16 times</b> " +
+        "the light of a 1-meter mirror.</p>" +
+        "<p>A <b>refractor</b> bends light through a <b>lens</b>. But the glass must be flawless all the way " +
+        "through, it sags because it can only be held at the edges, and each color focuses at a different spot " +
+        "(<b>chromatic aberration</b>). A <b>reflector</b> bounces light off a curved <b>mirror</b> — only the " +
+        "front surface matters and it can be supported from behind — so almost all big telescopes are " +
+        "reflectors. Newton built the first one in 1668.</p>",
+      diagram: "telescope-types",
+      showLead: "Tap each type and follow the starlight to its focus.",
+      matchKey: "telescopesmatch", matchLabels: ["Term", "Meaning"],
+      recap: "Light-gathering power &prop; <b>aperture&sup2;</b>. <b>Refractors</b> use lenses; <b>reflectors</b> " +
+        "use mirrors and win at large sizes. A reflector's light can be caught at the <b>prime focus</b>, sent out " +
+        "the side (<b>Newtonian</b>), or back through a hole in the mirror (<b>Cassegrain</b>).",
+      questions: [
+        { q: "A 4-meter mirror collects how much light compared with a 1-meter mirror?", choices: ["16 times as much", "4 times as much", "8 times as much", "The same"], answer: 0, why: "Light collected follows area, which grows with diameter squared: 4² = 16." },
+        { q: "What are a telescope's two most important jobs?", choices: ["Collect faint light and focus it into an image", "Magnify stars and change their color", "Cool the detector and block city lights", "Measure distance and speed"], answer: 0, why: "Collecting and focusing light are the main functions; magnification is done by an eyepiece." },
+        { q: "What kind of telescope did Galileo use?", choices: ["A refractor (lenses)", "A reflector (mirror)", "A radio dish", "An interferometer"], answer: 0, why: "Galileo's 'spyglass' was a tube with lenses — a refractor." },
+        { q: "Why do most large telescopes use mirrors?", choices: ["Only the front surface must be perfect, and the mirror can be supported from behind", "Mirrors magnify more than lenses", "Lenses can't focus starlight", "Mirrors are transparent"], answer: 0, why: "Light never passes through a mirror, so internal flaws don't matter and it won't sag the way a lens held by its edges does." },
+        { q: "In a Cassegrain telescope, where does the light end up?", choices: ["Back down through a hole in the main mirror", "Out the side of the tube", "At the prime focus near the top", "Through a lens at the top"], answer: 0, why: "A small secondary mirror sends the light back through a hole in the primary to an observing station below." },
+        { q: "What is chromatic aberration?", choices: ["Blur from each color focusing at a different spot in a lens", "Twinkling caused by the air", "A mirror sagging under its own weight", "Light pollution from cities"], answer: 0, why: "Glass bends different wavelengths by slightly different amounts, so the colors don't all focus together." }
+      ]
+    },
+    telescopestoday: {
+      title: "Telescopes Today",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Giant mirrors, good sites, and sharp images",
+      intro: "Modern telescopes have 8- to 10-meter mirrors, sit on <b>high, dark, dry</b> mountaintops, and use " +
+        "<b>adaptive optics</b> to undo the blurring of Earth's turbulent air.",
+      explain:
+        "<p><b>Bigger mirrors got practical:</b> Palomar's 5-m mirror (1948) needed a massive steel frame. " +
+        "Gemini North's 8-m mirror is thin and light, and computers push on its back at 120 places to fix its " +
+        "sag (<b>active control</b>). Each Keck telescope's 10-m mirror is made of <b>36 hexagons</b>.</p>" +
+        "<p><b>The air gets in the way</b> four ways: weather, absorption (especially infrared, by water vapor), " +
+        "<b>light pollution</b>, and turbulence, which blurs images and makes stars <b>twinkle</b> — astronomers " +
+        "call that <b>seeing</b>. So the best sites are high, dark, and dry, like Chile's Andes and Maunakea.</p>" +
+        "<p><b>Resolution</b> — the finest detail — is measured in arcseconds (1/3600 of a degree). " +
+        "<b>Adaptive optics</b> reshapes a flexible mirror up to 500 times a second to cancel the blur, reaching " +
+        "about 0.1 arcsecond in the infrared.</p>",
+      diagram: "adaptive-optics",
+      showLead: "Switch between bad seeing, adaptive optics, and space — watch the star's image.",
+      matchKey: "telescopestodaymatch", matchLabels: ["Term", "Meaning"],
+      recap: "Best sites: <b>high, dark, dry</b>, with steady air. <b>Seeing</b> = atmospheric blurring. " +
+        "<b>Resolution</b> is measured in arcseconds. <b>Adaptive optics</b> undoes the blur up to 500 times a " +
+        "second.",
+      questions: [
+        { q: "What makes a good observatory site?", choices: ["High, dark, and dry", "Low and near a big city", "Humid and cloudy", "At sea level"], answer: 0, why: "High sites sit above much of the water vapor, dark sites avoid light pollution, and dry air absorbs less infrared." },
+        { q: "What do astronomers call the blurring caused by turbulent air?", choices: ["Seeing", "Chromatic aberration", "Light pollution", "Active control"], answer: 0, why: "Bad seeing means lots of atmospheric blur; good seeing means steady air." },
+        { q: "How often can an adaptive optics mirror change shape?", choices: ["Up to 500 times per second", "Once a night", "Once a year", "Never — it's rigid"], answer: 0, why: "A sensor measures the distortion and the flexible mirror updates as often as 500 times a second." },
+        { q: "How many hexagonal segments make up each Keck telescope's mirror?", choices: ["36", "7", "18", "798"], answer: 0, why: "Each 10-m Keck mirror combines 36 hexagons, each 1.8 m wide." },
+        { q: "About how big does 1 arcsecond look?", choices: ["Like a quarter seen from 5 km away", "Like the full Moon", "Like your thumb at arm's length", "Like the whole sky"], answer: 0, why: "One arcsecond is 1/3600 of a degree — a quarter at 5 kilometers." },
+        { q: "Observatories are best placed at least how far from the nearest large city?", choices: ["100 miles", "1 mile", "10 feet", "It doesn't matter"], answer: 0, why: "City glare scattered by the air (light pollution) hides the faintest stars." }
+      ]
+    },
+    detectors: {
+      title: "Detectors and Instruments",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Recording the light: film, CCDs, and spectrometers",
+      intro: "The eye is a poor detector. Photographic film was better, but <b>CCDs</b> — like the sensor in a " +
+        "phone camera — record most of the photons that hit them.",
+      explain:
+        "<p><b>Detectors</b> make a permanent record and can take <b>long exposures</b> (sometimes hours), " +
+        "while the eye adds up light for only a fraction of a second.</p>" +
+        "<p><b>Photographic plates</b> use only about <b>1%</b> of the light. <b>CCDs</b> record " +
+        "<b>60&ndash;70%</b> (the best over 90%), counting photons in millions of <b>pixels</b> and giving " +
+        "digital output.</p>" +
+        "<p><b>Infrared is tricky:</b> at Earth temperatures (~300 K), the telescope and sky glow in the " +
+        "infrared themselves. So infrared detectors are cooled, often to <b>1&ndash;3 K</b> with liquid helium.</p>" +
+        "<p>A <b>spectrometer</b> spreads the light into a spectrum with a prism or, more often today, a " +
+        "<b>grating</b>.</p>",
+      diagram: "detector-catch",
+      showLead: "Tap a detector and see how many of 100 photons it actually records.",
+      matchKey: "detectorsmatch", matchLabels: ["Term", "Meaning"],
+      recap: "Film &asymp; <b>1%</b> efficient; CCDs <b>60&ndash;70%</b>, best <b>90%+</b>. Infrared detectors " +
+        "are cooled, often to <b>1&ndash;3 K</b>. Spectrometers use a <b>prism</b> or <b>grating</b>.",
+      questions: [
+        { q: "What share of the light does photographic film actually use?", choices: ["About 1%", "About 65%", "Over 90%", "100%"], answer: 0, why: "Film is very inefficient — the rest of the light is wasted." },
+        { q: "A typical CCD records about what share of the photons that hit it?", choices: ["60–70%", "1%", "10%", "5%"], answer: 0, why: "CCDs typically record 60–70%, and the best exceed 90%." },
+        { q: "What is a pixel?", choices: ["One spot where a detector counts photons", "A kind of prism", "A small telescope", "A unit of distance"], answer: 0, why: "“Pixel” is short for picture element; modern detectors have millions (megapixels)." },
+        { q: "Why are infrared detectors cooled with liquid helium?", choices: ["Warm things glow in the infrared and would swamp the faint signal", "To make them lighter", "To stop the telescope from rusting", "Helium makes light brighter"], answer: 0, why: "Everything near 300 K radiates infrared, so the detector must be kept at 1–3 K and shielded." },
+        { q: "What do most spectrometers today use to spread light into a spectrum?", choices: ["A grating", "A CCD", "An eyepiece", "A filter"], answer: 0, why: "A grating — thousands of grooves on a surface — spreads light like a prism does." },
+        { q: "Why is a long exposure useful?", choices: ["It collects light for a long time, revealing very faint objects", "It makes stars twinkle less", "It magnifies planets", "It removes chromatic aberration"], answer: 0, why: "Detectors can add up light for hours; the eye can only add it up for a fraction of a second." }
+      ]
+    },
+    radiotelescopes: {
+      title: "Radio Telescopes",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Radio dishes, interferometers, and radar",
+      intro: "Radio waves from space reach the ground. Because they are so <b>long</b>, radio astronomers link " +
+        "dishes together into <b>interferometers</b> to see fine detail.",
+      explain:
+        "<p><b>Karl Jansky</b> found the first cosmic radio waves (from the Milky Way) in the early 1930s; " +
+        "<b>Grote Reber</b> built the first antenna designed for them in 1936.</p>" +
+        "<p>A radio telescope is a curved metal <b>dish</b> that reflects radio waves to a receiver. Radio waves " +
+        "aren't sound — like light, they're electromagnetic radiation, but our senses can't detect them.</p>" +
+        "<p>Longer waves mean blurrier images, so even the biggest single dish sees less detail than a small " +
+        "optical telescope. Linking dishes into an <b>interferometer</b> gives the resolution of one dish as wide " +
+        "as their <b>separation</b>. The <b>VLA</b> reaches ~1 arcsecond, <b>ALMA</b> 0.006, and the " +
+        "<b>VLBA</b> (Virgin Islands to Hawaii) 0.0001.</p>" +
+        "<p><b>Radar</b> sends radio waves out and times the echo to find distances in the solar system.</p>",
+      diagram: "interferometer",
+      showLead: "Tap each telescope and watch two close radio sources blur or separate.",
+      matchKey: "radiotelescopesmatch", matchLabels: ["Name or term", "What it is"],
+      recap: "An <b>interferometer</b>'s resolution depends on the <b>separation</b> of its dishes, not their " +
+        "size. VLA &asymp; 1&Prime;, ALMA 0.006&Prime;, VLBA 0.0001&Prime;. <b>Radar</b> = send radio waves, time " +
+        "the echo.",
+      questions: [
+        { q: "Who discovered the first cosmic radio source?", choices: ["Karl Jansky", "Grote Reber", "Galileo", "Edwin Hubble"], answer: 0, why: "Jansky, a Bell Labs engineer, found radio static coming from the Milky Way in the early 1930s." },
+        { q: "What sets an interferometer's resolution?", choices: ["How far apart its dishes are", "How big each dish is", "How long it observes", "The color of the dishes"], answer: 0, why: "Two dishes 1 km apart resolve like one dish 1 km across." },
+        { q: "Why is a single radio dish so blurry?", choices: ["Radio waves are very long, and longer waves give poorer resolution", "Radio waves travel slowly", "Radio dishes are always small", "Radio waves can't be focused"], answer: 0, why: "Resolution gets worse as wavelength gets longer." },
+        { q: "Which array has the sharpest resolution?", choices: ["VLBA (0.0001 arcsecond)", "VLA (about 1 arcsecond)", "A single 100-m dish", "The Green Bank Telescope"], answer: 0, why: "The VLBA's dishes stretch from the Virgin Islands to Hawaii." },
+        { q: "How does radar find the distance to a planet?", choices: ["It times how long radio waves take to bounce back", "It measures the planet's color", "It counts the planet's moons", "It weighs the planet"], answer: 0, why: "Radio waves travel at the speed of light, so the round-trip time gives the distance." },
+        { q: "What is the largest radio dish now operating?", choices: ["FAST in China (500 m)", "Arecibo (305 m)", "Green Bank (100 m)", "Lovell (76 m)"], answer: 0, why: "Arecibo collapsed in 2020; China's 500-m FAST is now the largest." }
+      ]
+    },
+    spaceobs: {
+      title: "Observing from Space",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Why we put telescopes above the air",
+      intro: "Earth's atmosphere blocks <b>gamma rays, X-rays,</b> and <b>ultraviolet</b>, soaks up much " +
+        "<b>infrared</b>, and makes stars twinkle — so some telescopes have to fly.",
+      explain:
+        "<p>Direct <b>ultraviolet, X-ray, and gamma-ray</b> observations can only be made from space. In space, " +
+        "stars don't twinkle either.</p>" +
+        "<p><b>Infrared</b> is absorbed by water vapor low in the air, so astronomers flew telescopes in " +
+        "airplanes (<b>SOFIA</b>, 2010&ndash;2022) and then launched them (<b>IRAS</b> 1983, <b>Spitzer</b> " +
+        "2003&ndash;2020). In space the whole telescope can be cooled to nearly eliminate its own infrared glow.</p>" +
+        "<p><b>Hubble</b> (1990, 2.4 m) had a flawed mirror fixed by astronauts in 1993. <b>Webb</b> (launched " +
+        "Dec. 25, 2021, 6.5 m, 18 segments) observes infrared from 1.5 million km away. <b>Chandra</b> (X-ray, " +
+        "1999) and <b>Fermi</b> (gamma ray, 2008) cover the high-energy sky.</p>",
+      diagram: "atmosphere-windows",
+      showLead: "Tap each band of light and see how far it gets through the air.",
+      matchKey: "spaceobsmatch", matchLabels: ["Observatory", "What it is"],
+      recap: "Gamma, X-ray, UV &rarr; <b>space only</b> (gamma rays also indirectly from the ground). Infrared " +
+        "&rarr; <b>high peaks, airplanes, space</b>. Visible and radio &rarr; <b>reach the ground</b>.",
+      questions: [
+        { q: "Which of these can be observed directly only from space?", choices: ["X-rays", "Radio waves", "Visible light", "All of them"], answer: 0, why: "The atmosphere absorbs X-rays before they reach the ground." },
+        { q: "What mostly absorbs infrared light in our atmosphere?", choices: ["Water vapor", "Oxygen", "Clouds of dust from space", "City lights"], answer: 0, why: "Water vapor sits low in the atmosphere, so going higher helps infrared observations." },
+        { q: "What was SOFIA?", choices: ["A 2.5-m infrared telescope flown in a Boeing 747SP", "An X-ray satellite", "A radio dish in China", "A mirror segment of Webb"], answer: 0, why: "SOFIA flew above most of the atmosphere's water vapor from 2010 to 2022." },
+        { q: "How was Hubble's blurry mirror fixed?", choices: ["Astronauts installed corrective optics in 1993", "It was replaced with a new mirror", "It was brought back to Earth", "It fixed itself"], answer: 0, why: "Like glasses for blurry vision — astronauts added compensating optics and a new camera in December 1993." },
+        { q: "How far from Earth does the James Webb Space Telescope orbit?", choices: ["About 1.5 million km", "About 500 km", "At the Moon", "Around Mars"], answer: 0, why: "That's four times farther than the Moon — cold, but beyond astronaut repair." },
+        { q: "Chandra observes which kind of radiation?", choices: ["X-rays", "Gamma rays", "Infrared", "Radio"], answer: 0, why: "Chandra, launched in 1999, is NASA's great X-ray observatory; Fermi does gamma rays." }
+      ]
+    },
+    futurescopes: {
+      title: "The Future of Large Telescopes",
+      eyebrow: "Study tool · Chapter 6",
+      h1: "Giant mirrors made of many pieces",
+      intro: "The next ground giants will be 24.5 to 39 meters across. A single mirror 30 m or larger can't be built, so " +
+        "they use many <b>segments</b> held precisely in line.",
+      explain:
+        "<p>In space, <b>Webb</b> leads the coming decade, <b>Hubble</b> still works after 30+ years, and the " +
+        "<b>Nancy Grace Roman Space Telescope</b> (planned ~2027) will survey the infrared with a wide field of " +
+        "view.</p>" +
+        "<p>On the ground, the <b>Vera Rubin Observatory</b> (8.4 m, first light 2025) photographs the whole " +
+        "southern sky every three nights to catch <b>transients</b>. The planned <b>Cherenkov Telescope " +
+        "Array</b> will catch gamma rays 1000 times more energetic than Fermi can.</p>" +
+        "<p><b>Segmented giants:</b> the <b>European ELT</b> (39.3 m, 798 hexagons), the <b>TMT</b> (30 m, 492 " +
+        "hexagons), and the <b>GMT</b> (seven 8.4-m mirrors). They may even find signs of life in the atmospheres " +
+        "of planets around other stars.</p>",
+      diagram: "mirror-segments",
+      showLead: "Tap each telescope — all mirrors are drawn to the same scale.",
+      matchKey: "futurescopesmatch", matchLabels: ["Telescope or term", "What it is"],
+      recap: "Mirrors 30 m or larger can't be made in one piece. <b>ELT</b>: 39.3 m, 798 hexagons. <b>TMT</b>: " +
+        "30 m, 492 hexagons. <b>GMT</b>: seven 8.4-m mirrors. <b>Rubin</b>: whole southern sky every 3 nights.",
+      questions: [
+        { q: "Why are the new giant telescopes made of segments?", choices: ["A single mirror 30 m or larger can't be built or transported", "Segments are shinier", "Hexagons see more colors", "To make them twinkle less"], answer: 0, why: "It's technically impossible to make one mirror that large, so many smaller ones act as one." },
+        { q: "How many hexagonal segments will the European ELT have?", choices: ["798", "492", "36", "18"], answer: 0, why: "798 segments, each 1.4 m across, make its 39.3-m mirror." },
+        { q: "What is special about the Giant Magellan Telescope's mirror?", choices: ["It's made of seven 8.4-m mirrors", "It's one 30-m piece of glass", "It floats in space", "It's made of 798 hexagons"], answer: 0, why: "The GMT uses seven stiff monolithic 8.4-m mirrors as its segments." },
+        { q: "What does the Vera Rubin Observatory look for?", choices: ["Transients — things that change quickly, like exploding stars", "Radio waves from the Milky Way", "Gamma rays from space", "The Sun's ultraviolet light"], answer: 0, why: "It maps the southern sky every three nights for ten years, a movie of the changing sky." },
+        { q: "The Nancy Grace Roman Space Telescope will have what, compared with Webb?", choices: ["A smaller mirror but a wider field of view", "A bigger mirror", "X-ray eyes", "A place on the Moon"], answer: 0, why: "Roman is an infrared telescope planned for around 2027, trading mirror size for a wider view." },
+        { q: "What exciting discovery might the extremely large telescopes make?", choices: ["Evidence of life from the atmospheres of planets around other stars", "A new planet in our solar system made of glass", "Proof that the Sun is cooling fast", "Proof that the Moon has oceans"], answer: 0, why: "Their images and spectra of exoplanets could reveal atmospheric chemistry that hints at life." }
+      ]
+    }
+  };
+
   /* ---- click-to-load YouTube embed (no contact with Google until played) */
   function videoEmbed(id, label) {
     var wrap = h("div", { class: "video-embed" });
@@ -4280,7 +4472,13 @@
     "t/spectroscopy": ["spectroscopy", function () { renderLawTool(CH5_TOOLS.spectroscopy); }],
     "t/atomstructure": ["atomstructure", function () { renderLawTool(CH5_TOOLS.atomstructure); }],
     "t/spectrallines": ["spectrallines", function () { renderLawTool(CH5_TOOLS.spectrallines); }],
-    "t/doppler": ["doppler", function () { renderLawTool(CH5_TOOLS.doppler); }]
+    "t/doppler": ["doppler", function () { renderLawTool(CH5_TOOLS.doppler); }],
+    "t/telescopes": ["telescopes", function () { renderLawTool(CH6_TOOLS.telescopes); }],
+    "t/telescopestoday": ["telescopestoday", function () { renderLawTool(CH6_TOOLS.telescopestoday); }],
+    "t/detectors": ["detectors", function () { renderLawTool(CH6_TOOLS.detectors); }],
+    "t/radiotelescopes": ["radiotelescopes", function () { renderLawTool(CH6_TOOLS.radiotelescopes); }],
+    "t/spaceobs": ["spaceobs", function () { renderLawTool(CH6_TOOLS.spaceobs); }],
+    "t/futurescopes": ["futurescopes", function () { renderLawTool(CH6_TOOLS.futurescopes); }]
   };
 
   function route() {

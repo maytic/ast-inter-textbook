@@ -2987,5 +2987,499 @@
     draw(0);
   };
 
+  /* shared by the Ch 6 mirror diagrams, so one mirror always shows the same area */
+  function fmtArea(m2) {
+    return m2 < 10 ? m2.toFixed(2) : m2 < 100 ? m2.toFixed(1) : Math.round(m2).toLocaleString("en-US");
+  }
+
+  /* ---- 6.1  A telescope is a light bucket: area grows as diameter² ---- */
+  D["light-bucket"] = function (host) {
+    var r = frame(host, "A telescope is a light bucket",
+      "Tap a mirror size. The small orange disk in the middle is a 1-meter mirror, drawn to the same scale.",
+      "Light collected depends on the mirror's AREA, and area grows with the diameter squared. Twice as wide catches 4 times the light; 4 times as wide catches 16 times.");
+    var s = svg(r.stage, 300, 230);
+    var Cx = 150, Cy = 104, RMAX = 92;
+    var big = S("circle", { cx: Cx, cy: Cy, r: RMAX, "class": "dg-globe" });
+    var bigRim = S("circle", { cx: Cx, cy: Cy, r: RMAX, style: "fill:none;stroke:var(--accent);stroke-width:2" });
+    var dia = S("line", { x1: Cx - RMAX, y1: Cy, x2: Cx + RMAX, y2: Cy, "class": "dg-dash" });
+    var bigLbl = T(Cx, Cy - RMAX + 22, "", "dg-lbl-mid");
+    bigLbl.setAttribute("style", "font:700 15px system-ui,sans-serif;fill:var(--text)");
+    var ref = S("circle", { cx: Cx, cy: Cy, r: 10, "class": "dg-sun", style: "opacity:0.9" });
+    var refLbl = T(Cx, Cy + RMAX + 18, "orange = a 1-m mirror, same scale", "dg-lbl-mid");
+    [big, bigRim, dia, bigLbl, ref, refLbl].forEach(function (n) { s.appendChild(n); });
+    function draw(it) {
+      var d = it.d;
+      var refR = Math.max(1.2, RMAX / d);
+      ref.setAttribute("r", refR.toFixed(2));
+      bigLbl.textContent = d + " m";
+      var area = Math.PI * Math.pow(d / 2, 2);
+      var times = d * d;
+      r.readout.innerHTML = "<b>" + it.name + "</b> &mdash; area = &pi; &times; (" + d + " &divide; 2)&sup2; &asymp; <b>" +
+        fmtArea(area) + " m&sup2;</b>. That's " + d + "&sup2; = <b>" +
+        times.toLocaleString("en-US", { maximumFractionDigits: 1 }) + "&times;</b> the light of a 1-meter telescope.";
+    }
+    var items = [
+      { label: "1 m", value: { d: 1, name: "A 1-meter telescope" } },
+      { label: "Hubble 2.4 m", value: { d: 2.4, name: "Hubble Space Telescope (2.4 m)" } },
+      { label: "4 m", value: { d: 4, name: "A 4-meter telescope" } },
+      { label: "Palomar 5.1 m", value: { d: 5.1, name: "Hale Telescope, Palomar (5.1 m)" } },
+      { label: "Keck 10 m", value: { d: 10, name: "Keck I or II (10 m)" } },
+      { label: "ELT 39.3 m", value: { d: 39.3, name: "European Extremely Large Telescope (39.3 m)" } }
+    ];
+    bigPick(r.controls, items, 2, function (v) { draw(v); });
+    draw(items[2].value);
+  };
+
+  /* ---- 6.1  Refractor vs. reflector focus arrangements --------------- */
+  D["telescope-types"] = function (host) {
+    var r = frame(host, "Where does the light go?",
+      "Tap a telescope type. Starlight comes in from the left as parallel rays.",
+      "A refractor bends light through a lens. A reflector bounces it off a curved mirror — then the light can be caught at the prime focus, sent out the side (Newtonian), or sent back through a hole in the mirror (Cassegrain).");
+    var s = svg(r.stage, 360, 200);
+    var g = S("g", {});
+    s.appendChild(g);
+    var YS = [72, 86, 114, 128], CY = 100, TX0 = 40, TX1 = 300;
+    function line(pts, cls, style) {
+      g.appendChild(S("polyline", { points: pts.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" "),
+        "class": cls || "dg-ray3", style: "fill:none;" + (style || "") }));
+    }
+    function tube() {
+      g.appendChild(S("rect", { x: TX0, y: 58, width: TX1 - TX0, height: 84,
+        style: "fill:color-mix(in srgb, var(--text-faint) 10%, transparent);stroke:none" }));
+      [58, 142].forEach(function (y) { g.appendChild(S("line", { x1: TX0, y1: y, x2: TX1, y2: y, style: "stroke:var(--border);stroke-width:1.5" })); });
+    }
+    function mirrorX(y) { return TX1 - 0.006 * Math.pow(y - CY, 2); }
+    function primary(hole) {
+      var pts = [];
+      for (var y = 60; y <= 140; y += 2) {
+        if (hole && Math.abs(y - CY) < 7) { if (pts.length) { line(pts, "", "stroke:var(--accent);stroke-width:4"); pts = []; } continue; }
+        pts.push([mirrorX(y) + 2, y]);
+      }
+      line(pts, "", "stroke:var(--accent);stroke-width:4");
+    }
+    function dot(x, y, label, dy) {
+      g.appendChild(S("circle", { cx: x, cy: y, r: 4, "class": "dg-markhere" }));
+      if (label) g.appendChild(T(x, y + (dy || -10), label, "dg-lbl-mid"));
+    }
+    function incoming(xEnd) { YS.forEach(function (y) { line([[4, y], [typeof xEnd === "function" ? xEnd(y) : xEnd, y]]); }); }
+    var MODES = {
+      refractor: function () {
+        tube(false);
+        g.appendChild(S("ellipse", { cx: 50, cy: CY, rx: 7, ry: 40, style: "fill:color-mix(in srgb, var(--accent) 30%, transparent);stroke:var(--accent);stroke-width:1.5" }));
+        g.appendChild(S("ellipse", { cx: 312, cy: CY, rx: 3, ry: 12, style: "fill:color-mix(in srgb, var(--accent) 30%, transparent);stroke:var(--accent);stroke-width:1.2" }));
+        incoming(50);
+        var F = [280, CY];
+        YS.forEach(function (y) {
+          var ey = CY - (y - CY) * (312 - F[0]) / (F[0] - 50);
+          line([[50, y], F, [312, ey], [350, ey]]);
+        });
+        dot(F[0], F[1], "focus", 26);
+        g.appendChild(T(50, 50, "lens", "dg-lbl-mid"));
+        g.appendChild(T(318, 80, "eyepiece", "dg-lbl-mid"));
+        return "<b>Refracting telescope.</b> A lens bends the parallel starlight to a <b>focus</b>; an eyepiece then magnifies the image. " +
+          "The light passes <em>through</em> the glass, so the glass must be flawless, it can sag, and each color focuses at a slightly different spot (chromatic aberration).";
+      },
+      prime: function () {
+        tube(true); primary(false);
+        incoming(mirrorX);
+        var F = [110, CY];
+        YS.forEach(function (y) { line([[mirrorX(y), y], F]); });
+        g.appendChild(S("rect", { x: 96, y: 93, width: 14, height: 14, rx: 2, style: "fill:var(--bad)" }));
+        dot(F[0], F[1], "prime focus (detector)", -14);
+        g.appendChild(T(292, 52, "mirror", "dg-lbl-mid"));
+        return "<b>Reflecting telescope — prime focus.</b> A concave mirror at the bottom reflects the light back up the tube to the " +
+          "<b>prime focus</b>, where a detector records it. But anything sitting there blocks some of the incoming light.";
+      },
+      newtonian: function () {
+        tube(true); primary(false);
+        incoming(mirrorX);
+        var F = [110, CY], E = [150, 38];
+        YS.forEach(function (y) {
+          var H = [mirrorX(y), y];
+          // where the converging ray meets the 45° flat mirror (x + y = 250)
+          var t = (250 - H[0] - H[1]) / ((F[0] - H[0]) + (F[1] - H[1]));
+          var P = [H[0] + t * (F[0] - H[0]), H[1] + t * (F[1] - H[1])];
+          line([H, P, E]);
+        });
+        g.appendChild(S("line", { x1: 141, y1: 109, x2: 159, y2: 91, style: "stroke:var(--accent);stroke-width:3.5" }));
+        g.appendChild(S("rect", { x: 144, y: 36, width: 12, height: 22, rx: 2, style: "fill:var(--panel-2);stroke:var(--border)" }));
+        dot(E[0], E[1], "Newtonian focus (side)", -8);
+        g.appendChild(T(292, 52, "mirror", "dg-lbl-mid"));
+        return "<b>Newtonian focus.</b> A small flat mirror catches the converging light and sends it <b>out the side</b> of the tube, " +
+          "where an observer can reach it easily.";
+      },
+      cassegrain: function () {
+        tube(true); primary(true);
+        incoming(mirrorX);
+        var F = [110, CY], SX = 150, C = [338, CY];
+        YS.forEach(function (y) {
+          var H = [mirrorX(y), y];
+          var P = [SX, H[1] + (F[1] - H[1]) * (SX - H[0]) / (F[0] - H[0])];
+          line([H, P, C]);
+        });
+        g.appendChild(S("path", { d: "M 152 88 Q 146 100 152 112", style: "fill:none;stroke:var(--accent);stroke-width:3.5" }));
+        dot(C[0], C[1], "");
+        var cl = T(356, 158, "↑ Cassegrain focus", "dg-lbl");
+        cl.setAttribute("text-anchor", "end");
+        g.appendChild(cl);
+        g.appendChild(T(292, 52, "mirror (with hole)", "dg-lbl-mid"));
+        return "<b>Cassegrain focus.</b> A small secondary mirror sends the light <b>back down through a hole</b> in the primary mirror " +
+          "to an observing station below the telescope. Most large professional telescopes use this arrangement.";
+      }
+    };
+    function draw(key) { clr(g); r.readout.innerHTML = MODES[key](); }
+    bigPick(r.controls, [
+      { label: "Refractor", value: "refractor" }, { label: "Prime focus", value: "prime" },
+      { label: "Newtonian", value: "newtonian" }, { label: "Cassegrain", value: "cassegrain" }
+    ], 0, draw);
+    draw("refractor");
+  };
+
+  /* ---- 6.2  Seeing, twinkling, and adaptive optics ------------------- */
+  D["adaptive-optics"] = function (host) {
+    var r = frame(host, "Why stars blur — and how adaptive optics fixes it",
+      "Tap a setup. The box on the right is what the camera records from ONE star.",
+      "Moving cells of warm and cool air act like little lenses, so the star's image dances and smears. Adaptive optics reshapes a flexible mirror up to 500 times a second to undo it; in space there's no air at all.");
+    var s = svg(r.stage, 360, 212);
+    // left: star → air → telescope
+    s.appendChild(S("circle", { cx: 70, cy: 16, r: 5, "class": "dg-sun" }));
+    s.appendChild(T(84, 20, "star", "dg-lbl"));
+    var airG = S("g", {});
+    s.appendChild(airG);
+    var airLbl = T(8, 58, "turbulent air", "dg-lbl");
+    s.appendChild(airLbl);
+    var ray = S("polyline", { "class": "dg-ray3", style: "fill:none" });
+    s.appendChild(ray);
+    var flex = S("path", { style: "fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round" });
+    s.appendChild(flex);
+    var flexLbl = T(70, 196, "", "dg-lbl-mid");
+    s.appendChild(flexLbl);
+    s.appendChild(S("rect", { x: 52, y: 150, width: 36, height: 26, rx: 3, style: "fill:var(--panel-2);stroke:var(--border)" }));
+    s.appendChild(T(70, 167, "scope", "dg-lbl-mid"));
+    // right: the image box
+    var BX = 170, BY = 20, BW = 170;
+    s.appendChild(S("rect", { x: BX, y: BY, width: BW, height: BW, rx: 6, style: "fill:#05070d;stroke:var(--border)" }));
+    s.appendChild(T(BX + BW / 2, BY + BW + 14, "camera image", "dg-lbl-mid"));
+    var halo = S("circle", { r: 20, style: "fill:#ffd66b;opacity:0.18" });
+    var specG = S("g", {});
+    var core = S("circle", { r: 4, style: "fill:#fff8dc" });
+    [halo, specG, core].forEach(function (n) { s.appendChild(n); });
+    var cells = [];
+    for (var i = 0; i < 5; i++) {
+      var c = S("ellipse", { rx: 22, ry: 9, style: "fill:color-mix(in srgb, var(--accent) 16%, transparent);stroke:color-mix(in srgb, var(--accent) 40%, transparent)" });
+      airG.appendChild(c);
+      cells.push({ el: c, x: i * 34, y: 62 + (i % 3) * 22, v: 0.35 + (i % 3) * 0.2 });
+    }
+    var mode = "bad", t = 0;
+    var CX = BX + BW / 2, CYc = BY + BW / 2;
+    function wob(a, b) { return Math.sin(t * a + b) + 0.6 * Math.sin(t * a * 2.3 + b * 1.7); }
+    function tick() {
+      t += 0.05;
+      var ground = mode !== "space";
+      airG.style.display = ground ? "" : "none";
+      airLbl.style.display = ground ? "" : "none";
+      cells.forEach(function (c) {
+        c.x = (c.x + c.v) % 180;
+        c.el.setAttribute("cx", (c.x - 20).toFixed(1));
+        c.el.setAttribute("cy", c.y);
+      });
+      var amp = mode === "bad" ? 14 : mode === "ao" ? 1.6 : 0;
+      var dx = amp * wob(1.3, 0), dy = amp * wob(1.1, 2);
+      core.setAttribute("cx", (CX + dx).toFixed(1)); core.setAttribute("cy", (CYc + dy).toFixed(1));
+      halo.setAttribute("cx", CX); halo.setAttribute("cy", CYc);
+      halo.setAttribute("r", mode === "bad" ? 30 : mode === "ao" ? 9 : 6);
+      core.setAttribute("r", mode === "bad" ? 5 : 3.5);
+      clr(specG);
+      if (mode === "bad") {
+        for (var k = 0; k < 6; k++) {
+          specG.appendChild(S("circle", {
+            cx: (CX + 16 * wob(0.9 + k * 0.21, k * 3)).toFixed(1), cy: (CYc + 16 * wob(1.0 + k * 0.17, k * 5 + 1)).toFixed(1),
+            r: 2.4, style: "fill:#ffe9a8;opacity:" + (0.35 + 0.3 * Math.abs(Math.sin(t * 2 + k))).toFixed(2)
+          }));
+        }
+      }
+      // the ray from star to telescope wiggles in turbulent air
+      var wig = mode === "space" ? 0 : 8;
+      ray.setAttribute("points", "70,22 " + (70 + wig * wob(1.7, 1)).toFixed(1) + ",70 " + (70 + wig * wob(1.4, 4)).toFixed(1) + ",110 70,150");
+      // the flexible mirror bends only when adaptive optics is running
+      var bend = mode === "ao" ? 5 * wob(3, 0) : 0;
+      flex.setAttribute("d", "M 50 184 Q 70 " + (184 + bend).toFixed(1) + " 90 184");
+      flex.style.display = mode === "ao" ? "" : "none";
+    }
+    var TEXT = {
+      bad: "<b>Ground telescope, bad seeing.</b> The star's image dances and breaks into speckles many times a second; a long exposure smears it into a blob. " +
+        "Even at the best sites, traditional ground images can't show details smaller than <b>several tenths of an arcsecond</b>.",
+      ao: "<b>Adaptive optics ON.</b> A sensor measures the distortion and a flexible mirror changes shape up to <b>500 times per second</b> to cancel it. " +
+        "Resolution reaches about <b>0.1 arcsecond</b> in the infrared — about what Hubble gets in visible light.",
+      space: "<b>In space.</b> No air, no twinkling — the star's light is steady, and the detail you can see is limited only by the size of the telescope."
+    };
+    function draw(m) {
+      mode = m;
+      flexLbl.textContent = m === "ao" ? "flexible mirror" : "";
+      r.readout.innerHTML = TEXT[m];
+      tick();
+    }
+    bigPick(r.controls, [
+      { label: "Bad seeing", value: "bad" }, { label: "Adaptive optics", value: "ao" }, { label: "In space", value: "space" }
+    ], 0, draw);
+    autoTicker(r.controls, tick);
+    draw("bad");
+  };
+
+  /* ---- 6.3  How many photons does the detector catch? --------------- */
+  D["detector-catch"] = function (host) {
+    var r = frame(host, "How many photons get recorded?",
+      "Tap a detector. 100 photons land on it — the lit squares are the ones it actually records.",
+      "Photographic film turns only about 1% of the light into an image. A CCD records 60–70%, and the best exceed 90% — so CCDs can reveal much fainter objects.");
+    var s = svg(r.stage, 300, 250);
+    var g = S("g", {});
+    s.appendChild(g);
+    var lbl = T(150, 240, "", "dg-lbl-mid");
+    lbl.setAttribute("style", "font:700 14px system-ui,sans-serif;fill:var(--text)");
+    s.appendChild(lbl);
+    var cur = null;
+    function draw(it) {
+      cur = it;
+      clr(g);
+      var hits = [];
+      for (var i = 0; i < 100; i++) hits.push(i < it.pct);
+      for (var j = hits.length - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var tmp = hits[j]; hits[j] = hits[k]; hits[k] = tmp; }
+      hits.forEach(function (on, i) {
+        var x = 30 + (i % 10) * 24, y = 8 + Math.floor(i / 10) * 22;
+        g.appendChild(S("rect", { x: x, y: y, width: 20, height: 18, rx: 3,
+          style: on ? "fill:var(--warn);stroke:var(--warn)" : "fill:none;stroke:var(--border);stroke-width:1" }));
+      });
+      lbl.textContent = it.pct + " of 100 photons recorded";
+      r.readout.innerHTML = it.text;
+    }
+    var items = [
+      { label: "Photo plate (~1%)", value: { pct: 1, text: "<b>Photographic plate:</b> only about <b>1%</b> of the light that falls on it helps make the image — the rest is wasted. Still, it was the main detector for most of the twentieth century." } },
+      { label: "CCD (60–70%)", value: { pct: 65, text: "<b>Typical CCD:</b> records about <b>60–70%</b> of the photons. Each square is a <b>pixel</b>, where freed electrons are stored and counted at the end of the exposure." } },
+      { label: "Best CCD (90%+)", value: { pct: 92, text: "<b>Best silicon and infrared CCDs:</b> over <b>90%</b> of photons recorded — enough to find small moons of the outer planets, icy dwarf planets beyond Pluto, and dwarf galaxies." } }
+    ];
+    bigPick(r.controls, items, 0, draw);
+    var again = E("button", { "class": "dg-play", type: "button", text: "↻ New 100 photons" });
+    again.addEventListener("click", function () { if (cur) draw(cur); });
+    r.controls.appendChild(again);
+    draw(items[0].value);
+  };
+
+  /* ---- 6.4  Interferometers: separation sets the resolution ---------- */
+  var dgBlurId = 0;
+  D["interferometer"] = function (host) {
+    var r = frame(host, "Linking dishes into one giant eye",
+      "Tap a radio telescope. The dashed arc is the one giant dish the linked dishes act like.",
+      "An interferometer's sharpness depends on how FAR APART its dishes are, not how big each one is. (Resolution also depends on wavelength — ALMA works at much shorter, millimeter wavelengths than the VLA.) Drawings not to scale.");
+    var fid = "ch6-blur-" + (++dgBlurId);
+    var s = svg(r.stage, 360, 210);
+    var defs = S("defs", {});
+    var filt = S("filter", { id: fid, x: "-50%", y: "-50%", width: "200%", height: "200%" });
+    var blur = S("feGaussianBlur", { stdDeviation: 0 });
+    filt.appendChild(blur); defs.appendChild(filt); s.appendChild(defs);
+    var g = S("g", {});
+    s.appendChild(g);
+    // inset: what two close radio sources look like at this resolution
+    var IX = 262, IY = 120;
+    s.appendChild(S("rect", { x: IX - 44, y: IY - 38, width: 88, height: 76, rx: 6, style: "fill:#05070d;stroke:var(--border)" }));
+    var srcG = S("g", { filter: "url(#" + fid + ")" });
+    srcG.appendChild(S("circle", { cx: IX - 10, cy: IY, r: 6, style: "fill:#ffb347" }));
+    srcG.appendChild(S("circle", { cx: IX + 10, cy: IY, r: 6, style: "fill:#ff6b6b" }));
+    s.appendChild(srcG);
+    s.appendChild(T(IX, IY + 52, "two close sources", "dg-lbl-mid"));
+    function dish(x, y, sz, ang) {
+      var a = (ang || 0) * 180 / Math.PI;
+      var d = S("g", { transform: "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + a.toFixed(1) + ")" });
+      d.appendChild(S("path", { d: "M " + (-sz) + " " + (-sz * 0.5) + " Q 0 " + (sz * 0.7) + " " + sz + " " + (-sz * 0.5),
+        style: "fill:color-mix(in srgb, var(--accent) 25%, transparent);stroke:var(--accent);stroke-width:1.5" }));
+      d.appendChild(S("line", { x1: 0, y1: sz * 0.1, x2: 0, y2: sz * 0.9, style: "stroke:var(--text-faint);stroke-width:1.5" }));
+      g.appendChild(d);
+    }
+    function flatScene(n, span, sz) {
+      g.appendChild(S("line", { x1: 8, y1: 150, x2: 200, y2: 150, "class": "dg-ground" }));
+      var x0 = 104 - span / 2;
+      for (var i = 0; i < n; i++) dish(n === 1 ? 104 : x0 + span * i / (n - 1), 140, sz);
+      if (n > 1) {
+        g.appendChild(S("path", { d: "M " + x0 + " 120 Q 104 " + (190 - span * 0.1) + " " + (x0 + span) + " 120", "class": "dg-dash", style: "fill:none" }));
+        g.appendChild(S("line", { x1: x0, y1: 168, x2: x0 + span, y2: 168, "class": "dg-ray" }));
+      }
+    }
+    var SCENES = {
+      single: { blur: 7, draw: function () { flatScene(1, 0, 22); g.appendChild(T(104, 176, "one 100-m dish", "dg-lbl-mid")); },
+        text: "<b>A single dish</b> (like the 100-m Green Bank Telescope). Radio waves are so long that even the biggest single dish sees <b>less detail than a small visible-light telescope</b> in a college lab. The two sources blur into one." },
+      alma: { blur: 1.4, draw: function () { flatScene(9, 150, 7); g.appendChild(T(104, 184, "baselines up to 16 km", "dg-lbl-mid")); },
+        text: "<b>ALMA</b> (Chile, 16,400 ft): twelve 7-m and fifty-four 12-m dishes, baselines up to <b>16 km</b>. Working at millimeter wavelengths, it reaches resolutions down to <b>0.006 arcsecond</b>." },
+      vla: { blur: 3, draw: function () { flatScene(7, 180, 9); g.appendChild(T(104, 184, "spread over ~36 km", "dg-lbl-mid")); },
+        text: "<b>Jansky Very Large Array (VLA)</b>, New Mexico: <b>27</b> movable 25-m dishes on railroad tracks, spread over about <b>36 km</b>. Resolution about <b>1 arcsecond</b> — as sharp as a visible-light telescope." },
+      vlba: { blur: 0.2, draw: function () {
+          var ECx = 104, ECy = 230, ER = 120;
+          g.appendChild(S("circle", { cx: ECx, cy: ECy, r: ER, "class": "dg-globe" }));
+          var a0 = -Math.PI / 2 - 0.55, a1 = -Math.PI / 2 + 0.55;
+          for (var i = 0; i < 10; i++) {
+            var a = a0 + (a1 - a0) * i / 9;
+            dish(ECx + (ER + 6) * Math.cos(a), ECy + (ER + 6) * Math.sin(a), 6, a + Math.PI / 2);
+          }
+          var p0 = [ECx + ER * Math.cos(a0), ECy + ER * Math.sin(a0)], p1 = [ECx + ER * Math.cos(a1), ECy + ER * Math.sin(a1)];
+          g.appendChild(S("line", { x1: p0[0], y1: p0[1], x2: p1[0], y2: p1[1], "class": "dg-ray" }));
+          g.appendChild(T(104, 98, "Hawaii ← 10 dishes → Virgin Islands", "dg-lbl-mid"));
+        },
+        text: "<b>Very Long Baseline Array (VLBA)</b>: <b>10</b> dishes from the Virgin Islands to Hawaii, not wired together — the waves' arrival is timed precisely and combined later. Resolution <b>0.0001 arcsecond</b>: features as small as 10 AU at the center of our Galaxy." }
+    };
+    function draw(key) {
+      clr(g);
+      var sc = SCENES[key];
+      sc.draw();
+      blur.setAttribute("stdDeviation", sc.blur);
+      r.readout.innerHTML = sc.text;
+    }
+    bigPick(r.controls, [
+      { label: "Single dish", value: "single" }, { label: "VLA", value: "vla" },
+      { label: "ALMA", value: "alma" }, { label: "VLBA", value: "vlba" }
+    ], 0, draw);
+    draw("single");
+  };
+
+  /* ---- 6.5  Which light reaches the ground? Where do we observe it? --- */
+  D["atmosphere-windows"] = function (host) {
+    var r = frame(host, "Which light gets through the air?",
+      "Tap a band of light. The arrow shows how far down it gets; the lit-up icons are where astronomers observe it from.",
+      "Gamma rays, X-rays, and ultraviolet are stopped high up, so they need telescopes in space. Infrared is soaked up by water vapor low down — go high and dry, fly, or launch. Visible light and radio reach the ground. (Heights not to scale.)");
+    var s = svg(r.stage, 360, 230);
+    var GY = 200;
+    // sky layers
+    s.appendChild(S("rect", { x: 0, y: 0, width: 360, height: 60, style: "fill:#05070d" }));
+    s.appendChild(S("rect", { x: 0, y: 60, width: 360, height: GY - 60, style: "fill:color-mix(in srgb, var(--accent) 12%, transparent)" }));
+    s.appendChild(S("rect", { x: 0, y: 150, width: 360, height: GY - 150, style: "fill:color-mix(in srgb, var(--accent) 12%, transparent)" }));
+    s.appendChild(S("line", { x1: 0, y1: GY, x2: 360, y2: GY, "class": "dg-ground" }));
+    var sp = T(6, 14, "space", "dg-lbl"); sp.setAttribute("style", "fill:#cfd8ff"); s.appendChild(sp);
+    s.appendChild(T(6, 72, "atmosphere", "dg-lbl"));
+    s.appendChild(T(6, 162, "water vapor (low)", "dg-lbl"));
+    s.appendChild(T(6, GY + 14, "ground", "dg-lbl"));
+    // icons
+    var icons = {};
+    function icon(key, nodes, x, y, label) {
+      var gg = S("g", { transform: "translate(" + x + "," + y + ")" });
+      nodes.forEach(function (n) { gg.appendChild(n); });
+      var t = T(0, 26, label, "dg-lbl-mid");
+      gg.appendChild(t);
+      s.appendChild(gg);
+      icons[key] = gg;
+    }
+    icon("space", [
+      S("rect", { x: -6, y: -8, width: 12, height: 16, rx: 2, style: "fill:var(--text-dim)" }),
+      S("rect", { x: -22, y: -4, width: 14, height: 8, style: "fill:var(--accent)" }),
+      S("rect", { x: 8, y: -4, width: 14, height: 8, style: "fill:var(--accent)" })
+    ], 300, 26, "space telescope");
+    icon("plane", [
+      S("path", { d: "M -22 0 L 18 -3 Q 24 0 18 3 Z", style: "fill:var(--text-dim)" }),
+      S("path", { d: "M -4 -1 L -12 -12 L -6 -12 L 6 -1 Z M -4 1 L -12 12 L -6 12 L 6 1 Z", style: "fill:var(--text-dim)" })
+    ], 300, 110, "airplane (SOFIA)");
+    s.appendChild(S("path", { d: "M 150 " + GY + " L 196 128 L 242 " + GY + " Z", style: "fill:color-mix(in srgb, var(--text-faint) 35%, transparent);stroke:var(--border)" }));
+    icon("peak", [S("rect", { x: -7, y: -7, width: 14, height: 9, rx: 3, style: "fill:var(--text-dim)" })], 196, 122, "high dry peak");
+    icon("ground", [
+      S("path", { d: "M -12 -8 Q 0 8 12 -8", style: "fill:none;stroke:var(--text-dim);stroke-width:3" }),
+      S("line", { x1: 0, y1: 0, x2: 0, y2: 8, style: "stroke:var(--text-dim);stroke-width:2" })
+    ], 92, GY - 10, "ground telescope");
+    var arrow = S("line", { style: "stroke-width:5;stroke-linecap:round" });
+    var head = S("path", {});
+    var stopX = S("text", { "text-anchor": "middle", style: "font:800 16px system-ui,sans-serif" });
+    [arrow, head, stopX].forEach(function (n) { s.appendChild(n); });
+    var BANDS = {
+      gamma: { stop: 64, col: "#b388ff", where: ["space"], text: "<b>Gamma rays</b> are absorbed high in the atmosphere. Observed from space by <b>Fermi</b> (2008) and INTEGRAL — or <em>indirectly</em> from the ground by arrays like VERITAS and H.E.S.S., which catch the cascade of light a gamma ray sets off in the air." },
+      xray: { stop: 72, col: "#8ab4ff", where: ["space"], text: "<b>X-rays</b> never reach the ground. Observed from space by <b>Chandra</b> (1999) and XMM-Newton." },
+      uv: { stop: 88, col: "#c792ea", where: ["space"], text: "<b>Ultraviolet</b> is mostly blocked by the atmosphere, so it's observed from space — for example by the <b>Hubble Space Telescope</b>. The very first such observations, in 1946, used instruments on captured V2 rockets to detect the Sun's ultraviolet light." },
+      visible: { stop: GY, col: "#ffd66b", where: ["ground", "peak", "space"], text: "<b>Visible light</b> reaches the ground, so big ground telescopes like Keck and the VLT observe it — best from high, dark, dry sites. Hubble, Gaia, and TESS observe it from space, free of twinkling." },
+      ir: { stop: 158, col: "#ff8a65", where: ["peak", "plane", "space"], text: "<b>Infrared</b> is soaked up mostly by <b>water vapor</b> low in the atmosphere. So astronomers observe from high, dry peaks, from airplanes (SOFIA flew above 99% of the water vapor), or from space — IRAS, Spitzer, WISE, and the <b>James Webb Space Telescope</b>." },
+      radio: { stop: GY, col: "#80cbc4", where: ["ground"], text: "<b>Radio waves</b> reach the ground, so radio telescopes like the VLA, ALMA, Green Bank, and FAST work on Earth — even in daylight." }
+    };
+    function draw(key) {
+      var b = BANDS[key];
+      var x = 128, y1 = 4, y2 = b.stop;
+      var reached = y2 >= GY;
+      arrow.setAttribute("x1", x); arrow.setAttribute("x2", x);
+      arrow.setAttribute("y1", y1); arrow.setAttribute("y2", reached ? GY - 8 : y2);
+      arrow.setAttribute("style", "stroke-width:5;stroke-linecap:round;stroke:" + b.col);
+      if (reached) {
+        head.setAttribute("d", "M " + (x - 8) + " " + (GY - 12) + " L " + (x + 8) + " " + (GY - 12) + " L " + x + " " + (GY - 1) + " Z");
+        head.setAttribute("style", "fill:" + b.col);
+        stopX.textContent = "";
+      } else {
+        head.setAttribute("d", "");
+        stopX.setAttribute("x", x); stopX.setAttribute("y", y2 + 16);
+        stopX.setAttribute("style", "font:800 16px system-ui,sans-serif;fill:" + b.col);
+        stopX.textContent = "✕";
+      }
+      Object.keys(icons).forEach(function (k) {
+        icons[k].setAttribute("opacity", b.where.indexOf(k) > -1 ? "1" : "0.22");
+      });
+      r.readout.innerHTML = b.text;
+    }
+    bigPick(r.controls, [
+      { label: "Gamma", value: "gamma" }, { label: "X-ray", value: "xray" }, { label: "Ultraviolet", value: "uv" },
+      { label: "Visible", value: "visible" }, { label: "Infrared", value: "ir" }, { label: "Radio", value: "radio" }
+    ], 0, draw);
+    draw("gamma");
+  };
+
+  /* ---- 6.6  Segmented mirrors, drawn to one scale -------------------- */
+  D["mirror-segments"] = function (host) {
+    var r = frame(host, "Building a giant mirror from pieces",
+      "Tap a telescope. Every mirror is drawn to the SAME scale; the faint circle is the 39.3-m ELT for comparison.",
+      "No one can build or move a single mirror 30 m or more across, so giant telescopes combine many smaller mirrors, held precisely in line so they act as one.");
+    var s = svg(r.stage, 300, 250);
+    var Cx = 150, Cy = 122, PXM = 112 / 19.65; // pixels per meter: the ELT's 39.3 m fills the frame
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: 19.65 * PXM, "class": "dg-dash", style: "fill:none" }));
+    var g = S("g", {});
+    s.appendChild(g);
+    function hexCells(n) {
+      // axial coords within enough rings, nearest-first, skipping the center (a hole, as on Keck and Webb)
+      var cells = [];
+      for (var q = -20; q <= 20; q++) for (var rr = -20; rr <= 20; rr++) {
+        var x = Math.sqrt(3) * (q + rr / 2), y = 1.5 * rr;
+        if (q === 0 && rr === 0) continue;
+        cells.push({ x: x, y: y, d: x * x + y * y });
+      }
+      cells.sort(function (a, b) { return a.d - b.d || Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x); });
+      return cells.slice(0, n);
+    }
+    function hexPath(cx, cy, a) {
+      var p = [];
+      for (var i = 0; i < 6; i++) { var t = Math.PI / 180 * (60 * i - 30); p.push((cx + a * Math.cos(t)).toFixed(2) + "," + (cy + a * Math.sin(t)).toFixed(2)); }
+      return "M " + p.join(" L ") + " Z";
+    }
+    var SCOPES = {
+      webb: { n: 18, a: 0.73, d: 6.5, name: "James Webb Space Telescope", text: "<b>James Webb Space Telescope:</b> a <b>6.5-m</b> mirror of <b>18</b> gold-coated segments — shielded from the Sun by a sunshield the size of a tennis court." },
+      keck: { n: 36, a: 0.9, d: 10, name: "Keck", text: "<b>Keck I and II:</b> <b>10-m</b> mirrors, each made of <b>36</b> hexagonal segments 1.8 m wide, kept in shape by computer-controlled motors. The first of the new-technology giants (1993–96)." },
+      gmt: { circles: true, d: 24.5, name: "Giant Magellan Telescope", text: "<b>Giant Magellan Telescope:</b> about <b>24.5 m</b> across, made of <b>seven</b> stiff <b>8.4-m</b> mirrors. Being built near Las Campanas Observatory in Chile." },
+      tmt: { n: 492, a: 0.72, d: 30, name: "Thirty-Meter Telescope", text: "<b>Thirty-Meter Telescope:</b> <b>30 m</b> across, made of <b>492</b> hexagons about 1.44 m across corners, with gaps between them of only 2.5 mm. Preferred site: Maunakea." },
+      elt: { n: 798, a: 0.7, d: 39.3, name: "European ELT", text: "<b>European Extremely Large Telescope:</b> <b>39.3 m</b> across — the most ambitious — made of <b>798</b> hexagons, each 1.4 m across, in Chile's Atacama Desert." }
+    };
+    function draw(key) {
+      clr(g);
+      var sc = SCOPES[key];
+      var segStyle = "fill:color-mix(in srgb, var(--warn) 55%, transparent);stroke:var(--panel);stroke-width:" + (sc.n > 100 ? 0.4 : 0.8);
+      if (sc.circles) {
+        var R = 4.2 * PXM, dist = 8.5 * PXM;
+        g.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: segStyle }));
+        for (var i = 0; i < 6; i++) {
+          var t = i * Math.PI / 3;
+          g.appendChild(S("circle", { cx: Cx + dist * Math.cos(t), cy: Cy + dist * Math.sin(t), r: R, style: segStyle }));
+        }
+      } else {
+        var a = sc.a * PXM, spacing = sc.a; // cell layout in units of the hex circumradius
+        var path = "";
+        hexCells(sc.n).forEach(function (c) { path += hexPath(Cx + c.x * spacing * PXM, Cy + c.y * spacing * PXM, a * 0.96) + " "; });
+        g.appendChild(S("path", { d: path, style: segStyle }));
+      }
+      var area = Math.PI * Math.pow(sc.d / 2, 2);
+      r.readout.innerHTML = sc.text + " Collecting area roughly &pi; &times; (" + sc.d + " &divide; 2)&sup2; &asymp; <b>" +
+        fmtArea(area) + " m&sup2;</b>.";
+    }
+    bigPick(r.controls, [
+      { label: "Webb 6.5 m", value: "webb" }, { label: "Keck 10 m", value: "keck" }, { label: "GMT 24.5 m", value: "gmt" },
+      { label: "TMT 30 m", value: "tmt" }, { label: "ELT 39.3 m", value: "elt" }
+    ], 1, draw);
+    draw("keck");
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();

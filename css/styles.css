@@ -337,7 +337,7 @@ body::before {
   color: var(--accent);
   text-transform: none;
 }
-.prose ul { margin: 0 0 14px; padding-left: 22px; }
+.prose ul, .prose ol { margin: 0 0 14px; padding-left: 22px; }
 .prose li { margin: 4px 0; }
 .term {
   color: var(--term);
