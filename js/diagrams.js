@@ -3481,5 +3481,530 @@
     draw("keck");
   };
 
+  /* small seeded random generator, so a diagram's scatter looks the same every visit */
+  function seeded(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  /* rAF loop that quietly ends once its diagram is gone from the page */
+  function runWhileShown(node, tick) {
+    function loop() {
+      if (!document.body.contains(node)) return;
+      tick();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ---- 7.1  The eight planets, from the book's Table 7.2 ------------- */
+  D["planet-facts"] = function (host) {
+    var r = frame(host, "Meet the eight planets",
+      "Tap a planet. Its size is drawn to scale against Jupiter, and the bars compare every planet's density with water.",
+      "Numbers from the book's Table 7.2. Density is in g/cm³, where water = 1. The four inner planets are dense rock and metal; the four giants are light.");
+    var P = [
+      { n: "Mercury", au: "0.39", yr: "0.24", km: 4878, kmT: "4,878", m: "3.3", d: 5.4, col: "#a9a29a", note: "Closest to the Sun, with the greatest share of metal of any terrestrial world. Its sunlit side reaches 280–430 °C. No moons." },
+      { n: "Venus", au: "0.72", yr: "0.62", km: 12120, kmT: "12,120", m: "48.7", d: 5.2, col: "#e8c47a", note: "Rotates backward, very slowly. Its thick carbon dioxide atmosphere keeps the surface at about 700 K — hotter than Mercury. No moons." },
+      { n: "Earth", au: "1.00", yr: "1.00", km: 12756, kmT: "12,756", m: "59.8", d: 5.5, col: "#5b9bd5", note: "The densest planet, and the only one where surface temperatures generally lie between water's freezing and boiling points." },
+      { n: "Mars", au: "1.52", yr: "1.88", km: 6787, kmT: "6,787", m: "6.4", d: 3.9, col: "#d0703c", note: "Air as thin as Earth's at 30 km up, and no rain for billions of years. Its small moons are very likely captured asteroids." },
+      { n: "Jupiter", au: "5.20", yr: "11.86", km: 142984, kmT: "142,984", m: "18,991", d: 1.3, col: "#d9b48f", note: "More massive than all the other planets combined — about 1,300 Earths could fit inside. 75% hydrogen, 25% helium." },
+      { n: "Saturn", au: "9.54", yr: "29.46", km: 120536, kmT: "120,536", m: "5686", d: 0.7, col: "#e6d29a", note: "Its bright rings are by far the easiest of the four ring systems to see." },
+      { n: "Uranus", au: "19.18", yr: "84.07", km: 51118, kmT: "51,118", m: "866", d: 1.3, col: "#9fd8df", note: "Discovered after the telescope was invented. It spins about an axis tipped nearly on its side." },
+      { n: "Neptune", au: "30.06", yr: "164.82", km: 49660, kmT: "49,660", m: "1030", d: 1.6, col: "#5a7fe0", note: "The farthest planet, about 30 AU out. Its largest moon is Triton." }
+    ];
+    var s = svg(r.stage, 360, 200);
+    // left: size to scale
+    var Cx = 82, Cy = 92, RJ = 70;
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: RJ, "class": "dg-dash", style: "fill:none" }));
+    s.appendChild(T(Cx, Cy + RJ + 14, "dashed = Jupiter's size", "dg-lbl-mid"));
+    var ball = S("circle", { cx: Cx, cy: Cy });
+    var earthRef = S("circle", { cx: Cx, cy: Cy, r: RJ * 12756 / 142984, style: "fill:none;stroke:var(--text-dim);stroke-width:1" });
+    var nameT = T(Cx, 14, "", "dg-lbl-mid");
+    nameT.setAttribute("style", "font-weight:700;fill:var(--text)");
+    [ball, earthRef, nameT].forEach(function (n) { s.appendChild(n); });
+    // right: density bars
+    var X0 = 182, BW = 16, BASE = 170, PX = 24; // 24 px per g/cm³
+    s.appendChild(T(X0 - 4, 14, "density (g/cm³)", "dg-lbl"));
+    var bars = [];
+    P.forEach(function (p, i) {
+      var x = X0 + i * (BW + 2);
+      var b = S("rect", { x: x, y: BASE - p.d * PX, width: BW, height: p.d * PX, rx: 2 });
+      s.appendChild(b);
+      var t = T(x + BW / 2, BASE + 12, p.n.slice(0, 2), "dg-lbl-mid");
+      s.appendChild(t);
+      bars.push(b);
+    });
+    s.appendChild(S("line", { x1: X0 - 4, y1: BASE - PX, x2: X0 + 8 * (BW + 2), y2: BASE - PX, style: "stroke:#5b9bd5;stroke-width:1.5;stroke-dasharray:4 3" }));
+    s.appendChild(T(X0 + 8 * (BW + 2) + 3, BASE - PX - 2, "water", "dg-lbl"));
+    s.appendChild(T(X0 + 8 * (BW + 2) + 3, BASE - PX + 10, "= 1", "dg-lbl"));
+    s.appendChild(S("line", { x1: X0 - 4, y1: BASE, x2: X0 + 8 * (BW + 2), y2: BASE, "class": "dg-ground" }));
+    function draw(i) {
+      var p = P[i];
+      ball.setAttribute("r", Math.max(2.5, RJ * p.km / 142984));
+      ball.setAttribute("style", "fill:" + p.col);
+      earthRef.setAttribute("opacity", i >= 4 ? "1" : "0");
+      nameT.textContent = p.n + (i >= 4 ? "  (ring = Earth)" : "");
+      bars.forEach(function (b, j) {
+        b.setAttribute("style", "fill:" + (j === i ? p.col : "color-mix(in srgb, var(--text-faint) 40%, transparent)"));
+      });
+      r.readout.innerHTML = "<b>" + p.n + "</b>: " + p.au + " AU from the Sun · one orbit = " + p.yr + " years · " +
+        p.kmT + " km across · mass " + p.m + " × 10²³ kg · density <b>" + p.d + "</b> g/cm³" +
+        (p.d < 1 ? " (<b>less than water</b>)" : "") + ".<br>" + p.note;
+    }
+    bigPick(r.controls, P.map(function (p, i) { return { label: p.n, value: i }; }), 2, draw);
+    draw(2);
+  };
+
+  /* ---- 7.1  Meteor or meteorite? ------------------------------------- */
+  D["meteor-path"] = function (host) {
+    var r = frame(host, "Meteor or meteorite?",
+      "Pick what falls in from space, then watch it hit our atmosphere.",
+      "A grain of cosmic dust burns up in a brief flash — a meteor, or “shooting star.” A larger chunk of rock or metal can survive the trip; any piece that strikes the ground is a meteorite.");
+    var s = svg(r.stage, 360, 200);
+    var GY = 180;
+    s.appendChild(S("rect", { x: 0, y: 0, width: 360, height: 70, style: "fill:#05070d" }));
+    s.appendChild(S("rect", { x: 0, y: 70, width: 360, height: GY - 70, style: "fill:color-mix(in srgb, var(--accent) 14%, transparent)" }));
+    s.appendChild(S("line", { x1: 0, y1: GY, x2: 360, y2: GY, "class": "dg-ground" }));
+    var sp = T(6, 14, "space", "dg-lbl"); sp.setAttribute("style", "fill:#cfd8ff"); s.appendChild(sp);
+    s.appendChild(T(6, 84, "Earth's atmosphere", "dg-lbl"));
+    s.appendChild(T(6, GY + 14, "ground", "dg-lbl"));
+    var trail = S("path", { style: "fill:none;stroke-linecap:round" });
+    var rock = S("circle", {});
+    var crater = S("ellipse", { rx: 0, ry: 0, style: "fill:color-mix(in srgb, var(--text-faint) 50%, transparent)" });
+    var tag = T(0, 0, "", "dg-lbl-mid");
+    tag.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--warn)");
+    [trail, crater, rock, tag].forEach(function (n) { s.appendChild(n); });
+    var KINDS = {
+      dust: { size: 2.2, burnAt: 128, text: "A tiny grain of <b>cosmic dust</b> plunges into the atmosphere and <b>burns up</b>, making a brief streak of light — a <b>meteor</b>. Millions do this every day." },
+      chunk: { size: 7, burnAt: null, text: "A <b>larger chunk</b> of rock or metal glows as it falls but <b>survives</b> the trip. The piece that strikes the ground is a <b>meteorite</b> — you can see them in many natural history museums." }
+    };
+    var kind = "dust", t = 0;
+    function pos(u) { return [300 - 230 * u, 6 + (GY - 6) * u]; }
+    function tick() {
+      var k = KINDS[kind];
+      t += 0.006;
+      if (t > 1.35) t = 0;
+      var u = Math.min(t, 1);
+      var p = pos(u), y = p[1];
+      var inAir = y > 70;
+      var burnedOut = k.burnAt && y > k.burnAt;
+      // trail: from where it entered the air to now
+      if (inAir) {
+        var u0 = 64 / (GY - 6), pe = pos(u0);
+        var endU = burnedOut ? (k.burnAt - 6) / (GY - 6) : u;
+        var pn = pos(endU);
+        var fade = burnedOut ? Math.max(0, 1 - (t - endU) * 6) : 1;
+        trail.setAttribute("d", "M " + pe[0] + " " + pe[1] + " L " + pn[0] + " " + pn[1]);
+        trail.setAttribute("style", "fill:none;stroke-linecap:round;stroke:#ffd66b;stroke-width:" + (kind === "dust" ? 2.5 : 4) + ";opacity:" + (0.85 * fade));
+      } else trail.setAttribute("d", "");
+      var size = k.size;
+      if (kind === "chunk" && inAir) size = k.size - 2.5 * (y - 70) / (GY - 70); // it wears down but survives
+      rock.setAttribute("cx", p[0]); rock.setAttribute("cy", Math.min(y, GY - size));
+      rock.setAttribute("r", burnedOut ? 0 : size);
+      rock.setAttribute("style", "fill:" + (inAir ? "#ffb347" : "var(--text-dim)"));
+      var landed = kind === "chunk" && t >= 1;
+      crater.setAttribute("cx", pos(1)[0]); crater.setAttribute("cy", GY);
+      crater.setAttribute("rx", landed ? 12 : 0); crater.setAttribute("ry", landed ? 3 : 0);
+      if (burnedOut) { tag.textContent = "✨ meteor (burned up)"; tag.setAttribute("x", pos((k.burnAt - 6) / (GY - 6))[0] + 40); tag.setAttribute("y", k.burnAt + 18); }
+      else if (landed) { tag.textContent = "🪨 meteorite!"; tag.setAttribute("x", pos(1)[0] + 30); tag.setAttribute("y", GY - 14); }
+      else if (inAir) { tag.textContent = "glowing…"; tag.setAttribute("x", p[0] + 36); tag.setAttribute("y", y); }
+      else tag.textContent = "";
+    }
+    bigPick(r.controls, [{ label: "Tiny dust grain", value: "dust" }, { label: "Larger chunk", value: "chunk" }], 0, function (v) {
+      kind = v; t = 0; r.readout.innerHTML = KINDS[v].text;
+    });
+    r.readout.innerHTML = KINDS.dust.text;
+    autoTicker(r.controls, tick);
+  };
+
+  /* ---- 7.1  The solar system shrunk by 1 billion --------------------- */
+  D["scale-model"] = function (host) {
+    var r = frame(host, "The solar system, 1 billion times smaller",
+      "Tap an object. In this model 1 AU = 150 m = one city block, so the street below is marked in blocks.",
+      "Every size and distance divided by 10⁹. Sizes with a food are the book's own; the others are worked out from Table 7.2 with the same ÷ 10⁹.");
+    var s = svg(r.stage, 360, 112);
+    var X0 = 16, X1 = 344, MAXB = 32, SY = 64;
+    function bx(b) { return X0 + (X1 - X0) * b / MAXB; }
+    s.appendChild(S("rect", { x: X0 - 6, y: SY - 7, width: X1 - X0 + 12, height: 14, rx: 3, style: "fill:color-mix(in srgb, var(--text-faint) 22%, transparent)" }));
+    for (var b = 0; b <= MAXB; b++) {
+      s.appendChild(S("line", { x1: bx(b), y1: SY - 7, x2: bx(b), y2: SY + 7, style: "stroke:var(--panel);stroke-width:" + (b % 5 === 0 ? 1.6 : 0.8) }));
+      if (b % 5 === 0) s.appendChild(T(bx(b), SY + 20, String(b), "dg-lbl-mid"));
+    }
+    s.appendChild(T(X1, SY + 34, "city blocks from the Sun →", "dg-lbl")).setAttribute("text-anchor", "end");
+    var O = [
+      { n: "Sun", b: 0, col: "#ffcf6b", text: "The <b>Sun</b> is nearly <b>1.5 m</b> across — about the height of an adult — at the start of the street." },
+      { n: "Mercury", b: 0.39, col: "#a9a29a", text: "<b>Mercury</b>: 0.39 AU, so about <b>0.4 block</b> (59 m) from the Sun. About 0.5 cm across (4,878 km ÷ 10⁹)." },
+      { n: "Venus", b: 0.72, col: "#e8c47a", text: "<b>Venus</b>: 0.72 AU, about <b>0.7 block</b> (108 m) out. About 1.2 cm across — nearly Earth's size." },
+      { n: "Earth", b: 1, col: "#5b9bd5", text: "<b>Earth</b> is a <b>grape</b> 1.3 cm across, <b>one block (150 m)</b> from the Sun. The <b>Moon</b> is a <b>pea</b> 40 cm away — the Earth-Moon system fits in a backpack. A human here is the size of a single <b>atom</b>." },
+      { n: "Mars", b: 1.52, col: "#d0703c", text: "<b>Mars</b>: 1.52 AU, about <b>1.5 blocks</b> (228 m) out. About 0.7 cm across." },
+      { n: "Jupiter", b: 5.2, col: "#d9b48f", text: "<b>Jupiter</b> is a very large <b>grapefruit</b>, 15 cm across, <b>five blocks</b> from the Sun." },
+      { n: "Saturn", b: 9.54, col: "#e6d29a", text: "<b>Saturn</b> is <b>10 blocks</b> from the Sun, and about 12 cm across." },
+      { n: "Uranus", b: 19.18, col: "#9fd8df", text: "<b>Uranus</b> is <b>20 blocks</b> out, and about 5 cm across." },
+      { n: "Neptune", b: 30.06, col: "#5a7fe0", text: "<b>Neptune</b> is <b>30 blocks</b> out — about 5 cm across. Sending Voyager here is like steering a single molecule from the Earth-grape to a lemon <b>5 km</b> away, as accurately as the width of a spider-web thread." },
+      { n: "Pluto", b: 31, col: "#cbb8a6", text: "<b>Pluto</b>'s distance varies a lot during its 249-year orbit; it is now <b>just beyond 30 blocks</b> and getting farther." },
+      { n: "Nearest stars", b: null, col: "#fff", text: "The <b>nearest stars</b> would be <b>tens of thousands of kilometers</b> away — far off this street. Build the model in your city and the stars land on the <b>other side of Earth or beyond</b>." }
+    ];
+    var marks = [];
+    O.forEach(function (o, i) {
+      if (o.b === null) return;
+      var c = S("circle", { cx: bx(o.b), cy: SY, r: o.n === "Sun" ? 7 : 3.2, style: "fill:" + o.col });
+      s.appendChild(c);
+      marks[i] = c;
+    });
+    var arrow = S("path", { d: "M " + (X1 - 30) + " 40 L " + (X1 + 8) + " 40 M " + (X1 + 2) + " 34 L " + (X1 + 8) + " 40 L " + (X1 + 2) + " 46", style: "fill:none;stroke:var(--warn);stroke-width:2" });
+    s.appendChild(arrow);
+    var ptr = S("path", { style: "fill:var(--warn)" });
+    var lbl = T(0, 0, "", "dg-lbl-mid");
+    lbl.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--text)");
+    s.appendChild(ptr); s.appendChild(lbl);
+    function draw(i) {
+      var o = O[i];
+      marks.forEach(function (m, j) { if (m) m.setAttribute("r", j === i ? (j === 0 ? 9 : 6) : (j === 0 ? 7 : 3.2)); });
+      if (o.b === null) {
+        arrow.setAttribute("opacity", "1"); ptr.setAttribute("d", "");
+        lbl.setAttribute("x", X1 + 8); lbl.setAttribute("y", 30); lbl.textContent = "stars → tens of thousands of km";
+        lbl.style.textAnchor = "end";
+      } else {
+        arrow.setAttribute("opacity", "0");
+        var x = bx(o.b);
+        ptr.setAttribute("d", "M " + (x - 6) + " " + (SY - 22) + " L " + (x + 6) + " " + (SY - 22) + " L " + x + " " + (SY - 12) + " Z");
+        lbl.setAttribute("x", Math.max(36, Math.min(324, x))); lbl.setAttribute("y", SY - 28); lbl.textContent = o.n;
+        lbl.style.textAnchor = "middle";
+      }
+      r.readout.innerHTML = o.text;
+    }
+    bigPick(r.controls, O.map(function (o, i) { return { label: o.n, value: i }; }), 3, draw);
+    draw(3);
+  };
+
+  /* ---- 7.2  Differentiation: melt it and the metal sinks ------------- */
+  D["differentiation"] = function (host) {
+    var r = frame(host, "Melt a planet and watch it sort itself",
+      "Start cold, then heat the planet past 1300 K. Then cool it down and see what stays.",
+      "Differentiation: gravity pulls the heavy metal (dark dots) down into a core and lets the lighter silicate rock (light dots) float up into a crust. Once a planet has done this, cooling keeps the layers.");
+    var s = svg(r.stage, 300, 220);
+    var Cx = 150, Cy = 108, R = 92;
+    var body = S("circle", { cx: Cx, cy: Cy, r: R });
+    s.appendChild(body);
+    var rnd = seeded(77);
+    var dots = [];
+    function inDisk(r0, r1) {
+      var rr = Math.sqrt(r0 * r0 + (r1 * r1 - r0 * r0) * rnd()), a = rnd() * Math.PI * 2;
+      return [rr * Math.cos(a), rr * Math.sin(a)];
+    }
+    var g = S("g", {});
+    s.appendChild(g);
+    for (var i = 0; i < 190; i++) {
+      var metal = i < 64;
+      var mix = inDisk(0, 0.93);
+      var home = metal ? inDisk(0, 0.4) : inDisk(0.47, 0.93);
+      var c = S("circle", { r: metal ? 3.6 : 3, style: "fill:" + (metal ? "#6f7a86" : "#e3c99a") + ";stroke:" + (metal ? "#3d454e" : "#a88c5c") + ";stroke-width:0.6" });
+      g.appendChild(c);
+      dots.push({ c: c, mix: mix, home: home, metal: metal, ph: rnd() * 6.28 });
+    }
+    var tLbl = T(Cx, Cy + R + 16, "", "dg-lbl-mid");
+    tLbl.setAttribute("style", "font-weight:700;font-size:12px");
+    s.appendChild(tLbl);
+    var STATES = {
+      cold: { target: 0, jig: 0, fill: "color-mix(in srgb, var(--text-faint) 25%, transparent)", lbl: "cold — solid", lc: "var(--text-dim)",
+        text: "Imagine a world that is <b>cold and solid</b>, with metal and rock mixed all through it. Nothing can move, so nothing sorts." },
+      hot: { target: 1, jig: 1.6, fill: "color-mix(in srgb, #ff6a3d 45%, transparent)", lbl: "above 1300 K — melted!", lc: "#ff8a5c",
+        text: "Heated past the melting point of rock — typically <b>more than 1300 K</b>. Now gravity takes over: the <b>heavy metal sinks</b> to form a <b>core</b>, and the <b>light silicates float up</b> to form a <b>crust</b>." },
+      cooled: { target: 1, jig: 0, fill: "color-mix(in srgb, var(--text-faint) 25%, transparent)", lbl: "cooled — layers kept", lc: "var(--good)",
+        text: "Cooled and solid again — but the <b>layers stay</b>. A dense metal core under a light rocky crust is how we know the terrestrial planets were once <b>melted</b>." }
+    };
+    var state = "cold", p = 0, time = 0;
+    function apply() {
+      var st = STATES[state];
+      body.setAttribute("style", "fill:" + st.fill + ";stroke:var(--border);stroke-width:1.5");
+      tLbl.textContent = state === "cooled" && p < 0.05 ? "cooled — still mixed" : st.lbl; tLbl.setAttribute("style", "font-weight:700;font-size:12px;fill:" + (state === "cooled" && p < 0.05 ? "var(--text-dim)" : st.lc));
+      var text = st.text;
+      if (state === "cooled" && p < 0.05) text = "It was <b>never melted</b>, so nothing sorted — cooling changes nothing. Heat it above <b>1300 K</b> first.";
+      else if (state === "cooled" && p < 0.99) text = "It cooled <b>before it finished sorting</b>, so the layers froze partway.";
+      r.readout.innerHTML = text;
+    }
+    function frameDraw() {
+      var st = STATES[state];
+      time += 0.05;
+      if (state === "cold") p = 0;
+      else if (state === "hot") p = Math.min(1, p + 0.006);
+      // when cooled, p freezes wherever the melt got to (normally 1)
+      var e = p * p * (3 - 2 * p);
+      dots.forEach(function (d) {
+        var x = d.mix[0] + (d.home[0] - d.mix[0]) * e, y = d.mix[1] + (d.home[1] - d.mix[1]) * e;
+        var j = st.jig;
+        d.c.setAttribute("cx", (Cx + x * R + j * Math.sin(time * 1.7 + d.ph)).toFixed(2));
+        d.c.setAttribute("cy", (Cy + y * R + j * Math.cos(time * 1.3 + d.ph * 2)).toFixed(2));
+      });
+    }
+    bigPick(r.controls, [
+      { label: "❄ Cold & mixed", value: "cold" }, { label: "🔥 Heat above 1300 K", value: "hot" }, { label: "🧊 Cool it down", value: "cooled" }
+    ], 0, function (v) { state = v; apply(); });
+    apply();
+    frameDraw();
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 7.2  Farther from the Sun, colder ------------------------------ */
+  D["planet-temperature"] = function (host) {
+    var r = frame(host, "Move a world away from the Sun",
+      "Drag the slider to move a world out from Mercury's distance to 100 times farther (about Pluto at its closest).",
+      "The book's rule of thumb: sunlight weakens with the square of distance, and temperature drops roughly with the square root of distance. It ignores atmospheres — Venus's thick air makes it hotter than Mercury.");
+    var s = svg(r.stage, 360, 170);
+    var X0 = 40, X1 = 300, Y = 70;
+    function xAt(k) { return X0 + (X1 - X0) * (Math.sqrt(k) - 1) / 9; }
+    s.appendChild(S("circle", { cx: 14, cy: Y, r: 16, "class": "dg-sun" }));
+    s.appendChild(S("line", { x1: X0, y1: Y, x2: X1, y2: Y, "class": "dg-dash" }));
+    s.appendChild(T(xAt(1), Y + 22, "Mercury", "dg-lbl-mid"));
+    s.appendChild(T(xAt(100), Y + 22, "Pluto", "dg-lbl-mid"));
+    [1, 4, 9, 25, 49, 100].forEach(function (k) {
+      s.appendChild(S("line", { x1: xAt(k), y1: Y - 4, x2: xAt(k), y2: Y + 4, style: "stroke:var(--text-faint)" }));
+      s.appendChild(T(xAt(k), Y - 9, k + "×", "dg-lbl-mid"));
+    });
+    var rays = S("path", { style: "fill:#ffcf6b" });
+    var world = S("circle", { cy: Y, r: 8 });
+    s.insertBefore(rays, s.firstChild);
+    s.appendChild(world);
+    // thermometer
+    var TX = 336, TT = 18, TB = 138;
+    s.appendChild(S("rect", { x: TX - 6, y: TT, width: 12, height: TB - TT, rx: 6, style: "fill:none;stroke:var(--border);stroke-width:1.5" }));
+    s.appendChild(S("circle", { cx: TX, cy: TB + 8, r: 10, style: "fill:#ff6a3d" }));
+    var merc = S("rect", { x: TX - 3.5, width: 7, rx: 3.5, style: "fill:#ff6a3d" });
+    s.appendChild(merc);
+    s.appendChild(T(TX - 12, TT + 6, "500 K", "dg-lbl")).setAttribute("text-anchor", "end");
+    s.appendChild(T(TX - 12, TB - 12, "50 K", "dg-lbl")).setAttribute("text-anchor", "end");
+    var bigT = T(170, 128, "", "dg-lbl-mid");
+    bigT.setAttribute("style", "font-weight:800;font-size:18px;fill:var(--text)");
+    var subT = T(170, 150, "", "dg-lbl-mid");
+    s.appendChild(bigT); s.appendChild(subT);
+    function draw(k, out) {
+      var x = xAt(k), T_ = 500 / Math.sqrt(k), light = 1 / (k * k);
+      world.setAttribute("cx", x);
+      var hot = Math.max(0, Math.min(1, (T_ - 50) / 450));
+      world.setAttribute("style", "fill:rgb(" + Math.round(120 + 135 * hot) + "," + Math.round(140 + 30 * hot) + "," + Math.round(230 - 170 * hot) + ")");
+      var spread = 18;
+      rays.setAttribute("d", "M 14 " + (Y - 6) + " L " + x + " " + (Y - spread) + " L " + x + " " + (Y + spread) + " L 14 " + (Y + 6) + " Z");
+      rays.setAttribute("opacity", (0.05 + 0.45 / k).toFixed(3));
+      var h = (TB - TT) * (T_ - 50) / 450;
+      merc.setAttribute("y", TB - h); merc.setAttribute("height", Math.max(0, h) + 4);
+      bigT.textContent = "≈ " + Math.round(T_) + " K";
+      subT.textContent = "sunlight " + (light >= 0.01 ? Math.round(light * 100) + "%" : (light * 100).toFixed(light >= 0.001 ? 2 : 3) + "%") + " as strong as at Mercury";
+      out.textContent = k + "×";
+      r.readout.innerHTML = k + " times Mercury's distance → sunlight is 1 ÷ " + k + "² = <b>1/" + (k * k).toLocaleString() +
+        "</b> as strong, and the temperature is about 500 K ÷ √" + k + " = <b>" + Math.round(T_) + " K</b>." +
+        (k === 100 ? " That's the book's example: <b>Pluto</b>, about 100 times as far as Mercury, is about 10 times colder — <b>500 K → 50 K</b>." : "");
+    }
+    var sl = slider(r.controls, "Distance (× Mercury's)", 1, 100, 1, 1, draw);
+    sl.set(1);
+  };
+
+  /* ---- 7.3  Counting craters: who swept the sidewalk? ---------------- */
+  D["crater-count"] = function (host) {
+    var r = frame(host, "Read a surface's age from its craters",
+      "Craters land at the same steady rate on both regions. Flood region B with lava whenever you like, and compare the counts.",
+      "Like snow on two sidewalks: the same amount fell on both, but one was swept. Fewer craters means less time since the surface was last swept clean — a younger surface.");
+    var s = svg(r.stage, 340, 190);
+    var REG = [{ x: 14, name: "Region A" }, { x: 178, name: "Region B" }], W = 148, Y0 = 22;
+    var groups = [], counts = [0, 0], lava = null;
+    REG.forEach(function (rg, i) {
+      s.appendChild(S("rect", { x: rg.x, y: Y0, width: W, height: W, rx: 4, style: "fill:color-mix(in srgb, var(--text-faint) 30%, transparent);stroke:var(--border)" }));
+      var gg = S("g", {});
+      s.appendChild(gg);
+      groups.push(gg);
+      s.appendChild(T(rg.x + W / 2, 14, rg.name, "dg-lbl-mid"));
+    });
+    var flood = S("rect", { x: REG[1].x, y: Y0, width: W, height: W, rx: 4, style: "fill:#ff6a3d", opacity: 0 });
+    s.appendChild(flood);
+    var cA = T(REG[0].x + W / 2, Y0 + W + 16, "", "dg-lbl-mid"), cB = T(REG[1].x + W / 2, Y0 + W + 16, "", "dg-lbl-mid");
+    cA.setAttribute("style", "font-weight:700;fill:var(--text)"); cB.setAttribute("style", "font-weight:700;fill:var(--text)");
+    s.appendChild(cA); s.appendChild(cB);
+    var rnd = Math.random, tick = 0, flooded = false, full = false, flash = 0;
+    function addCrater(i) {
+      var rad = 2 + Math.pow(rnd(), 3) * 9;
+      var x = REG[i].x + rad + rnd() * (W - 2 * rad), y = Y0 + rad + rnd() * (W - 2 * rad);
+      groups[i].appendChild(S("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: rad.toFixed(1), style: "fill:color-mix(in srgb, var(--panel) 70%, transparent);stroke:var(--text-dim);stroke-width:0.8" }));
+      counts[i]++;
+    }
+    function report() {
+      cA.textContent = counts[0] + " craters"; cB.textContent = counts[1] + " craters";
+      var msg;
+      if (!flooded) msg = "Both regions are piling up craters at the same rate. Tap <b>Flood B with lava</b> to sweep region B clean.";
+      else if (counts[1] < counts[0]) msg = "Region B has <b>fewer craters</b> (" + counts[1] + " vs. " + counts[0] + ") even though the same number of impacts hit both. Its surface is <b>younger</b> — the craters only count the time since the lava swept it clean.";
+      else msg = "Both regions were swept clean at the same moment, so their counts match — same age.";
+      if (full) msg += " <i>Region A is saturated — tap Start over.</i>";
+      r.readout.innerHTML = msg;
+    }
+    function step() {
+      if (flash > 0) { flash -= 0.02; flood.setAttribute("opacity", Math.max(0, flash).toFixed(2)); }
+      if (full) return;
+      if (++tick % 14) return;
+      addCrater(0); addCrater(1);
+      if (counts[0] >= 120) full = true;
+      report();
+    }
+    var row = E("div", { "class": "dg-bigrow" });
+    var fl = E("button", { type: "button", "class": "dg-bigbtn", text: "🌋 Flood B with lava" });
+    var rs = E("button", { type: "button", "class": "dg-bigbtn", text: "↺ Start over" });
+    fl.addEventListener("click", function () { clr(groups[1]); counts[1] = 0; flooded = true; flash = 0.9; report(); });
+    rs.addEventListener("click", function () { clr(groups[0]); clr(groups[1]); counts = [0, 0]; flooded = false; full = false; report(); });
+    row.appendChild(fl); row.appendChild(rs);
+    r.controls.appendChild(row);
+    report();
+    autoTicker(r.controls, step);
+  };
+
+  /* ---- 7.3  Half-lives and nuclear clocks ---------------------------- */
+  D["half-life"] = function (host) {
+    var r = frame(host, "A nuclear clock",
+      "Pick a radioactive element from the book's Table 7.3, then slide the half-lives. Pink dots are parent atoms; gray dots have become daughters.",
+      "Each half-life, half of the remaining parent atoms decay: 1 → ½ → ¼ → ⅛. Comparing parents left with daughters made tells how long the clock has run — and so how old the rock is.");
+    var ISO = [
+      { p: "Uranium-238", d: "Lead-206", hl: 4.47 },
+      { p: "Potassium-40", d: "Argon-40", hl: 1.31 },
+      { p: "Thorium-232", d: "Lead-208", hl: 14.0 },
+      { p: "Rubidium-87", d: "Strontium-87", hl: 48.8 },
+      { p: "Samarium-147", d: "Neodymium-143", hl: 106 }
+    ];
+    var s = svg(r.stage, 360, 190);
+    var order = [], rnd = seeded(2024);
+    for (var i = 0; i < 100; i++) order.push(i);
+    for (i = 99; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), tmp = order[i]; order[i] = order[j]; order[j] = tmp; }
+    var cells = [];
+    for (i = 0; i < 100; i++) {
+      var c = S("circle", { cx: 18 + (i % 10) * 17, cy: 18 + Math.floor(i / 10) * 17, r: 6.5 });
+      s.appendChild(c); cells.push(c);
+    }
+    // decay curve on the right
+    var GX = 200, GY = 160, GW = 148, GH = 140;
+    s.appendChild(S("line", { x1: GX, y1: GY, x2: GX + GW, y2: GY, "class": "dg-axis" }));
+    s.appendChild(S("line", { x1: GX, y1: GY, x2: GX, y2: GY - GH, "class": "dg-axis" }));
+    var d = "";
+    for (var k = 0; k <= 100; k++) { var n = k / 20; d += (k ? " L " : "M ") + (GX + GW * n / 5).toFixed(1) + " " + (GY - GH / Math.pow(2, n)).toFixed(1); }
+    s.appendChild(S("path", { d: d, style: "fill:none;stroke:#f48fb1;stroke-width:2" }));
+    for (k = 0; k <= 5; k++) s.appendChild(T(GX + GW * k / 5, GY + 12, String(k), "dg-lbl-mid"));
+    s.appendChild(T(GX + GW / 2, GY + 25, "half-lives passed", "dg-lbl-mid"));
+    s.appendChild(T(GX + 4, GY - GH + 2, "parent left", "dg-lbl"));
+    var dot = S("circle", { r: 4.5, style: "fill:var(--warn)" });
+    s.appendChild(dot);
+    var iso = ISO[0], hl = 0, slOut = null;
+    function fmtYears(b) {
+      if (b === 0) return "0 years";
+      var str = b >= 100 ? String(Math.round(b)) : b >= 10 ? b.toFixed(1) : b.toFixed(2);
+      if (str.indexOf(".") > -1) str = str.replace(/\.?0+$/, "");
+      return str + " billion years";
+    }
+    function draw() {
+      var frac = 1 / Math.pow(2, hl), parents = Math.round(100 * frac);
+      cells.forEach(function (c, i) {
+        var isParent = order.indexOf(i) < parents;
+        c.setAttribute("style", isParent ? "fill:#f48fb1;stroke:#c2185b;stroke-width:0.8" : "fill:color-mix(in srgb, var(--text-faint) 45%, transparent)");
+      });
+      dot.setAttribute("cx", GX + GW * hl / 5); dot.setAttribute("cy", GY - GH * frac);
+      var yrs = hl * iso.hl;
+      if (slOut) slOut.textContent = String(hl);
+      var fracTxt = hl === 0 ? "all" : hl === 1 ? "½" : hl === 2 ? "¼" : hl === 3 ? "⅛" : hl === 4 ? "1/16" : hl === 5 ? "1/32" : (frac * 100).toFixed(0) + "%";
+      r.readout.innerHTML = "<b>" + iso.p + "</b> → <b>" + iso.d + "</b>, half-life <b>" + iso.hl + " billion years</b>. After <b>" + hl +
+        "</b> half-li" + (hl === 1 ? "fe" : "ves") + " (" + hl + " × " + iso.hl + " = <b>" + fmtYears(yrs) + "</b>), <b>" + fracTxt +
+        "</b> of the parent is left: about <b>" + parents + "</b> parent atoms and <b>" + (100 - parents) + "</b> daughters." +
+        (yrs > 4.5 ? " <i>That's longer than the solar system has existed (about 4.5 billion years), so no rock from our solar system could have decayed this far.</i>" : "");
+    }
+    bigPick(r.controls, ISO.map(function (x, i) { return { label: x.p, value: i }; }), 0, function (i) { iso = ISO[i]; draw(); });
+    var sl = slider(r.controls, "Half-lives passed", 0, 5, 0, 0.5, function (v, out) { hl = v; slOut = out; draw(); });
+    sl.set(0);
+  };
+
+  /* ---- 7.4  From a spinning cloud to planets -------------------------- */
+  D["solar-nebula"] = function (host) {
+    var r = frame(host, "Building a solar system",
+      "Tap each stage in order. Watch: the inner parts of the disk go around faster.",
+      "The Sun and planets formed together from one spinning cloud — which is why the planets orbit in one plane and the same direction. The hot inner disk made rocky planets; ice survived only farther out.");
+    var s = svg(r.stage, 360, 210);
+    var Cx = 180, Cy = 105, RMAX = 160, ICE = 62;
+    var rnd = seeded(4242);
+    var parts = [];
+    for (var i = 0; i < 260; i++) {
+      var rr = 18 + Math.pow(rnd(), 0.8) * (RMAX - 18);
+      var c = S("circle", { r: 1.4 });
+      parts.push({ c: c, r: rr, a: rnd() * Math.PI * 2, z: (rnd() * 2 - 1) * 0.9, cloudR: 30 + rnd() * 70 });
+    }
+    var zone = S("ellipse", { cx: Cx, cy: Cy, rx: ICE, ry: ICE * 0.3, style: "fill:color-mix(in srgb, #ff6a3d 18%, transparent);stroke:#ff8a5c;stroke-dasharray:4 3" });
+    var zoneT = T(Cx, Cy + ICE * 0.3 + 30, "inside the dashed line: too warm for ice", "dg-lbl-mid");
+    zoneT.setAttribute("style", "font-weight:700;fill:#ff8a5c;paint-order:stroke;stroke:var(--panel);stroke-width:3px");
+    var orbitsG = S("g", {});
+    var sun = S("circle", { cx: Cx, cy: Cy, r: 6, "class": "dg-sun" });
+    [zone, zoneT, orbitsG].forEach(function (n) { s.appendChild(n); });
+    parts.forEach(function (p) { s.appendChild(p.c); });
+    s.appendChild(zoneT); // keep the label above the dust
+    s.appendChild(sun);
+    // planetesimals and planets (radius, size, rocky?)
+    var lumps = [], rl = seeded(99);
+    for (i = 0; i < 46; i++) {
+      var lr = 24 + rl() * (RMAX - 30);
+      var lc = S("circle", {});
+      s.appendChild(lc);
+      lumps.push({ c: lc, r: lr, a: rl() * Math.PI * 2, size: 2.2 + rl() * 1.6 });
+    }
+    var PL = [[28, 2.6, 1], [40, 3.6, 1], [52, 3.8, 1], [62, 3, 1], [92, 9, 0], [118, 8, 0], [140, 5.5, 0], [158, 5.2, 0]];
+    var planets = PL.map(function (q, i) {
+      var pc = S("circle", { r: q[1] });
+      s.appendChild(pc);
+      return { c: pc, r: q[0], a: i * 2.1, rocky: q[2] };
+    });
+    var STAGES = [
+      { flat: 1, dust: 1, lump: 0, pl: 0, sun: 3, zone: 0,
+        text: "<b>1. A spinning cloud</b> of gas and dust — the <b>solar nebula</b>. Its center will become the Sun; a small fraction of the material farther out will become everything else." },
+      { flat: 0.3, dust: 1, lump: 0, pl: 0, sun: 9, zone: 1,
+        text: "<b>2. A flattened, spinning disk</b> with the Sun forming at the bright center. The inner disk moves <b>faster</b>, so friction heats it — <b>too warm for water to condense as ice</b>. Ice can survive only farther out. (Young stars today have disks like this: circumstellar disks.)" },
+      { flat: 0.3, dust: 0.25, lump: 1, pl: 0, sun: 11, zone: 1,
+        text: "<b>3. Planetesimals.</b> Material clumps into millions of small bodies, probably <b>no larger than 100 km</b> across — <b>rocky</b> ones in the hot inner disk, <b>icy</b> ones farther out. They crash into each other violently." },
+      { flat: 0.3, dust: 0, lump: 0, pl: 1, sun: 13, zone: 0,
+        text: "<b>4. Planets.</b> Planetesimals gather under their mutual gravity. Small <b>rocky</b> planets end up close in; the <b>giants</b> farther out — all orbiting in <b>one plane</b> and the <b>same direction</b>. Impacts and radioactive heat melted the planets so they differentiated. About 4.5 billion years later, it's a much calmer place." }
+    ];
+    var st = STAGES[0], flat = 1, dustO = 1, lumpO = 0, plO = 0, sunR = 3, zoneO = 0;
+    function ease(v, to) { return v + (to - v) * 0.05; }
+    function frameDraw() {
+      flat = ease(flat, st.flat); dustO = ease(dustO, st.dust); lumpO = ease(lumpO, st.lump); plO = ease(plO, st.pl);
+      sunR = ease(sunR, st.sun); zoneO = ease(zoneO, st.zone);
+      var cloudMix = (flat - 0.3) / 0.7; // 1 = round cloud, 0 = flat disk
+      parts.forEach(function (p) {
+        var rad = p.cloudR * cloudMix + p.r * (1 - cloudMix);
+        p.a += 0.6 / Math.pow(rad, 1.5) * (cloudMix > 0.5 ? 0.35 : 1); // inner parts always go around faster
+        var x = Cx + rad * Math.cos(p.a), y = Cy + rad * Math.sin(p.a) * flat + p.z * 60 * cloudMix;
+        p.c.setAttribute("cx", x.toFixed(1)); p.c.setAttribute("cy", y.toFixed(1));
+        var warm = p.r < ICE && cloudMix < 0.5;
+        p.c.setAttribute("style", "fill:" + (cloudMix > 0.5 ? "#c9b48f" : warm ? "#ffb070" : "#a8d8ff") + ";opacity:" + (0.75 * dustO).toFixed(2));
+      });
+      lumps.forEach(function (l) {
+        l.a += 0.6 / Math.pow(l.r, 1.5);
+        l.c.setAttribute("cx", (Cx + l.r * Math.cos(l.a)).toFixed(1));
+        l.c.setAttribute("cy", (Cy + l.r * Math.sin(l.a) * flat).toFixed(1));
+        l.c.setAttribute("r", (l.size * lumpO).toFixed(2));
+        l.c.setAttribute("style", "fill:" + (l.r < ICE ? "#b98a5e" : "#cfeaff"));
+      });
+      clr(orbitsG);
+      if (plO > 0.02) planets.forEach(function (p) {
+        orbitsG.appendChild(S("ellipse", { cx: Cx, cy: Cy, rx: p.r, ry: p.r * flat, style: "fill:none;stroke:var(--border);stroke-width:0.7;opacity:" + plO.toFixed(2) }));
+      });
+      planets.forEach(function (p) {
+        p.a += 0.6 / Math.pow(p.r, 1.5);
+        p.c.setAttribute("cx", (Cx + p.r * Math.cos(p.a)).toFixed(1));
+        p.c.setAttribute("cy", (Cy + p.r * Math.sin(p.a) * flat).toFixed(1));
+        p.c.setAttribute("style", "fill:" + (p.rocky ? "#c98a5a" : "#e0c89a") + ";opacity:" + plO.toFixed(2));
+      });
+      sun.setAttribute("r", sunR.toFixed(1));
+      zone.setAttribute("opacity", zoneO.toFixed(2)); zoneT.setAttribute("opacity", zoneO.toFixed(2));
+    }
+    bigPick(r.controls, [
+      { label: "1 · Cloud", value: 0 }, { label: "2 · Disk", value: 1 }, { label: "3 · Planetesimals", value: 2 }, { label: "4 · Planets", value: 3 }
+    ], 0, function (i) { st = STAGES[i]; r.readout.innerHTML = st.text; });
+    r.readout.innerHTML = STAGES[0].text;
+    autoTicker(r.controls, frameDraw);
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();

@@ -79,7 +79,13 @@
     detectors: ["t/detectors", "Detectors and Instruments", "Film vs. CCDs, infrared challenges, and spectrometers"],
     radiotelescopes: ["t/radiotelescopes", "Radio Telescopes", "Radio dishes, interferometers, and radar"],
     spaceobs: ["t/spaceobs", "Observing from Space", "Hubble, Webb, Chandra, Fermi — and why we launch them"],
-    futurescopes: ["t/futurescopes", "The Future of Large Telescopes", "Rubin, the ELT, TMT, GMT, and segmented mirrors"]
+    futurescopes: ["t/futurescopes", "The Future of Large Telescopes", "Rubin, the ELT, TMT, GMT, and segmented mirrors"],
+    solarsystem: ["t/solarsystem", "Our Planetary System", "The Sun, terrestrial planets, giant planets, and dwarf planets"],
+    smallbodies: ["t/smallbodies", "Smaller Members", "Moons, rings, asteroids, comets, meteors, and meteorites"],
+    scalemodel: ["t/scalemodel", "A Scale Model of the Solar System", "Earth a grape, one block from a 1.5-m Sun"],
+    planetmakeup: ["t/planetmakeup", "Composition and Structure", "What planets are made of, differentiation, and heat"],
+    datingsurfaces: ["t/datingsurfaces", "Dating Planetary Surfaces", "Crater counts and radioactive half-lives"],
+    solarorigin: ["t/solarorigin", "Origin of the Solar System", "The solar nebula, planetesimals, and collisions"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -3279,6 +3285,182 @@
     }
   };
 
+  var CH7_TOOLS = {
+    solarsystem: {
+      title: "Our Planetary System",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "The Sun's family: two kinds of planets",
+      intro: "The Sun holds <b>99.80%</b> of the solar system's mass. Around it orbit four small, rocky " +
+        "<b>terrestrial</b> planets and four huge <b>giant</b> planets — all in about the same plane and the same direction.",
+      explain:
+        "<p><b>Terrestrial planets</b> — Mercury, Venus, Earth, Mars (often plus the Moon): small, made of <b>rock and " +
+        "metal</b>, with solid surfaces marked by craters, mountains, and volcanoes.</p>" +
+        "<p><b>Giant (jovian) planets</b> — Jupiter, Saturn, Uranus, Neptune: much larger, made mostly of lighter " +
+        "<b>ices, liquids, and gases</b>, with no solid surface. Jupiter alone is more massive than all the other " +
+        "planets combined; about 1,300 Earths could fit inside it.</p>" +
+        "<p>All eight <b>revolve</b> the same direction in nearly one plane, and most <b>rotate</b> that way too — " +
+        "except <b>Venus</b> (backward, slowly) and <b>Uranus</b> and <b>Pluto</b> (tipped on their sides). Beyond " +
+        "Neptune are the <b>trans-Neptunian objects</b>; the largest, like Pluto and Eris, are <b>dwarf planets</b>, " +
+        "as is the asteroid Ceres.</p>",
+      diagram: "planet-facts",
+      showLead: "Tap each planet — compare its size with Jupiter and its density with water.",
+      matchKey: "solarsystemmatch", matchLabels: ["Object or group", "What to know"],
+      recap: "Sun = <b>99.80%</b> of the mass. <b>Terrestrial</b> = small, rock and metal, dense. <b>Giant</b> = huge, " +
+        "ices/liquids/gases, light (Saturn's 0.7 is less than water). Odd spinners: <b>Venus</b> backward, " +
+        "<b>Uranus</b> and <b>Pluto</b> on their sides.",
+      questions: [
+        { q: "Which planet is more massive than all the others combined?", choices: ["Jupiter", "Saturn", "Earth", "Neptune"], answer: 0, why: "Jupiter has 0.10% of the solar system's mass — more than all the other planets put together." },
+        { q: "Which group are Mercury, Venus, Earth, and Mars?", choices: ["Terrestrial planets", "Giant planets", "Dwarf planets", "Trans-Neptunian objects"], answer: 0, why: "The four inner planets are the terrestrial planets: small, rocky, and metallic." },
+        { q: "What are the giant planets mostly made of?", choices: ["Lighter ices, liquids, and gases", "Rock and metal", "Pure iron", "Frozen carbon dioxide only"], answer: 0, why: "They are like vast, round oceans with much smaller, dense cores." },
+        { q: "Which planet has a density lower than water's?", choices: ["Saturn (0.7 g/cm³)", "Earth (5.5 g/cm³)", "Jupiter (1.3 g/cm³)", "Mars (3.9 g/cm³)"], answer: 0, why: "Water is 1 g/cm³; Saturn's density from Table 7.2 is 0.7." },
+        { q: "Which planet rotates backward, very slowly?", choices: ["Venus", "Mars", "Uranus", "Saturn"], answer: 0, why: "Venus's rotation is retrograde. Uranus is the one tipped on its side." },
+        { q: "Which of these is a dwarf planet?", choices: ["Ceres", "Mercury", "Titan", "Eros"], answer: 0, why: "Ceres, the largest asteroid, is a dwarf planet. Titan is Saturn's moon; Eros is an asteroid." }
+      ]
+    },
+    smallbodies: {
+      title: "Smaller Members",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "Moons, rings, asteroids, comets, and dust",
+      intro: "Besides the planets, the solar system holds some <b>430 known moons</b>, four ring systems, rocky " +
+        "<b>asteroids</b>, icy <b>comets</b>, and countless grains of <b>cosmic dust</b>.",
+      explain:
+        "<p><b>Moons:</b> only Mercury and Venus have none. The biggest — our Moon, Jupiter's four <b>Galilean</b> " +
+        "moons, Saturn's <b>Titan</b>, and Neptune's <b>Triton</b> — are as big as small planets. All four giant " +
+        "planets have <b>rings</b> of countless small bodies orbiting their equators.</p>" +
+        "<p><b>Asteroids</b> are rocky bodies, mostly between Mars and Jupiter. <b>Comets</b> are mostly ice and orbit " +
+        "in the distant, cold outer solar system. Both are leftovers from the solar system's formation.</p>" +
+        "<p><b>Cosmic dust</b> that enters our atmosphere burns up in a brief flash — a <b>meteor</b>. A bigger chunk " +
+        "that survives and hits the ground is a <b>meteorite</b>.</p>",
+      diagram: "meteor-path",
+      showLead: "Drop a dust grain, then a larger chunk — which one makes a meteorite?",
+      matchKey: "smallbodiesmatch", matchLabels: ["Object", "What it is"],
+      recap: "<b>Asteroid</b> = rocky, mostly between Mars and Jupiter. <b>Comet</b> = icy, far out. <b>Meteor</b> = " +
+        "the flash of burning dust. <b>Meteorite</b> = the piece that reaches the ground.",
+      questions: [
+        { q: "Where are most asteroids found?", choices: ["Between Mars and Jupiter", "Beyond Neptune", "Inside Mercury's orbit", "In Saturn's rings"], answer: 0, why: "Asteroids orbit mostly between Mars and Jupiter, though some cross Earth's orbit." },
+        { q: "What is a meteor?", choices: ["The flash of light from cosmic dust burning up in our atmosphere", "A rock lying on the ground", "An icy body far from the Sun", "A small moon"], answer: 0, why: "Meteors are 'shooting stars' — the particle burns up in the air." },
+        { q: "What is a meteorite?", choices: ["A piece of rock or metal that survives and strikes the ground", "A comet's tail", "A grain of dust that burns up", "A dwarf planet"], answer: 0, why: "Any piece that strikes the ground is a meteorite." },
+        { q: "Comets are made mostly of what?", choices: ["Ice — frozen water, carbon dioxide, and carbon monoxide", "Iron and nickel", "Hydrogen gas", "Silicate rock"], answer: 0, why: "Comets are icy bodies stored in the cosmic deep freeze of the outer solar system." },
+        { q: "Which planets have no moons?", choices: ["Mercury and Venus", "Earth and Mars", "Uranus and Neptune", "All the giants"], answer: 0, why: "Only Mercury and Venus move through space alone." },
+        { q: "What are the moons of Mars very likely to be?", choices: ["Captured asteroids", "Pieces of Earth", "Comet nuclei", "Leftover rings"], answer: 0, why: "Some of the smallest moons, like those of Mars, are very likely captured asteroids." }
+      ]
+    },
+    scalemodel: {
+      title: "A Scale Model of the Solar System",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "Shrink everything by a billion",
+      intro: "Divide every size and distance by <b>10⁹</b>. Earth becomes a <b>grape</b> one <b>city block</b> from a Sun " +
+        "about as tall as an adult — and the nearest stars end up on the other side of the planet or beyond.",
+      explain:
+        "<p><b>Earth</b>: a grape, 1.3 cm across. The <b>Moon</b>: a pea 40 cm away. The <b>Sun</b>: nearly 1.5 m " +
+        "across, with Earth <b>150 m</b> away — about one city block.</p>" +
+        "<p><b>Jupiter</b>: a 15-cm grapefruit, <b>5 blocks</b> out. <b>Saturn</b> 10 blocks, <b>Uranus</b> 20, " +
+        "<b>Neptune</b> 30; <b>Pluto</b> now just beyond 30 blocks.</p>" +
+        "<p>A <b>human</b> shrinks to the size of a single atom. The <b>nearest stars</b> would be tens of thousands " +
+        "of kilometers away.</p>",
+      diagram: "scale-model",
+      showLead: "Walk down the street — one block per AU.",
+      matchKey: "scalemodelmatch", matchLabels: ["In real life", "In the model"],
+      recap: "Scale 1 : 10⁹. Earth = <b>grape</b>, 1 block (150 m) from a <b>1.5-m Sun</b>. Jupiter = <b>grapefruit</b>, " +
+        "5 blocks. Neptune 30 blocks. Nearest stars = <b>tens of thousands of km</b>.",
+      questions: [
+        { q: "In the model, how big is Earth?", choices: ["A grape, 1.3 cm across", "A pea", "A grapefruit", "A basketball"], answer: 0, why: "12,756 km ÷ 10⁹ ≈ 1.3 cm — about a grape." },
+        { q: "How far is Earth from the Sun in the model?", choices: ["About one city block (150 m)", "40 cm", "5 kilometers", "Tens of thousands of kilometers"], answer: 0, why: "150 million km ÷ 10⁹ = 150 m." },
+        { q: "How big is the Sun in the model?", choices: ["Nearly 1.5 m — about the height of an adult", "1.3 cm", "15 cm", "150 m"], answer: 0, why: "About 1.4 million km ÷ 10⁹ ≈ 1.4–1.5 m." },
+        { q: "How many blocks from the Sun is Neptune?", choices: ["30", "5", "10", "20"], answer: 0, why: "Jupiter 5, Saturn 10, Uranus 20, Neptune 30." },
+        { q: "Where would the nearest stars be?", choices: ["Tens of thousands of kilometers away", "One block past Neptune", "In the next town over", "100 blocks away"], answer: 0, why: "Even in this tiny model, the stars would be on the other side of Earth or beyond." },
+        { q: "In the model, a human is the size of what?", choices: ["A single atom", "A grain of sand", "A pea", "An ant"], answer: 0, why: "And cars and spacecraft shrink to the size of molecules." }
+      ]
+    },
+    planetmakeup: {
+      title: "Composition and Structure",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "What planets are made of — and why they have layers",
+      intro: "Giant planets are mostly <b>hydrogen and helium</b>; terrestrial planets are <b>rock and metal</b>. " +
+        "Melting let gravity sort the terrestrial planets into a metal <b>core</b> and a rocky <b>crust</b>.",
+      explain:
+        "<p><b>Jupiter and Saturn</b> are 75% hydrogen and 25% helium, like the Sun, squeezed so hard the hydrogen is " +
+        "<b>liquid</b>. Their cores of rock, metal, and ice are hidden; we detect them from their gravity.</p>" +
+        "<p><b>Terrestrial planets</b> are silicate rock (silicon + oxygen) and metal (mostly iron). Their dense cores " +
+        "and light crusts show they once <b>melted</b>: <b>differentiation</b> needs more than about <b>1300 K</b>.</p>" +
+        "<p><b>Temperature</b> falls with distance from the Sun (Mercury ~500 K, Pluto ~50 K), but atmospheres " +
+        "matter — Venus is hotter than Mercury. <b>Geological activity</b> needs internal heat, and bigger worlds keep " +
+        "it longer: the Moon is dead, Earth and Venus are still molten inside.</p>",
+      diagram: "differentiation",
+      showLead: "Heat the planet past 1300 K, then cool it down.",
+      matchKey: "planetmakeupmatch", matchLabels: ["Term", "Meaning"],
+      recap: "Giants: <b>H and He</b>, liquid hydrogen, hidden cores. Terrestrial: <b>rock and metal</b>, " +
+        "<b>differentiated</b> (metal core, rock crust) after melting above ~1300 K. Bigger worlds stay geologically " +
+        "<b>active</b> longer.",
+      questions: [
+        { q: "What are Jupiter and Saturn made of, by mass?", choices: ["75% hydrogen, 25% helium", "Mostly rock and iron", "Half ice, half rock", "Mostly carbon dioxide"], answer: 0, why: "Nearly the same chemical makeup as the Sun." },
+        { q: "What does differentiation do?", choices: ["Sinks heavy metal to the core and floats light rock to the crust", "Breaks a planet into asteroids", "Adds craters to a surface", "Turns hydrogen into helium"], answer: 0, why: "It's gravity separating a melted interior into layers by density." },
+        { q: "About how hot must a rocky planet get to differentiate?", choices: ["More than 1300 K", "About 300 K", "About 50 K", "About 700 K"], answer: 0, why: "It must reach the melting point of rocks, typically more than 1300 K." },
+        { q: "Which world is geologically dead?", choices: ["The Moon", "Earth", "Venus", "Io"], answer: 0, why: "The small Moon cooled long ago; Earth and Venus still have molten interiors, and tides power Io's volcanoes." },
+        { q: "Why does a bigger planet stay geologically active longer?", choices: ["It keeps its internal heat longer, like a big potato", "It is closer to the Sun", "It has more moons", "It has more craters"], answer: 0, why: "Activity is driven by heat escaping from inside, and larger bodies cool more slowly." },
+        { q: "What may keep oceans liquid inside some icy moons?", choices: ["Tidal heating from neighboring worlds", "Sunlight", "Their rings", "A greenhouse atmosphere"], answer: 0, why: "Tides from gravitational interactions can heat a moon's interior and melt ice." }
+      ]
+    },
+    datingsurfaces: {
+      title: "Dating Planetary Surfaces",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "Craters and nuclear clocks",
+      intro: "Two ways to tell how old a surface is: <b>count its craters</b> (more craters = older), or date its " +
+        "rocks with <b>radioactive decay</b>.",
+      explain:
+        "<p><b>Craters</b> pile up at a roughly constant rate, so their number tells how long a surface has been " +
+        "exposed — since it was last <b>swept clean</b> by lava or impact melt. On one world, the more heavily cratered " +
+        "terrain is generally older.</p>" +
+        "<p><b>Radioactive</b> nuclei decay at random, but a large sample loses <b>half</b> of its parent atoms every " +
+        "<b>half-life</b>: 1 → ½ → ¼ → ⅛. The decayed atoms become <b>daughter</b> elements, so comparing parents to " +
+        "daughters tells a rock's age. Uranium-238 → lead-206 has a half-life of 4.47 billion years.</p>" +
+        "<p>Dating the Apollo samples (1969) showed the Moon is <b>ancient and geologically dead</b>; Earth and the Moon " +
+        "each formed about <b>4.5 billion years</b> ago.</p>",
+      diagram: "half-life",
+      showLead: "Pick an element and slide the half-lives — watch the parents turn into daughters.",
+      matchKey: "datingsurfacesmatch", matchLabels: ["Term", "Meaning"],
+      recap: "More craters = <b>older</b> surface. Each <b>half-life</b>, half the parent decays: ½, ¼, ⅛. " +
+        "Parent-to-daughter ratio = age. Moon and Earth: about <b>4.5 billion years</b> old.",
+      questions: [
+        { q: "On one world, which terrain is generally older?", choices: ["The more heavily cratered terrain", "The smoothest terrain", "The fresh lava plains", "The terrain with active volcanoes"], answer: 0, why: "More craters mean more time since the surface was swept clean." },
+        { q: "What fraction of a radioactive sample is left after two half-lives?", choices: ["¼", "½", "⅛", "0"], answer: 0, why: "Half of a half: ½ × ½ = ¼." },
+        { q: "1 gram of a radioactive element has a half-life of 100 years. How much is left after 300 years?", choices: ["⅛ gram", "⅓ gram", "¼ gram", "None"], answer: 0, why: "300 years = 3 half-lives: 1 → ½ → ¼ → ⅛." },
+        { q: "What are the decay products of a radioactive parent called?", choices: ["Daughter elements", "Planetesimals", "Isotopes of the parent", "Meteorites"], answer: 0, why: "Parents decay into daughters; the material doesn't disappear." },
+        { q: "What is the half-life of uranium-238?", choices: ["4.47 billion years", "1.31 billion years", "106 billion years", "100 years"], answer: 0, why: "Table 7.3: uranium-238 → lead-206, 4.47 billion years." },
+        { q: "Why do crater counts only give the time since a surface was 'swept clean'?", choices: ["Lava flows or impact melt can erase older craters", "Craters fade on their own every year", "Impacts only began recently", "Craters can only form on the Moon"], answer: 0, why: "Like a swept sidewalk in a snowstorm, an erased surface starts counting again." }
+      ]
+    },
+    solarorigin: {
+      title: "Origin of the Solar System",
+      eyebrow: "Study tool · Chapter 7",
+      h1: "From a spinning cloud to planets",
+      intro: "The Sun and planets formed <b>together</b> from a spinning cloud of gas and dust, the <b>solar nebula</b>, " +
+        "about 4.5 billion years ago.",
+      explain:
+        "<p><b>The clues:</b> the planets orbit in nearly <b>one plane</b> and the <b>same direction</b>, and the Sun " +
+        "spins that way too. The Sun, Jupiter, and Saturn share a hydrogen-rich makeup, while the inner planets are " +
+        "mostly heavy elements like iron and silicon.</p>" +
+        "<p><b>Why rocky inside, icy outside?</b> The inner disk moved faster, so friction heated it — too warm for " +
+        "water to condense as ice.</p>" +
+        "<p><b>Building planets:</b> material clumped into <b>planetesimals</b> (probably no larger than 100 km) that " +
+        "collided violently to build planets. Giant random collisions may explain the oddballs — Uranus and Pluto on " +
+        "their sides, Venus spinning backward. We see similar <b>circumstellar disks</b> around young stars today.</p>",
+      diagram: "solar-nebula",
+      showLead: "Step through the four stages — cloud, disk, planetesimals, planets.",
+      matchKey: "solaroriginmatch", matchLabels: ["Term or clue", "Meaning"],
+      recap: "<b>Solar nebula</b> → flat spinning disk → <b>planetesimals</b> → planets. Hot inner disk (friction) = " +
+        "<b>rocky</b> planets; ice only farther out. Giant collisions probably explain the exceptions.",
+      questions: [
+        { q: "What is the solar nebula?", choices: ["The spinning cloud of gas and dust the solar system formed from", "The Sun's outer atmosphere", "A ring around Saturn", "The asteroid belt"], answer: 0, why: "The Sun and planets formed together from it." },
+        { q: "Which clue suggests the planets and Sun formed together?", choices: ["They all move in nearly one plane and the same direction", "All planets have the same size", "All planets have rings", "All planets are rocky"], answer: 0, why: "Astronomers read that shared plane and direction as evidence of one spinning cloud of gas and dust — the solar nebula." },
+        { q: "Why was the inner disk too warm for ice?", choices: ["It moved faster, causing more friction", "It was full of volcanoes", "It was farther from the Sun", "It had no gas at all"], answer: 0, why: "The Sun's rays had trouble penetrating the dense disk; friction did the heating." },
+        { q: "What are planetesimals?", choices: ["Planet building blocks, probably no larger than 100 km", "Moons of dwarf planets", "Disks around young stars", "Giant planets close to their star"], answer: 0, why: "They gathered under mutual gravity to form the planets." },
+        { q: "What may explain why Uranus spins on its side?", choices: ["An enormous collision long ago", "The greenhouse effect", "Radioactive decay", "Being far from the Sun"], answer: 0, why: "Random collisions of massive planetesimals could explain exceptions to the rules." },
+        { q: "What do we see around many very young stars today?", choices: ["Circumstellar disks like our early solar nebula", "Fully formed copies of our solar system", "Nothing at all", "Rings like Saturn's"], answer: 0, why: "These flattened, spinning disks are where planets are probably forming today." }
+      ]
+    }
+  };
+
   /* ---- click-to-load YouTube embed (no contact with Google until played) */
   function videoEmbed(id, label) {
     var wrap = h("div", { class: "video-embed" });
@@ -4478,7 +4660,13 @@
     "t/detectors": ["detectors", function () { renderLawTool(CH6_TOOLS.detectors); }],
     "t/radiotelescopes": ["radiotelescopes", function () { renderLawTool(CH6_TOOLS.radiotelescopes); }],
     "t/spaceobs": ["spaceobs", function () { renderLawTool(CH6_TOOLS.spaceobs); }],
-    "t/futurescopes": ["futurescopes", function () { renderLawTool(CH6_TOOLS.futurescopes); }]
+    "t/futurescopes": ["futurescopes", function () { renderLawTool(CH6_TOOLS.futurescopes); }],
+    "t/solarsystem": ["solarsystem", function () { renderLawTool(CH7_TOOLS.solarsystem); }],
+    "t/smallbodies": ["smallbodies", function () { renderLawTool(CH7_TOOLS.smallbodies); }],
+    "t/scalemodel": ["scalemodel", function () { renderLawTool(CH7_TOOLS.scalemodel); }],
+    "t/planetmakeup": ["planetmakeup", function () { renderLawTool(CH7_TOOLS.planetmakeup); }],
+    "t/datingsurfaces": ["datingsurfaces", function () { renderLawTool(CH7_TOOLS.datingsurfaces); }],
+    "t/solarorigin": ["solarorigin", function () { renderLawTool(CH7_TOOLS.solarorigin); }]
   };
 
   function route() {
