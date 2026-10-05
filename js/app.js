@@ -85,7 +85,19 @@
     scalemodel: ["t/scalemodel", "A Scale Model of the Solar System", "Earth a grape, one block from a 1.5-m Sun"],
     planetmakeup: ["t/planetmakeup", "Composition and Structure", "What planets are made of, differentiation, and heat"],
     datingsurfaces: ["t/datingsurfaces", "Dating Planetary Surfaces", "Crater counts and radioactive half-lives"],
-    solarorigin: ["t/solarorigin", "Origin of the Solar System", "The solar nebula, planetesimals, and collisions"]
+    solarorigin: ["t/solarorigin", "Origin of the Solar System", "The solar nebula, planetesimals, and collisions"],
+    sunlayers: ["t/sunlayers", "Layers of the Sun", "Core, radiative zone, convective zone, and photosphere"],
+    solaratmosphere: ["t/solaratmosphere", "The Sun's Atmosphere", "Chromosphere, corona, solar wind, and auroras"],
+    sunspots: ["t/sunspots", "Sunspots and Rotation", "Cool magnetic spots and differential rotation"],
+    solarcycle: ["t/solarcycle", "The Solar Cycle", "The 11-year sunspot cycle and 22-year magnetic cycle"],
+    solaractivity: ["t/solaractivity", "Solar Activity", "Plages, prominences, flares, and CMEs"],
+    spaceweather: ["t/spaceweather", "Space Weather", "How solar storms affect Earth — and when they arrive"],
+    sunenergy: ["t/sunenergy", "Sources of Sunshine", "Burning, falling meteorites, and gravitational contraction"],
+    massenergy: ["t/massenergy", "Mass, Energy, and Fusion", "E = mc², binding energy, fusion and fission"],
+    ppchain: ["t/ppchain", "The Proton-Proton Chain", "Four hydrogens become one helium, step by step"],
+    hydrostatic: ["t/hydrostatic", "Hydrostatic Equilibrium", "Gravity in, pressure out — the Sun's balance"],
+    energyflow: ["t/energyflow", "How Energy Escapes the Sun", "Radiation, convection, and the photon's random walk"],
+    sunobs: ["t/sunobs", "Observing the Sun's Interior", "Helioseismology and solar neutrinos"]
   };
   function hasTool(key) { return D.tools && D.tools.indexOf(key) > -1; }
 
@@ -3461,6 +3473,347 @@
     }
   };
 
+  var CH15_TOOLS = {
+    sunlayers: {
+      title: "Layers of the Sun",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "Inside the Sun: core, radiative zone, convective zone",
+      intro: "The Sun is a huge ball of hot, ionized gas — <b>109 Earths</b> across, mostly <b>hydrogen and helium</b>. " +
+        "It has no solid surface, but it does have <b>layers</b>, like an onion.",
+      explain:
+        "<p><b>Core</b> — where nuclear energy is released, the source of all the Sun's energy. About <b>15 million K</b>, " +
+        "the hottest part.</p>" +
+        "<p><b>Radiative zone</b> — from about 25% to 70% of the way out. Energy travels as light, but photons keep " +
+        "bumping into particles and changing direction, so it moves <b>very slowly</b>.</p>" +
+        "<p><b>Convective zone</b> — the top 200,000 km of the interior. Hot plasma bubbles up, cools, and sinks, like " +
+        "<b>boiling oatmeal</b>.</p>" +
+        "<p><b>Photosphere</b> — the visible surface, where the Sun turns opaque (just over 400 km thick, about " +
+        "<b>5800 K</b>). Its <b>granulation</b> is the tops of rising columns of hot gas.</p>",
+      diagram: "sun-layers",
+      showLead: "Tap each layer, from the core outward.",
+      matchKey: "sunlayersmatch", matchLabels: ["Layer or fact", "What to know"],
+      recap: "Core (<b>15 million K</b>, makes the energy) → radiative zone (light crawls out) → convective zone (boiling) " +
+        "→ photosphere (<b>5800 K</b>, the visible surface). By mass: <b>73%</b> hydrogen, <b>25%</b> helium, <b>2%</b> everything else.",
+      questions: [
+        { q: "Where is the Sun's energy produced?", choices: ["The core", "The photosphere", "The corona", "The convective zone"], answer: 0, why: "The core, at about 15 million K, is where nuclear energy is released." },
+        { q: "About what percentage of the Sun's mass is hydrogen?", choices: ["73%", "25%", "2%", "50%"], answer: 0, why: "Hydrogen 73%, helium 25%, everything else 2% (Table 15.2 gives 73.4% and 25.0%)." },
+        { q: "In which zone does energy move by rising and sinking gas?", choices: ["Convective zone", "Radiative zone", "Core", "Corona"], answer: 0, why: "Giant convection cells carry the heat up, like boiling oatmeal." },
+        { q: "What is the photosphere?", choices: ["The visible surface, where the Sun becomes opaque", "A solid crust", "The Sun's core", "The outermost atmosphere"], answer: 0, why: "It's a thin layer, just over 400 km, where the gas goes from transparent to opaque." },
+        { q: "What causes granulation?", choices: ["Hot gas rising from below the photosphere", "Meteorites hitting the Sun", "Sunspots", "Coronal holes"], answer: 0, why: "Bright granules are rising columns of hotter gas; it cools and sinks in the darker lanes." },
+        { q: "What is a plasma?", choices: ["A hot ionized gas", "A liquid metal", "A frozen gas", "A kind of rock"], answer: 0, why: "The Sun is so hot that many atoms are stripped of electrons." }
+      ]
+    },
+    solaratmosphere: {
+      title: "The Sun's Atmosphere",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "Chromosphere, transition region, corona — and the solar wind",
+      intro: "Above the photosphere, the temperature does something strange: it goes <b>up</b>, from about 5800 K to " +
+        "10,000 K to <b>a million degrees</b> or more.",
+      explain:
+        "<p><b>Chromosphere</b> — 2000–3000 km thick, about <b>10,000 K</b>, red from the light of <b>hydrogen</b>. " +
+        "Helium was discovered in its spectrum in 1868.</p>" +
+        "<p><b>Transition region</b> — a thin zone where the temperature shoots up to nearly a million degrees.</p>" +
+        "<p><b>Corona</b> — a million degrees or more, but extremely thin; seen during total eclipses or with a " +
+        "<b>coronagraph</b>.</p>" +
+        "<p><b>Solar wind</b> — protons and electrons streaming out at about <b>400 km/s</b>, mostly from " +
+        "<b>coronal holes</b>. Near Earth's magnetic poles they make the <b>auroras</b>.</p>",
+      diagram: "atmosphere-temp",
+      showLead: "Climb from the photosphere up into the corona.",
+      matchKey: "solaratmospherematch", matchLabels: ["Term", "What to know"],
+      recap: "Photosphere <b>5800 K</b> → chromosphere <b>10,000 K</b> → transition region → corona <b>1 million K+</b>. " +
+        "Solar wind at <b>400 km/s</b>, mainly from coronal holes → auroras.",
+      questions: [
+        { q: "Which layer of the Sun's atmosphere is hottest?", choices: ["The corona", "The chromosphere", "The photosphere", "The transition region"], answer: 0, why: "The corona is a million degrees or more." },
+        { q: "What gives the chromosphere its red color?", choices: ["A bright red line of hydrogen", "Iron", "Sunspots", "Dust"], answer: 0, why: "One of the strongest emission lines in its spectrum is hydrogen's red line." },
+        { q: "What does a coronagraph do?", choices: ["Blocks the Sun's glare so we can see the corona", "Measures the Sun's mass", "Detects neutrinos", "Counts sunspots"], answer: 0, why: "An occulting disk covers the bright photosphere." },
+        { q: "How fast does the solar wind blow?", choices: ["About 400 km/s", "About 3 km/s", "The speed of light", "About 40 m per year"], answer: 0, why: "Almost 1 million miles per hour." },
+        { q: "Where does most of the solar wind come from?", choices: ["Coronal holes", "Sunspots", "The core", "Plages"], answer: 0, why: "There the field lines reach out into space, letting gas escape." },
+        { q: "What causes auroras?", choices: ["Charged particles from the Sun making air molecules glow", "Sunlight reflecting off ice", "Lightning", "Moonlight"], answer: 0, why: "Particles follow Earth's magnetic field down near the poles and strike the air." }
+      ]
+    },
+    sunspots: {
+      title: "Sunspots and Rotation",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "Sunspots, and a Sun that doesn't turn all at once",
+      intro: "<b>Sunspots</b> are cooler, darker patches caused by strong <b>magnetism</b>. Tracking them shows the Sun " +
+        "rotates — faster at its equator than near its poles.",
+      explain:
+        "<p>Spots are about <b>3800 K</b>, next to a 5800 K photosphere — dark only by contrast. A big spot has a dark " +
+        "<b>umbra</b> inside a lighter <b>penumbra</b>; a few have topped 140,000 km.</p>" +
+        "<p><b>Galileo</b> (1612) tracked spots and found the Sun turns in about a month. Being gas, it has " +
+        "<b>differential rotation</b>: about <b>25 days</b> at the equator, <b>28</b> at 40°, <b>36</b> at 80°.</p>" +
+        "<p>The <b>Zeeman effect</b> — spectral lines splitting in a magnetic field — shows spots have strong magnetic " +
+        "fields. The fields block the rising hot gas of convection, so the spot cools.</p>",
+      diagram: "differential-rotation",
+      showLead: "Watch the equator pull ahead of the poles.",
+      matchKey: "sunspotsmatch", matchLabels: ["Term", "What to know"],
+      recap: "Spot = <b>3800 K</b>, magnetic, umbra + penumbra. Rotation: <b>25</b> days (equator), <b>28</b> (40°), " +
+        "<b>36</b> (80°). Zeeman effect measures the field.",
+      questions: [
+        { q: "Why do sunspots look dark?", choices: ["They are cooler than the photosphere around them", "They are holes", "They are shadows of planets", "They are made of iron"], answer: 0, why: "About 3800 K versus about 5800 K." },
+        { q: "What is the darker center of a sunspot called?", choices: ["Umbra", "Penumbra", "Plage", "Granule"], answer: 0, why: "The less dark surrounding region is the penumbra." },
+        { q: "How long does the Sun's equator take to rotate once?", choices: ["About 25 days", "About 36 days", "One year", "One day"], answer: 0, why: "36 days is near latitude 80°." },
+        { q: "Who first used sunspots to show the Sun rotates?", choices: ["Galileo", "Schwabe", "Zeeman", "Maunder"], answer: 0, why: "Galileo, in 1612, found a period of about a month." },
+        { q: "What does the Zeeman effect measure?", choices: ["Magnetic fields", "Distance", "Rotation speed", "Age"], answer: 0, why: "Spectral lines split in a magnetic field, by an amount set by its strength." },
+        { q: "Why are sunspots cooler?", choices: ["Strong magnetic fields block the rising hot gas", "They are farther from the core", "Clouds cover them", "They have no hydrogen"], answer: 0, why: "Blocking convection keeps heat from reaching that part of the surface." }
+      ]
+    },
+    solarcycle: {
+      title: "The Solar Cycle",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "The 11-year sunspot cycle and the 22-year magnetic cycle",
+      intro: "The number of sunspots rises and falls about every <b>11 years</b>. And every cycle, the Sun's magnetic " +
+        "pattern <b>flips</b>.",
+      explain:
+        "<p><b>Heinrich Schwabe</b>, a pharmacist hunting for a planet inside Mercury's orbit, counted spots daily from " +
+        "1826 to 1850 and found the <b>sunspot cycle</b>: maxima every 11 years on average (9 to 14). At maximum, more " +
+        "than 100 spots; at minimum, sometimes none.</p>" +
+        "<p>In one cycle, the <b>leading spots</b> in the north all have one polarity and those in the south the " +
+        "opposite. Next cycle they <b>reverse</b> — so the full magnetic cycle is <b>22 years</b>.</p>" +
+        "<p>The Sun's <b>dynamo</b> (churning ionized gas) makes the field; differential rotation winds it into " +
+        "<b>loops</b> that break the surface as pairs of opposite-polarity spots. The <b>Maunder Minimum</b> " +
+        "(1645–1715) had very few spots.</p>",
+      diagram: "sunspot-cycle",
+      showLead: "Slide through two cycles and watch the polarities.",
+      matchKey: "solarcyclematch", matchLabels: ["Term", "What to know"],
+      recap: "Sunspot cycle = <b>11 years</b> (9–14). Polarity flips each cycle → magnetic cycle = <b>22 years</b>. " +
+        "Dynamo + differential rotation → loops → spot pairs. Maunder Minimum = <b>1645–1715</b>.",
+      questions: [
+        { q: "Who discovered the sunspot cycle?", choices: ["Heinrich Schwabe", "Galileo", "Cecilia Payne-Gaposchkin", "Richard Carrington"], answer: 0, why: "He counted sunspots daily from 1826 to 1850." },
+        { q: "How long is the average sunspot cycle?", choices: ["11 years", "22 years", "25 days", "100 years"], answer: 0, why: "Maxima come every 11 years on average, anywhere from 9 to 14." },
+        { q: "How long until the Sun's magnetic polarity pattern repeats?", choices: ["22 years", "11 years", "5.5 years", "36 days"], answer: 0, why: "Leading-spot polarities reverse each 11-year cycle." },
+        { q: "What is the Sun's dynamo?", choices: ["Churning ionized gas that generates the magnetic field", "A power plant on the Sun", "The core's fusion", "The solar wind"], answer: 0, why: "Moving charged gas makes currents, which make magnetic fields." },
+        { q: "Why do the two spots of a pair have opposite polarity?", choices: ["They are the two ends of one magnetic loop", "One is in each hemisphere", "One is older", "One is hotter"], answer: 0, why: "A loop of field breaks through the surface at both ends." },
+        { q: "What was the Maunder Minimum?", choices: ["1645–1715, when there were very few sunspots", "The coldest layer of the Sun", "The shortest solar cycle", "The 1859 solar storm"], answer: 0, why: "It coincided with Europe's Little Ice Age." }
+      ]
+    },
+    solaractivity: {
+      title: "Solar Activity",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "Plages, prominences, flares, and CMEs",
+      intro: "Above the sunspots, the chromosphere and corona flare up too. All of it happens together in " +
+        "<b>active regions</b>, wherever the magnetic field is strong.",
+      explain:
+        "<p><b>Plages</b> — bright, hotter, denser clouds in the chromosphere around sunspots.</p>" +
+        "<p><b>Prominences</b> — huge clouds or loops of gas rising into the corona. Quiescent ones last hours or days; " +
+        "eruptive ones can reach over <b>1 million km</b>; surge prominences move up to <b>1300 km/s</b>.</p>" +
+        "<p><b>Solar flares</b> — the most violent events: <b>5–10 minutes</b>, about a million hydrogen bombs' worth " +
+        "of energy, up to <b>10 million K</b>, with floods of X-rays and ultraviolet. Opposite magnetic fields destroy " +
+        "each other, like a rubber band snapping.</p>" +
+        "<p><b>Coronal mass ejections</b> — coronal material (mainly protons and electrons) blasted out at " +
+        "<b>500–1000 km/s</b>.</p>",
+      diagram: "solar-activity",
+      showLead: "Tap through the field guide, from sunspot to CME.",
+      matchKey: "solaractivitymatch", matchLabels: ["Event", "What to know"],
+      recap: "Plage = bright chromosphere cloud. Prominence = gas loop into the corona (surge up to <b>1300 km/s</b>). " +
+        "Flare = most violent, <b>10 million K</b>. CME = <b>500–1000 km/s</b>. All in <b>active regions</b>.",
+      questions: [
+        { q: "What is a plage?", choices: ["A bright, hot, dense region in the chromosphere around sunspots", "A dark spot", "A hole in the corona", "A kind of neutrino"], answer: 0, why: "Seen through filters that pass hydrogen or calcium light." },
+        { q: "Which is the most violent event on the Sun's surface?", choices: ["A solar flare", "A plage", "A granule", "A quiescent prominence"], answer: 0, why: "A typical flare releases about a million hydrogen bombs' worth of energy." },
+        { q: "How hot can flare material get?", choices: ["About 10 million K", "About 3800 K", "About 5800 K", "About 10,000 K"], answer: 0, why: "At such temperatures it gives off a flood of X-rays and ultraviolet." },
+        { q: "How fast does material leave in a CME?", choices: ["500–1000 km/s", "2–3 km/s", "1 km per day", "The speed of light"], answer: 0, why: "Mainly protons and electrons, ejected into interplanetary space." },
+        { q: "How high can eruptive prominences reach?", choices: ["More than 1 million km", "About 400 km", "About 100 km", "Only as high as a granule"], answer: 0, why: "Earth would be completely lost inside one." },
+        { q: "What do all active regions have?", choices: ["Strong magnetic fields", "No sunspots", "Low temperatures", "Coronal holes"], answer: 0, why: "Sunspots, plages, prominences, flares, and CMEs gather where the field is strong." }
+      ]
+    },
+    spaceweather: {
+      title: "Space Weather",
+      eyebrow: "Study tool · Chapter 15",
+      h1: "When solar storms reach Earth",
+      intro: "Particles from the Sun — steadily in the solar wind, or in huge bursts like <b>CMEs</b> — reach Earth's " +
+        "magnetosphere. When this <b>space weather</b> turns stormy, our technology is at risk.",
+      explain:
+        "<p><b>Carrington Event (1859)</b>: a flare, then a solar storm — auroras as far south as Hawaii and the " +
+        "Caribbean, and sparks from telegraph wires.</p>" +
+        "<p><b>Sources</b>: coronal holes (usually mild), flares (X-rays and ultraviolet that can charge and damage " +
+        "spacecraft), and CMEs (most disruptive: they heat the ionosphere and drag satellites down).</p>" +
+        "<p><b>Damage</b>: \"killer electrons\" in satellites, communications and GPS disruptions, and power outages " +
+        "(Quebec, 1989: up to 9 hours). Seeing a CME leave gives <b>several days</b> of warning: <b>T = D ÷ v</b>.</p>",
+      diagram: "cme-travel",
+      showLead: "Pick a speed and time the trip to Earth.",
+      matchKey: "spaceweathermatch", matchLabels: ["Term", "What to know"],
+      recap: "Most disruptive = <b>CMEs</b>. T = D ÷ v: at <b>400 km/s</b>, 1.496 × 10⁸ km takes about <b>4.3 days</b>; " +
+        "at 500 km/s, <b>3.46 days</b>. The Sun's output varies only ~<b>0.1%</b> per cycle — not the cause of global warming.",
+      questions: [
+        { q: "What was the Carrington Event?", choices: ["An 1859 solar storm with far-reaching auroras and sparking telegraph wires", "The discovery of sunspots", "A 1989 blackout", "The Maunder Minimum"], answer: 0, why: "It was the first recognized space-weather event." },
+        { q: "Which solar event is most disruptive for Earth?", choices: ["Coronal mass ejections", "Coronal holes", "Granulation", "Plages"], answer: 0, why: "CMEs heat the ionosphere, drag satellites, and induce damaging currents." },
+        { q: "How does a CME drag satellites to lower orbits?", choices: ["It heats and expands the ionosphere, increasing friction", "It pushes them with sunlight", "It pulls them with gravity", "It melts their solar panels"], answer: 0, why: "In March 1989, 11,000 of 19,000 tracked objects were temporarily lost." },
+        { q: "Particles moving at 400 km/s cross 1.496 × 10⁸ km in about how long?", choices: ["4.3 days", "43 days", "1 hour", "4 weeks"], answer: 0, why: "T = D ÷ v = 3.74 × 10⁵ s ≈ 4.3 days." },
+        { q: "Why are CME blackouts more likely in North America than Europe?", choices: ["It's closer to Earth's magnetic pole", "It has more satellites", "It's closer to the Sun", "It has older power lines"], answer: 0, why: "Induced currents are strongest near the magnetic pole." },
+        { q: "Does solar variability explain the global warming of the past 50 years?", choices: ["No", "Yes, completely", "Yes, mostly", "Only in Europe"], answer: 0, why: "Climate data and models consistently show it is not the cause." }
+      ]
+    }
+  };
+
+  var CH16_TOOLS = {
+    sunenergy: {
+      title: "Sources of Sunshine",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "What could power the Sun for billions of years?",
+      intro: "The Sun pours out about <b>4 × 10²⁶ watts</b> and has done so for about <b>4.5 billion years</b>. " +
+        "Nineteenth-century scientists tried every energy source they knew — none lasted long enough.",
+      explain:
+        "<p><b>Conservation of energy</b>: energy can't be created or destroyed, only changed from one form to another. " +
+        "So where does the Sun's come from?</p>" +
+        "<p><b>Burning?</b> A coal or wood Sun lasts only a few thousand years. <b>Falling meteorites?</b> We'd notice " +
+        "our year changing by 2 seconds per year.</p>" +
+        "<p><b>Shrinking?</b> Kelvin and Helmholtz: falling gas heats up, and contracting only <b>40 m per year</b> " +
+        "would power the Sun. But that runs out after about <b>100 million years</b> — far less than Earth's age.</p>",
+      diagram: "sun-fuel",
+      showLead: "Try each power source — which bar reaches the Sun's age?",
+      matchKey: "sunenergymatch", matchLabels: ["Idea or term", "What to know"],
+      recap: "Chemical: <b>a few thousand years</b>. Gravitational contraction: <b>100 million years</b> (10⁴² J ÷ 10³⁴ J/yr). " +
+        "Needed: <b>billions</b> → nuclear fusion.",
+      questions: [
+        { q: "What is a watt?", choices: ["One joule per second", "One joule", "One kilogram", "One meter per second"], answer: 0, why: "Power is energy per unit time; a 100-watt bulb uses 100 J each second." },
+        { q: "How long could chemical burning power the Sun?", choices: ["A few thousand years", "100 million years", "Billions of years", "Forever"], answer: 0, why: "Even if the whole Sun were coal or wood." },
+        { q: "Who proposed that the Sun shines by contracting?", choices: ["Kelvin and Helmholtz", "Einstein", "Darwin", "Pauli"], answer: 0, why: "They suggested the Sun's outer layers might be slowly falling inward." },
+        { q: "How long could contraction keep the Sun shining?", choices: ["About 100 million years", "About 4.5 billion years", "About 1000 years", "About 40 years"], answer: 0, why: "About 10⁴² J ÷ 10³⁴ J per year." },
+        { q: "Why was the falling-meteorite idea rejected?", choices: ["Our year would change by 2 seconds per year, which isn't seen", "Meteorites are too cold", "There are no meteorites", "They would block sunlight"], answer: 0, why: "An Earth's mass every 100 years would change Earth's orbital period (Kepler's third law)." },
+        { q: "Why did Darwin worry about the Sun's age?", choices: ["Evolution needed more time than contraction allowed", "He thought the Sun was too hot", "He discovered fusion", "He measured sunspots"], answer: 0, why: "He worried about it until his death in 1882." }
+      ]
+    },
+    massenergy: {
+      title: "Mass, Energy, and Fusion",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "E = mc²: a little mass makes a lot of energy",
+      intro: "Einstein showed that matter is a form of energy. Because <b>c²</b> is so huge, turning even a tiny bit of " +
+        "mass into energy releases an enormous amount.",
+      explain:
+        "<p><b>E = mc²</b>: c is the speed of light, 3 × 10⁸ m/s. Converting 1 gram completely equals burning " +
+        "<b>15,000 barrels of oil</b>.</p>" +
+        "<p><b>Binding energy</b>: when particles join into a nucleus (held by the <b>strong nuclear force</b>), the new " +
+        "nucleus weighs a little less. That missing mass is released as energy. <b>Iron</b> is the most stable nucleus.</p>" +
+        "<p><b>Fusion</b> (light nuclei joining, up to iron) and <b>fission</b> (heavy nuclei splitting, down to iron) " +
+        "both release energy. Stars are mostly hydrogen, so they run on <b>fusion</b> — which needs more than about " +
+        "<b>12 million K</b> to overcome the protons' electrical repulsion.</p>",
+      diagram: "emc2",
+      showLead: "Compare turning ALL of a mass into energy with fusing hydrogen.",
+      matchKey: "massenergymatch", matchLabels: ["Term", "Meaning"],
+      recap: "<b>E = mc²</b>, c = 3 × 10⁸ m/s. 1 g → <b>15,000 barrels</b> of oil. Fusion = light → heavier; fission = " +
+        "heavy → lighter; both toward <b>iron</b>. Fusion needs > <b>12 million K</b>.",
+      questions: [
+        { q: "In E = mc², what is c?", choices: ["The speed of light", "The speed of sound", "A constant equal to 100", "The mass of a proton"], answer: 0, why: "3 × 10⁸ m/s, squared." },
+        { q: "Does matter have to move at the speed of light to turn into energy?", choices: ["No — c² is just the conversion factor", "Yes", "Only in stars", "Only in the core"], answer: 0, why: "Like 100 in cents = 100 × dollars, it just relates the two." },
+        { q: "What holds the nucleus together?", choices: ["The strong nuclear force", "Gravity", "The electrical force", "Magnetism"], answer: 0, why: "It's an attraction stronger than the electrical repulsion between protons, but only over nucleus-sized distances." },
+        { q: "What is fusion?", choices: ["Light nuclei joining into a heavier one", "Heavy nuclei splitting apart", "Burning hydrogen with oxygen", "Electrons leaving atoms"], answer: 0, why: "Up to iron, joining nuclei releases energy." },
+        { q: "Which element has the most stable nucleus?", choices: ["Iron", "Hydrogen", "Helium", "Uranium"], answer: 0, why: "Its binding energy is the greatest." },
+        { q: "What is the antiparticle of the electron called?", choices: ["Positron", "Neutrino", "Proton", "Neutron"], answer: 0, why: "Same mass, positive charge." }
+      ]
+    },
+    ppchain: {
+      title: "The Proton-Proton Chain",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "Four hydrogens in, one helium out",
+      intro: "Deep in the Sun's core, a <b>three-step</b> process fuses <b>four hydrogen nuclei</b> into <b>one helium " +
+        "nucleus</b> — and the helium weighs <b>0.71%</b> less.",
+      explain:
+        "<p><b>Step 1</b>: ¹H + ¹H → ²H + e⁺ + ν (deuterium, a positron, and a neutrino). The slow step.</p>" +
+        "<p><b>Step 2</b>: ²H + ¹H → ³He + γ (helium-3 and a gamma ray), about 6 seconds later.</p>" +
+        "<p><b>Step 3</b>: ³He + ³He → ⁴He + ¹H + ¹H, about a million years later. Steps 1 and 2 happen twice for each " +
+        "step 3.</p>" +
+        "<p><b>The payoff</b>: 4.03130 u − 4.00268 u = <b>0.02862 u</b> lost → E = mc². One kilogram of hydrogen gives " +
+        "<b>6.4 × 10¹⁴ J</b>. The Sun fuses <b>600 million tons</b> every second. Hotter stars use the <b>CNO cycle</b>.</p>",
+      diagram: "pp-chain",
+      showLead: "Tap the steps in order and watch the nuclei collide.",
+      matchKey: "ppchainmatch", matchLabels: ["Step or number", "What it means"],
+      recap: "4 ¹H → ⁴He. Mass lost <b>0.71%</b> → <b>6.4 × 10¹⁴ J</b> per kg. Sun: <b>600 million tons</b>/s fused, " +
+        "<b>4 million tons</b>/s into energy. p-p chain below ~1.2 solar masses; CNO cycle in hotter stars.",
+      questions: [
+        { q: "What does step 1 of the p-p chain make?", choices: ["Deuterium, a positron, and a neutrino", "Helium-4", "Helium-3 and a gamma ray", "Carbon"], answer: 0, why: "¹H + ¹H → ²H + e⁺ + ν." },
+        { q: "What does step 3 need to start?", choices: ["Two helium-3 nuclei", "Two deuterium nuclei", "Four protons", "A carbon nucleus"], answer: 0, why: "So steps 1 and 2 must each happen twice first." },
+        { q: "What is deuterium?", choices: ["Hydrogen with one proton and one neutron", "Helium with one neutron", "An antiproton", "A kind of neutrino"], answer: 0, why: "It is an isotope of hydrogen." },
+        { q: "What fraction of the mass turns into energy?", choices: ["0.71%", "7.1%", "71%", "100%"], answer: 0, why: "0.02862 u of 4.03130 u." },
+        { q: "How much energy does fusing 1 kg of hydrogen release?", choices: ["6.4 × 10¹⁴ J", "700 J", "10⁴² J", "4 × 10²⁶ J"], answer: 0, why: "0.0071 kg × (3 × 10⁸ m/s)²." },
+        { q: "What happens to the positron from step 1?", choices: ["It annihilates with an electron, making gamma rays", "It escapes the Sun in 2 seconds", "It becomes a neutron", "It joins the helium"], answer: 0, why: "It's antimatter, so it instantly meets an electron. The neutrino is what escapes." }
+      ]
+    },
+    hydrostatic: {
+      title: "Hydrostatic Equilibrium",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "A balancing act: gravity versus pressure",
+      intro: "The Sun is neither expanding nor contracting. At every point inside, <b>gas pressure</b> pushing out " +
+        "exactly balances <b>gravity</b> pulling in.",
+      explain:
+        "<p><b>Gas pressure</b> is the push of fast-moving particles. More particles, or hotter (faster) ones, mean " +
+        "more pressure.</p>" +
+        "<p>If the pressure were too low, the star would <b>contract</b>, building up pressure; too high, it would " +
+        "<b>expand</b>, lowering it. Either way it settles back — <b>hydrostatic equilibrium</b>, like a balloon.</p>" +
+        "<p>To hold up the Sun's weight, its center must be about <b>15 million K</b> — hot enough for fusion. And " +
+        "since heat flows from hot to cool, the Sun is hottest at the center, and it needs a fresh energy source to " +
+        "keep from cooling.</p>",
+      diagram: "hydrostatic",
+      showLead: "Squeeze the star, then puff it up — it always comes back.",
+      matchKey: "hydrostaticmatch", matchLabels: ["Term", "Meaning"],
+      recap: "Pressure out = gravity in, at every point → <b>hydrostatic equilibrium</b>. Center ≈ <b>15 million K</b>. " +
+        "Hottest at the center; fusion replaces the energy that flows out.",
+      questions: [
+        { q: "What balances gravity inside the Sun?", choices: ["Gas pressure", "Magnetism", "The solar wind", "Rotation"], answer: 0, why: "The outward push of hot, fast-moving gas." },
+        { q: "What happens if a star's pressure is too low to hold up its outer layers?", choices: ["It contracts, building up pressure", "It explodes", "It expands", "Nothing"], answer: 0, why: "Contracting raises the pressure until it balances." },
+        { q: "What makes gas pressure higher?", choices: ["More particles or a higher temperature", "Fewer particles", "Lower temperature", "Slower particles"], answer: 0, why: "More, or faster, collisions push harder." },
+        { q: "How hot must the Sun's center be to hold the Sun up?", choices: ["About 15 million K", "About 5800 K", "About 10,000 K", "About 1 million K"], answer: 0, why: "Hot enough for protons to fuse." },
+        { q: "Where is a star hottest?", choices: ["At its center", "At its surface", "In its corona", "It's the same everywhere"], answer: 0, why: "Heat flows outward, from hot to cool." },
+        { q: "Why does the Sun need a source of fresh energy?", choices: ["Energy constantly flows out, so it would otherwise cool", "To keep spinning", "To make sunspots", "To make the solar wind"], answer: 0, why: "Like an iron that cools once it's unplugged." }
+      ]
+    },
+    energyflow: {
+      title: "How Energy Escapes the Sun",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "Radiation, convection — and a very long random walk",
+      intro: "Energy made in the core must travel outward. In the Sun it moves by <b>radiation</b> and " +
+        "<b>convection</b>; conduction can usually be ignored in stars.",
+      explain:
+        "<p><b>Conduction</b>: collisions pass energy along (a spoon in hot coffee). <b>Convection</b>: warm material " +
+        "rises (hot air from a fireplace). <b>Radiation</b>: photons carry energy (a heater's glowing coils).</p>" +
+        "<p>The interior is so opaque that a photon goes only about <b>0.01 m</b> before being absorbed and re-emitted " +
+        "in a random direction. Its energy zigzags out over <b>100,000 to 1,000,000 years</b>. A neutrino leaves in a " +
+        "little over <b>2 seconds</b>.</p>" +
+        "<p>The model Sun: a <b>core</b> to one-quarter of the way out (one-third of the mass, 15 million K, nearly 150 " +
+        "times water's density at the center); <b>radiation</b> out to <b>70%</b>; then <b>convection</b>.</p>",
+      diagram: "photon-walk",
+      showLead: "Race a photon against a neutrino out of the Sun.",
+      matchKey: "energyflowmatch", matchLabels: ["Term or number", "Meaning"],
+      recap: "Stars: <b>radiation</b> + <b>convection</b>. Photon steps ≈ <b>0.01 m</b> → <b>100,000–1,000,000 years</b> " +
+        "to escape; neutrino ≈ <b>2 s</b>. Radiation to <b>70%</b> of the way out, convection above.",
+      questions: [
+        { q: "Which two ways of moving energy are important inside stars?", choices: ["Radiation and convection", "Conduction and convection", "Conduction only", "Conduction and radiation"], answer: 0, why: "Stars are transparent enough that conduction can usually be ignored." },
+        { q: "Hot air rising from a fireplace is an example of what?", choices: ["Convection", "Conduction", "Radiation", "Fusion"], answer: 0, why: "Warm material rises, carrying energy with it." },
+        { q: "About how far does a photon go in the Sun before being absorbed?", choices: ["About 0.01 m", "About 1 km", "About 1 AU", "About 400 km"], answer: 0, why: "The interior gas is very opaque." },
+        { q: "How long does energy take to get from the core to the surface?", choices: ["100,000 to 1,000,000 years", "2 seconds", "About 6 seconds", "About 1 hour"], answer: 0, why: "Random zigzags make the trip extremely slow." },
+        { q: "Why do neutrinos escape so quickly?", choices: ["They barely interact with matter", "They are very heavy", "They are pushed by convection", "They are made at the surface"], answer: 0, why: "They fly straight out at nearly the speed of light." },
+        { q: "Where does convection take over from radiation in the Sun?", choices: ["About 70% of the way from the center", "At the center", "About 25% of the way out", "In the corona"], answer: 0, why: "Rising columns of hot gas carry the energy the rest of the way." }
+      ]
+    },
+    sunobs: {
+      title: "Observing the Sun's Interior",
+      eyebrow: "Study tool · Chapter 16",
+      h1: "Helioseismology and the missing neutrinos",
+      intro: "Two ways to look inside the Sun: the waves that make its surface <b>breathe</b>, and the <b>neutrinos</b> " +
+        "that fly straight out of its core.",
+      explain:
+        "<p><b>Helioseismology</b>: surface patches 4000–15,000 km across move in and out about every <b>5 minutes</b>. " +
+        "The waves reveal that convection reaches <b>30%</b> of the way to the center, that the Sun below the convection " +
+        "zone rotates like a solid body, and that active regions on the far side can be spotted a week or more early.</p>" +
+        "<p><b>Neutrinos</b>: Raymond Davis's chlorine tank in a gold mine found only <b>one-third</b> of the predicted " +
+        "solar neutrinos. The <b>Sudbury</b> detector (1000 metric tons of heavy water) caught all three types and " +
+        "matched the models: two-thirds of the electron neutrinos had <b>changed type</b> on the way, so neutrinos " +
+        "have <b>mass</b>.</p>",
+      diagram: "neutrino-catch",
+      showLead: "Try Davis's detector, then Sudbury's — compare what they count.",
+      matchKey: "sunobsmatch", matchLabels: ["Name or term", "What it showed"],
+      recap: "Helioseismology: <b>5-minute</b> oscillations; convection to <b>30%</b> of the way in. Davis: only " +
+        "<b>⅓</b> of neutrinos. Sudbury: all three types, total matches → <b>neutrino oscillation</b>, neutrinos have mass.",
+      questions: [
+        { q: "What is helioseismology?", choices: ["Studying the Sun's oscillations to learn about its interior", "Earthquakes caused by the Sun", "Counting neutrinos", "Measuring sunspot temperatures"], answer: 0, why: "Like using earthquake waves to study Earth's interior." },
+        { q: "How long does one surface oscillation take?", choices: ["About 5 minutes", "About 11 years", "About 25 days", "About 2 seconds"], answer: 0, why: "Moving a few hundred meters per second." },
+        { q: "What did Davis's chlorine experiment find?", choices: ["Only one-third of the predicted neutrinos", "Twice as many neutrinos as predicted", "No neutrinos at all", "Exactly the predicted number"], answer: 0, why: "It could only detect electron neutrinos." },
+        { q: "What did Sudbury use to detect neutrinos?", choices: ["Heavy water", "Cleaning fluid", "Ice", "A telescope mirror"], answer: 0, why: "1000 metric tons of it, 2 km underground." },
+        { q: "What is neutrino oscillation?", choices: ["Neutrinos changing type on the way from the Sun", "Neutrinos bouncing inside the Sun", "The Sun's 5-minute breathing", "Neutrinos turning into photons"], answer: 0, why: "Two-thirds of the electron neutrinos change type before reaching Earth." },
+        { q: "What does neutrino oscillation tell us?", choices: ["Neutrinos have mass", "The Sun is cooling", "Fusion has stopped", "The solar models were wrong"], answer: 0, why: "Oscillation can only happen if the mass isn't zero — and Sudbury showed the models were right." }
+      ]
+    }
+  };
+
   /* ---- click-to-load YouTube embed (no contact with Google until played) */
   function videoEmbed(id, label) {
     var wrap = h("div", { class: "video-embed" });
@@ -4666,7 +5019,19 @@
     "t/scalemodel": ["scalemodel", function () { renderLawTool(CH7_TOOLS.scalemodel); }],
     "t/planetmakeup": ["planetmakeup", function () { renderLawTool(CH7_TOOLS.planetmakeup); }],
     "t/datingsurfaces": ["datingsurfaces", function () { renderLawTool(CH7_TOOLS.datingsurfaces); }],
-    "t/solarorigin": ["solarorigin", function () { renderLawTool(CH7_TOOLS.solarorigin); }]
+    "t/solarorigin": ["solarorigin", function () { renderLawTool(CH7_TOOLS.solarorigin); }],
+    "t/sunlayers": ["sunlayers", function () { renderLawTool(CH15_TOOLS.sunlayers); }],
+    "t/solaratmosphere": ["solaratmosphere", function () { renderLawTool(CH15_TOOLS.solaratmosphere); }],
+    "t/sunspots": ["sunspots", function () { renderLawTool(CH15_TOOLS.sunspots); }],
+    "t/solarcycle": ["solarcycle", function () { renderLawTool(CH15_TOOLS.solarcycle); }],
+    "t/solaractivity": ["solaractivity", function () { renderLawTool(CH15_TOOLS.solaractivity); }],
+    "t/spaceweather": ["spaceweather", function () { renderLawTool(CH15_TOOLS.spaceweather); }],
+    "t/sunenergy": ["sunenergy", function () { renderLawTool(CH16_TOOLS.sunenergy); }],
+    "t/massenergy": ["massenergy", function () { renderLawTool(CH16_TOOLS.massenergy); }],
+    "t/ppchain": ["ppchain", function () { renderLawTool(CH16_TOOLS.ppchain); }],
+    "t/hydrostatic": ["hydrostatic", function () { renderLawTool(CH16_TOOLS.hydrostatic); }],
+    "t/energyflow": ["energyflow", function () { renderLawTool(CH16_TOOLS.energyflow); }],
+    "t/sunobs": ["sunobs", function () { renderLawTool(CH16_TOOLS.sunobs); }]
   };
 
   function route() {

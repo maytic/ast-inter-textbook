@@ -4006,5 +4006,817 @@
     autoTicker(r.controls, frameDraw);
   };
 
+
+  /* number → "6.4 × 10<sup>14</sup>" (HTML), for the Ch 15–16 readouts */
+  function sciHTML(x, sig) {
+    if (x === 0) return "0";
+    var e = Math.floor(Math.log10(Math.abs(x)));
+    var m = x / Math.pow(10, e);
+    var ms = m.toPrecision(sig || 2);
+    if (parseFloat(ms) >= 10) { e += 1; ms = (m / 10).toPrecision(sig || 2); }
+    ms = ms.replace(/\.?0+$/, "");
+    if (e >= -2 && e <= 4) {
+      var v = Number(x.toPrecision(sig || 2));
+      return v >= 1000 ? v.toLocaleString("en-US") : String(v);
+    }
+    return (ms === "1" ? "" : ms + " × ") + "10<sup>" + e + "</sup>";
+  }
+
+  /* ---- 15.1  The layers of the Sun, from the core out ------------------ */
+  D["sun-layers"] = function (host) {
+    var r = frame(host, "Take a trip from the Sun's core to its corona",
+      "Tap a layer — on the picture or with the buttons — to see how hot it is and what happens there.",
+      "The inside is drawn roughly to scale (radiative zone from about 25% to 70% of the way out). The atmosphere layers are really far thinner than drawn — the photosphere is only about 400 km thick.");
+    var s = svg(r.stage, 360, 250);
+    var Cx = 128, Cy = 125, R = 92;
+    var L = [
+      { n: "Core", r0: 0, r1: 0.25, col: "#fff3b0", t: "about 15 million K",
+        text: "The <b>core</b> is extremely dense and is where nuclear energy is released — the source of <b>all</b> the Sun's energy. At about <b>15 million K</b>, it is the hottest part of the Sun." },
+      { n: "Radiative zone", r0: 0.25, r1: 0.7, col: "#ffb347", t: "energy moves as light",
+        text: "From about <b>25%</b> to <b>70%</b> of the way out, energy moves as <b>light</b>. The matter is so dense that a photon can't go far before hitting a particle, changing direction, and losing energy — so the light crawls outward <b>very slowly</b>." },
+      { n: "Convective zone", r0: 0.7, r1: 1, col: "#ff7a3d", t: "energy moves by convection",
+        text: "The outermost layer of the interior, about <b>200,000 km</b> deep. Giant <b>convection cells</b> carry the heat up, like boiling oatmeal: hot plasma rises, loses its heat at the surface, cools, and sinks again." },
+      { n: "Photosphere", r0: 1, r1: 1.04, col: "#ffd34d", t: "about 5800 K",
+        text: "The <b>visible surface</b> — the layer where the Sun turns from transparent to opaque in just over <b>400 km</b>. It is mottled with <b>granulation</b>: rising columns of hot gas, each granule 700–1000 km across." },
+      { n: "Chromosphere", r0: 1.04, r1: 1.1, col: "#ff4d6a", t: "about 10,000 K",
+        text: "The layer just above the photosphere, <b>2000–3000 km</b> thick. Its red color comes from <b>hydrogen</b>. Surprise: it is <b>hotter</b> than the photosphere below it. Helium was discovered here in 1868." },
+      { n: "Transition region", r0: 1.1, r1: 1.13, col: "#c77dff", t: "10,000 K → nearly 1 million K",
+        text: "A thin zone — probably only a few tens of kilometers thick — where the temperature <b>shoots up</b> from 10,000 K to nearly a million degrees. NASA's IRIS mission (2013) studies it." },
+      { n: "Corona", r0: 1.13, r1: 1.34, col: "#9ad0ff", t: "a million K or more",
+        text: "The outermost, hottest layer, reaching <b>millions of kilometers</b> out. It is very thin (about 10⁹ atoms per cm³ at its bottom) and only half as bright as the full moon, so we see it during total eclipses or with a coronagraph. The <b>solar wind</b> streams out of it." }
+    ];
+    var rings = [];
+    for (var i = L.length - 1; i >= 0; i--) {
+      var ly = L[i];
+      var c = S("circle", { cx: Cx, cy: Cy, r: (R * ly.r1).toFixed(1),
+        style: "fill:" + ly.col + ";opacity:" + (i === 6 ? 0.28 : 1) + ";cursor:pointer" });
+      s.appendChild(c);
+      rings[i] = c;
+    }
+    // convection cells and a zigzag photon, for flavor
+    for (var k = 0; k < 7; k++) {
+      var a = Math.PI * (1.08 + k * 0.12), rm = R * 0.85;
+      s.appendChild(S("circle", { cx: (Cx + rm * Math.cos(a)).toFixed(1), cy: (Cy + rm * Math.sin(a)).toFixed(1), r: (R * 0.11).toFixed(1),
+        style: "fill:none;stroke:#b8431c;stroke-width:1.2;pointer-events:none" }));
+    }
+    var zz = "M " + (Cx + R * 0.27) + " " + Cy, rnd = seeded(15);
+    for (k = 1; k <= 9; k++) zz += " L " + (Cx + R * (0.27 + k * 0.045)).toFixed(1) + " " + (Cy + (rnd() - 0.5) * 18).toFixed(1);
+    s.appendChild(S("path", { d: zz, style: "fill:none;stroke:#8a3b00;stroke-width:1.2;pointer-events:none" }));
+    var hi = S("circle", { cx: Cx, cy: Cy, style: "fill:none;stroke:var(--accent);stroke-width:3;pointer-events:none" });
+    var hi0 = S("circle", { cx: Cx, cy: Cy, style: "fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;pointer-events:none" });
+    s.appendChild(hi); s.appendChild(hi0);
+    var nameT = T(300, 70, "", "dg-lbl-mid"); nameT.setAttribute("style", "font-weight:800;font-size:15px;fill:var(--text)");
+    var tempT = T(300, 96, "", "dg-lbl-mid"); tempT.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--warn)");
+    var tl = T(300, 140, "", "dg-lbl-mid");
+    s.appendChild(nameT); s.appendChild(tempT); s.appendChild(tl);
+    var btns;
+    function pick(i) {
+      var ly = L[i];
+      hi.setAttribute("r", (R * ly.r1).toFixed(1));
+      hi0.setAttribute("r", (R * ly.r0).toFixed(1));
+      hi0.style.display = ly.r0 ? "" : "none";
+      nameT.textContent = ly.n;
+      tempT.textContent = ly.t;
+      tl.textContent = "layer " + (i + 1) + " of 7" + (i < 3 ? " · inside" : " · atmosphere");
+      r.readout.innerHTML = ly.text;
+      if (btns) btns.forEach(function (b, j) { b.classList.toggle("on", j === i); });
+    }
+    rings.forEach(function (c, i) { c.addEventListener("click", function () { pick(i); }); });
+    btns = bigPick(r.controls, L.map(function (ly, i) { return { label: ly.n, value: i }; }), 0, pick);
+    pick(0);
+  };
+
+  /* ---- 15.1  Temperature climbs above the photosphere (Fig 15.8) ------- */
+  D["atmosphere-temp"] = function (host) {
+    var r = frame(host, "Climb up through the Sun's atmosphere",
+      "Slide upward from the photosphere and watch the thermometer. It goes the wrong way!",
+      "Curve traced from the book's Figure 15.8, so read the numbers as rough. Note the temperature scale: each step up is 10 times hotter.");
+    var s = svg(r.stage, 360, 210);
+    var GX = 52, GY = 180, GW = 290, GH = 160;
+    // [height km, temperature K]
+    var P = [[0, 5800], [250, 4800], [500, 4400], [900, 6000], [1400, 7000], [1900, 8500], [2100, 10000], [2200, 20000], [2260, 30000],
+      [2300, 100000], [2350, 400000], [2420, 800000], [2600, 1000000], [3000, 1100000]];
+    function xOf(h) { return GX + GW * h / 3000; }
+    function yOf(t) { return GY - GH * (Math.log10(t) - 3) / 3.2; }
+    function tAt(h) {
+      for (var i = 1; i < P.length; i++) if (h <= P[i][0]) {
+        var f = (h - P[i - 1][0]) / (P[i][0] - P[i - 1][0]);
+        return Math.pow(10, Math.log10(P[i - 1][1]) + f * (Math.log10(P[i][1]) - Math.log10(P[i - 1][1])));
+      }
+      return P[P.length - 1][1];
+    }
+    // zone shading
+    [[0, 500, "#ffd34d", "photosphere"], [500, 2100, "#ff4d6a", "chromosphere"], [2100, 2420, "#c77dff", "transition"], [2420, 3000, "#9ad0ff", "corona"]].forEach(function (z) {
+      s.appendChild(S("rect", { x: xOf(z[0]), y: GY - GH, width: xOf(z[1]) - xOf(z[0]), height: GH, style: "fill:" + z[2] + ";opacity:0.12" }));
+      var lbl = T((xOf(z[0]) + xOf(z[1])) / 2, GY - GH - 4, z[3], "dg-lbl-mid");
+      lbl.setAttribute("style", "font-size:9px");
+      s.appendChild(lbl);
+    });
+    s.appendChild(S("line", { x1: GX, y1: GY, x2: GX + GW, y2: GY, "class": "dg-axis" }));
+    s.appendChild(S("line", { x1: GX, y1: GY, x2: GX, y2: GY - GH, "class": "dg-axis" }));
+    [[1e3, "1000 K"], [1e4, "10,000 K"], [1e5, "100,000 K"], [1e6, "1 million K"]].forEach(function (t) {
+      var y = yOf(t[0]);
+      s.appendChild(S("line", { x1: GX - 3, y1: y, x2: GX + GW, y2: y, style: "stroke:var(--border);stroke-width:0.6" }));
+      var tt = T(GX - 5, y + 3, t[1], "dg-lbl"); tt.style.textAnchor = "end"; tt.setAttribute("style", "font-size:8px;text-anchor:end");
+      s.appendChild(tt);
+    });
+    [0, 1000, 2000, 3000].forEach(function (h) { s.appendChild(T(xOf(h), GY + 12, String(h), "dg-lbl-mid")); });
+    s.appendChild(T(GX + GW / 2, GY + 25, "height above the photosphere (km)", "dg-lbl-mid"));
+    var d = "";
+    for (var h = 0; h <= 3000; h += 10) d += (h ? " L " : "M ") + xOf(h).toFixed(1) + " " + yOf(tAt(h)).toFixed(1);
+    s.appendChild(S("path", { d: d, style: "fill:none;stroke:#ff6a3d;stroke-width:2.2" }));
+    var dot = S("circle", { r: 5.5, style: "fill:var(--warn);stroke:var(--text);stroke-width:1" });
+    s.appendChild(dot);
+    function layer(h) {
+      if (h < 500) return ["Photosphere", "the visible surface, about 5800 K. On the book's graph, the temperature dips a little just above it before rising."];
+      if (h < 2100) return ["Chromosphere", "about <b>10,000 K</b> — already <b>hotter</b> than the photosphere below it, even though it's farther from the Sun's center."];
+      if (h < 2420) return ["Transition region", "the temperature rockets from 10,000 K to nearly a million degrees over a very short distance."];
+      return ["Corona", "a <b>million degrees or more</b> — the hottest part of the atmosphere, kept hot by magnetic effects."];
+    }
+    function draw(v, out) {
+      var t = tAt(v);
+      dot.setAttribute("cx", xOf(v)); dot.setAttribute("cy", yOf(t));
+      out.textContent = v + " km";
+      var rounded = t >= 1e5 ? Math.round(t / 1e5) * 1e5 : t >= 1e4 ? Math.round(t / 1e3) * 1e3 : Math.round(t / 100) * 100;
+      var ly = layer(v);
+      r.readout.innerHTML = "<b>" + v.toLocaleString("en-US") + " km</b> up: the <b>" + ly[0] + "</b> — " + ly[1] +
+        " (Graph reads about <b>" + rounded.toLocaleString("en-US") + " K</b>.)";
+    }
+    var sl = slider(r.controls, "Height", 0, 3000, 0, 20, draw);
+    sl.set(0);
+  };
+
+  /* ---- 15.2  Differential rotation winds up the field ----------------- */
+  D["differential-rotation"] = function (host) {
+    var r = frame(host, "The Sun doesn't spin like a solid ball",
+      "Watch three sunspots at latitudes 0°, 40°, and 80° ride around the Sun. The dashed line started straight north–south. Faded parts are on the far side.",
+      "Rotation periods from the book: about 25 days at the equator, 28 days at 40°, 36 days at 80° (in between, the line uses a smooth guess). Because the equator gets ahead, a magnetic field line gets wound up (Figure 15.17).");
+    var s = svg(r.stage, 340, 240);
+    var Cx = 150, Cy = 115, R = 98;
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:#ffb347;stroke:#e08a1e;stroke-width:1.5" }));
+    var DEG = Math.PI / 180;
+    [-80, -40, 0, 40, 80].forEach(function (lat) {
+      var y = Cy - R * Math.sin(lat * DEG), w = R * Math.cos(lat * DEG);
+      s.appendChild(S("line", { x1: Cx - w, y1: y, x2: Cx + w, y2: y, style: "stroke:#c96f12;stroke-width:0.6;opacity:0.6" }));
+    });
+    function period(lat) {
+      var a = Math.abs(lat);
+      return a <= 40 ? 25 + 3 * a / 40 : 28 + 8 * (a - 40) / 40;
+    }
+    var fieldBack = S("path", { style: "fill:none;stroke:#5a2a00;stroke-width:1.2;stroke-dasharray:2 3;opacity:0.3" });
+    var field = S("path", { style: "fill:none;stroke:#5a2a00;stroke-width:1.8;stroke-dasharray:4 3" });
+    s.appendChild(fieldBack); s.appendChild(field);
+    var SP = [{ lat: 0, col: "#3a1a00", lbl: "0°" }, { lat: 40, col: "#3a1a00", lbl: "40°" }, { lat: 80, col: "#3a1a00", lbl: "80°" }];
+    SP.forEach(function (p) {
+      p.c = S("circle", { r: 6, style: "fill:" + p.col + ";stroke:#fff3b0;stroke-width:1" });
+      s.appendChild(p.c);
+      var y = Cy - R * Math.sin(p.lat * DEG);
+      var lt = T(Cx + R * Math.cos(p.lat * DEG) + 6, y + 3, p.lbl + " · " + period(p.lat) + " d", "dg-lbl");
+      s.appendChild(lt);
+    });
+    var dayT = T(Cx, Cy + R + 18, "", "dg-lbl-mid");
+    dayT.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--text)");
+    s.appendChild(dayT);
+    var day = 0, lastShown = -1;
+    function proj(lat, lon) {
+      return { x: Cx + R * Math.cos(lat * DEG) * Math.sin(lon), y: Cy - R * Math.sin(lat * DEG), front: Math.cos(lon) > 0 };
+    }
+    function draw() {
+      var d = "", db = "", pen = false, penB = false;
+      for (var lat = -80; lat <= 80; lat += 1) {
+        var p = proj(lat, 2 * Math.PI * day / period(lat)), xy = p.x.toFixed(1) + " " + p.y.toFixed(1);
+        if (p.front) { d += (pen ? " L " : " M ") + xy; pen = true; penB = false; }
+        else { db += (penB ? " L " : " M ") + xy; penB = true; pen = false; }
+      }
+      field.setAttribute("d", d || "M 0 0");
+      fieldBack.setAttribute("d", db || "M 0 0");
+      SP.forEach(function (sp) {
+        var p = proj(sp.lat, 2 * Math.PI * day / period(sp.lat));
+        sp.c.setAttribute("cx", p.x.toFixed(1)); sp.c.setAttribute("cy", p.y.toFixed(1));
+        sp.c.style.opacity = p.front ? 1 : 0.3;
+      });
+      var dd = Math.floor(day);
+      dayT.textContent = "Day " + dd;
+      if (dd !== lastShown) {
+        lastShown = dd;
+        var laps = SP.map(function (sp) { return (day / period(sp.lat)).toFixed(2); });
+        r.readout.innerHTML = "After <b>" + dd + " days</b>: the equator spot has gone <b>" + laps[0] + "</b> times around, the 40° spot <b>" +
+          laps[1] + "</b>, and the 80° spot only <b>" + laps[2] + "</b>. " +
+          (day < 20 ? "They started side by side, but the equator is already pulling ahead." :
+            "The field line, dragged faster at the equator, is winding up around the Sun — the start of the magnetic loops that make sunspots.");
+      }
+    }
+    var row = E("div", { "class": "dg-bigrow" });
+    var rs = E("button", { type: "button", "class": "dg-bigbtn", text: "↺ Line them up again" });
+    rs.addEventListener("click", function () { day = 0; lastShown = -1; draw(); });
+    row.appendChild(rs);
+    r.controls.appendChild(row);
+    draw();
+    autoTicker(r.controls, function () { day += 0.12; draw(); });
+  };
+
+  /* ---- 15.2  The 11-year sunspot cycle and the 22-year magnetic cycle -- */
+  D["sunspot-cycle"] = function (host) {
+    var r = frame(host, "Two sunspot cycles make one magnetic cycle",
+      "Slide through 22 years. Watch how many spots there are, and which magnetic polarity the leading spot of each pair has.",
+      "An idealized cycle — real ones last 9 to 14 years and differ in strength. N and S mark the magnetic polarity of each spot; the leading spot is the one on the right (in the direction the Sun turns).");
+    var s = svg(r.stage, 360, 250);
+    var GX = 30, GY = 66, GW = 300, GH = 50;
+    function act(t) { var x = Math.sin(Math.PI * (t % 11) / 11); return x * x; }
+    s.appendChild(S("line", { x1: GX, y1: GY, x2: GX + GW, y2: GY, "class": "dg-axis" }));
+    var d = "";
+    for (var t = 0; t <= 22; t += 0.1) d += (t ? " L " : "M ") + (GX + GW * t / 22).toFixed(1) + " " + (GY - GH * act(t)).toFixed(1);
+    s.appendChild(S("path", { d: d, style: "fill:none;stroke:#ff6a3d;stroke-width:2" }));
+    [0, 5.5, 11, 16.5, 22].forEach(function (t) { s.appendChild(T(GX + GW * t / 22, GY + 12, String(t), "dg-lbl-mid")); });
+    s.appendChild(T(GX + GW * 0.25, 12, "cycle 1", "dg-lbl-mid"));
+    s.appendChild(T(GX + GW * 0.75, 12, "cycle 2", "dg-lbl-mid"));
+    s.appendChild(S("line", { x1: GX + GW / 2, y1: 6, x2: GX + GW / 2, y2: GY, "class": "dg-dash" }));
+    var mark = S("circle", { r: 5, style: "fill:var(--warn);stroke:var(--text)" });
+    s.appendChild(mark);
+    var Cx = 180, Cy = 168, R = 70;
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:#ffb347;stroke:#e08a1e;stroke-width:1.5" }));
+    s.appendChild(S("line", { x1: Cx - R, y1: Cy, x2: Cx + R, y2: Cy, style: "stroke:#c96f12;stroke-dasharray:3 3" }));
+    var nl = T(Cx - R - 6, Cy - R + 14, "North", "dg-lbl"); nl.setAttribute("style", "text-anchor:end"); s.appendChild(nl);
+    var sl_ = T(Cx - R - 6, Cy + R - 6, "South", "dg-lbl"); sl_.setAttribute("style", "text-anchor:end"); s.appendChild(sl_);
+    var spotsG = S("g", {});
+    s.appendChild(spotsG);
+    var rnd = seeded(1511), SLOTS = [], ks = [0.05, 0.2, 0.35, 0.5, 0.65, 0.8];
+    [true, false].forEach(function (north) {
+      [[0.3, -0.62], [0.3, 0], [0.3, 0.62], [0.62, -0.5], [0.62, 0.12], [0.62, 0.62]].forEach(function (ll, i) {
+        var lat = ll[0] + (rnd() - 0.5) * 0.08, lon = ll[1] + (rnd() - 0.5) * 0.12;
+        SLOTS.push({ north: north, x: Cx + R * Math.cos(lat) * Math.sin(lon), y: Cy + (north ? -1 : 1) * R * Math.sin(lat), k: ks[(i * 7 + (north ? 0 : 3)) % 6] });
+      });
+    });
+    var POL = { N: "#e5484d", S: "#3b82f6" };
+    function spot(x, y, pol, rad) {
+      var g = S("g", {});
+      g.appendChild(S("circle", { cx: x, cy: y, r: rad, style: "fill:" + POL[pol] + ";stroke:#2a1200;stroke-width:0.8" }));
+      var tt = T(x, y + 3, pol, "dg-lbl-mid"); tt.setAttribute("style", "font-size:8px;font-weight:800;fill:#fff;text-anchor:middle");
+      g.appendChild(tt);
+      return g;
+    }
+    function draw(v, out) {
+      out.textContent = "year " + v;
+      mark.setAttribute("cx", GX + GW * v / 22); mark.setAttribute("cy", GY - GH * act(v));
+      clr(spotsG);
+      var a = act(v), cycle2 = v >= 11 && v < 22;
+      var nLead = cycle2 ? "S" : "N", sLead = cycle2 ? "N" : "S";
+      SLOTS.forEach(function (sl) {
+        if (sl.k > a * 1.05) return;
+        var lead = sl.north ? nLead : sLead, trail = lead === "N" ? "S" : "N";
+        spotsG.appendChild(spot(sl.x - 6, sl.y, trail, 5));
+        spotsG.appendChild(spot(sl.x + 6, sl.y, lead, 5));
+      });
+      var phase = a < 0.12 ? "<b>Sunspot minimum</b> — sometimes no spots are visible at all." :
+        a > 0.85 ? "<b>Sunspot maximum</b> — more than 100 spots can often be seen at once, yet they cover less than half a percent of the surface." :
+          (v % 11 < 5.5 ? "Spots are becoming <b>more common</b>, heading toward maximum." : "Spots are becoming <b>fewer</b>, heading toward minimum.");
+      r.readout.innerHTML = "<b>Year " + v + "</b> · " + (v >= 22 ? "back to the start: the magnetic pattern repeats after <b>22 years</b>" : "11-year cycle <b>" + (cycle2 ? 2 : 1) + "</b>") + ". " + phase +
+        " Leading spots: <b>" + nLead + "</b> in the north, <b>" + sLead + "</b> in the south" +
+        (v >= 11 && v < 22 ? " — <b>reversed</b> from cycle 1." : ".");
+    }
+    var sl2 = slider(r.controls, "Year", 0, 22, 4, 0.5, draw);
+    sl2.set(4);
+  };
+
+  /* ---- 15.3  Activity above the photosphere --------------------------- */
+  D["solar-activity"] = function (host) {
+    var r = frame(host, "A field guide to solar activity",
+      "Tap each kind of activity to see where it happens and how big, hot, and fast it is.",
+      "The tiny blue dot is Earth, drawn to the same scale as the Sun's edge. All of these happen together in active regions, above strongly magnetic sunspots.");
+    var s = svg(r.stage, 360, 220);
+    var Cx = 180, Cy = 330, R = 160;         // top of the Sun at y = 170
+    var KM = R / 696000;
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R + 12, style: "fill:#ff4d6a;opacity:0.35" }));
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:#ffb347" }));
+    var earthD = 12756 * KM;
+    s.appendChild(S("circle", { cx: 300, cy: 150, r: Math.max(1.4, earthD / 2), style: "fill:#4aa3ff" }));
+    s.appendChild(T(300, 142, "Earth", "dg-lbl-mid"));
+    var fx = S("g", {});
+    s.appendChild(fx);
+    var t = 0, mode = 0;
+    var M = [
+      { n: "Sunspot", text: "A dark, cooler patch in the <b>photosphere</b>: about <b>3800 K</b> vs. 5800 K around it. Lasts hours to months; a dark <b>umbra</b> inside a lighter <b>penumbra</b>. A few have topped <b>140,000 km</b> — over 10 Earths." },
+      { n: "Plage", text: "A bright \"cloud\" in the <b>chromosphere</b> around sunspots — hotter and denser than its surroundings. Photographed through filters that pass only the light of <b>hydrogen</b> or <b>calcium</b>." },
+      { n: "Quiet prominence", text: "A <b>quiescent prominence</b>: a graceful loop of plasma rising into the corona, usually near sunspots. It can stay nearly stable for <b>hours or even days</b>. Prominences are relatively cool gas (one in Figure 15.19 is about 60,000 K) suspended in the much hotter corona." },
+      { n: "Eruptive prominence", text: "Relatively rare. It sends matter up into the corona at high speed; some reach <b>more than 1 million km</b> above the photosphere — far off the top of this picture. <b>Surge prominences</b> can move <b>1300 km/s</b>." },
+      { n: "Flare", text: "The <b>most violent</b> event on the Sun. A typical flare lasts <b>5–10 minutes</b> and releases about a <b>million hydrogen bombs</b>' worth of energy, heating material to <b>10 million K</b> and releasing a flood of <b>X-rays and ultraviolet</b>. Cause: opposite magnetic fields destroying each other, like a stretched rubber band snapping." },
+      { n: "CME", text: "A <b>coronal mass ejection</b>: coronal material — mainly <b>protons and electrons</b>, tens of millions of tons — blasted into space at <b>500–1000 km/s</b>. The most disruptive kind of space weather when it reaches Earth." }
+    ];
+    function arch(h, w, x0) {
+      var top = 170 - h;
+      return "M " + (x0 - w) + " 172 C " + (x0 - w) + " " + top + ", " + (x0 + w) + " " + top + ", " + (x0 + w) + " 172";
+    }
+    function frameDraw() {
+      t += 1;
+      clr(fx);
+      var spotX = 150;
+      // the active region's sunspots are always there
+      fx.appendChild(S("ellipse", { cx: spotX - 14, cy: 175, rx: 9, ry: 3, style: "fill:#7a3a12" }));
+      fx.appendChild(S("ellipse", { cx: spotX + 14, cy: 175, rx: 7, ry: 2.6, style: "fill:#7a3a12" }));
+      if (mode === 1) {
+        for (var i = 0; i < 6; i++) fx.appendChild(S("ellipse", { cx: spotX - 30 + i * 12, cy: 168 - (i % 2) * 3, rx: 14, ry: 5, style: "fill:#fff4d0;opacity:0.55" }));
+      } else if (mode === 2) {
+        var sway = Math.sin(t / 40) * 2;
+        fx.appendChild(S("path", { d: arch(48 + sway, 16, spotX), style: "fill:none;stroke:#ff4d6a;stroke-width:6;opacity:0.85;stroke-linecap:round" }));
+      } else if (mode === 3) {
+        var h = 20 + (t % 180) * 1.2;
+        fx.appendChild(S("path", { d: arch(h, 16 + h * 0.12, spotX), style: "fill:none;stroke:#ff4d6a;stroke-width:6;opacity:" + Math.max(0.15, 1 - (t % 180) / 220).toFixed(2) + ";stroke-linecap:round" }));
+      } else if (mode === 4) {
+        var ph = (t % 120) / 120, f = ph < 0.15 ? ph / 0.15 : Math.max(0, 1 - (ph - 0.15) / 0.5);
+        fx.appendChild(S("circle", { cx: spotX, cy: 168, r: 6 + 16 * f, style: "fill:#ffffff;opacity:" + (0.25 + 0.75 * f).toFixed(2) }));
+        for (var k = 0; k < 10; k++) {
+          var a = Math.PI * (1 + k / 9), L = 10 + 40 * f;
+          fx.appendChild(S("line", { x1: spotX, y1: 168, x2: (spotX + L * Math.cos(a)).toFixed(1), y2: (168 + L * Math.sin(a)).toFixed(1), style: "stroke:#c77dff;stroke-width:1.5;opacity:" + f.toFixed(2) }));
+        }
+      } else if (mode === 5) {
+        var p = (t % 200) / 200, rad = 8 + p * 150;
+        fx.appendChild(S("path", { d: "M " + (spotX - rad * 0.9) + " " + (170 - rad * 0.2) + " A " + rad + " " + rad + " 0 0 1 " + (spotX + rad * 0.9) + " " + (170 - rad * 0.2),
+          style: "fill:none;stroke:#9ad0ff;stroke-width:" + (6 - 4 * p).toFixed(1) + ";opacity:" + (1 - p * 0.8).toFixed(2) }));
+        var rnd = seeded(7);
+        for (var q = 0; q < 24; q++) {
+          var aa = Math.PI * (1.15 + rnd() * 0.7), rr = rad * (0.7 + rnd() * 0.3);
+          fx.appendChild(S("circle", { cx: (spotX + rr * Math.cos(aa)).toFixed(1), cy: (170 + rr * Math.sin(aa)).toFixed(1), r: 1.4, style: "fill:#dff0ff;opacity:" + (1 - p * 0.7).toFixed(2) }));
+        }
+      }
+    }
+    bigPick(r.controls, M.map(function (m, i) { return { label: m.n, value: i }; }), 0, function (i) { mode = i; t = 0; r.readout.innerHTML = M[i].text; frameDraw(); });
+    r.readout.innerHTML = M[0].text;
+    frameDraw();
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 15.4  How long until the storm arrives? (Example 15.1) --------- */
+  D["cme-travel"] = function (host) {
+    var r = frame(host, "When will the solar storm hit Earth?",
+      "Pick a speed (or slide your own), then watch the particles make the trip. Time = distance ÷ speed.",
+      "Distance from the Sun to Earth: 1.496 × 10⁸ km. The animation is sped up enormously. A monitoring satellite sits about an hour upstream of Earth — the last checkpoint before impact.");
+    var s = svg(r.stage, 360, 130);
+    var X0 = 30, X1 = 330, Y = 62, DIST = 1.496e8;
+    s.appendChild(S("circle", { cx: X0 - 6, cy: Y, r: 26, "class": "dg-sun" }));
+    s.appendChild(S("circle", { cx: X1, cy: Y, r: 7, style: "fill:#4aa3ff" }));
+    s.appendChild(T(X1, Y + 22, "Earth", "dg-lbl-mid"));
+    s.appendChild(S("line", { x1: X0 + 22, y1: Y, x2: X1 - 9, y2: Y, "class": "dg-dash" }));
+    var sat = S("rect", { y: Y - 4, width: 6, height: 8, style: "fill:var(--text-dim)" });
+    var satT = T(0, Y - 10, "monitor", "dg-lbl-mid");
+    s.appendChild(sat); s.appendChild(satT);
+    var cloud = S("g", {});
+    s.appendChild(cloud);
+    var rnd = seeded(404), blobs = [];
+    for (var i = 0; i < 18; i++) blobs.push([(rnd() - 0.5) * 18, (rnd() - 0.5) * 22]);
+    var clock = T(180, 112, "", "dg-lbl-mid");
+    clock.setAttribute("style", "font-weight:800;font-size:14px;fill:var(--text)");
+    s.appendChild(clock);
+    var v = 400, p = 0, slApi = null;
+    function days(sp) { return DIST / sp / 86400; }
+    function readout() {
+      var secs = DIST / v, d = secs / 86400;
+      r.readout.innerHTML = "T = D ÷ v = (1.496 × 10<sup>8</sup> km) ÷ (" + v + " km/s) = <b>" + sciHTML(secs, 3) + " s</b>. " +
+        "Divide by 60 × 60 × 24 = 86,400 s per day: <b>" + d.toFixed(2) + " days</b> (about " + Math.round(secs / 3600) + " hours)." +
+        (v === 400 ? " That's the book's Example 15.1: about <b>4.3 days</b>." : v === 500 ? " The book's check-your-learning answer: <b>3.46 days</b>." : "") +
+        " The monitor only gives about an hour's notice of the storm's magnetic direction.";
+      var satKm = v * 3600, satX = X1 - (X1 - X0) * satKm / DIST - 10;
+      sat.setAttribute("x", satX - 3); satT.setAttribute("x", satX);
+    }
+    function frameDraw() {
+      // cross the screen in a time proportional to the real trip
+      p += 0.0045 * days(400) / days(v);
+      if (p > 1.12) p = 0;
+      var x = X0 + 20 + (X1 - X0 - 28) * Math.min(1, p);
+      clr(cloud);
+      blobs.forEach(function (b) {
+        cloud.appendChild(S("circle", { cx: (x + b[0] * (0.4 + p)).toFixed(1), cy: (Y + b[1] * (0.4 + p)).toFixed(1), r: 1.8, style: "fill:#ff9f5a;opacity:" + (p > 1 ? 0.25 : 0.9) }));
+      });
+      var elapsed = Math.min(1, p) * days(v);
+      clock.textContent = p >= 1 ? "💥 arrived after " + days(v).toFixed(1) + " days" : "day " + elapsed.toFixed(1);
+    }
+    bigPick(r.controls, [
+      { label: "Solar wind · 400 km/s", value: 400 }, { label: "CME · 500 km/s", value: 500 }, { label: "Fast CME · 1000 km/s", value: 1000 }
+    ], 0, function (val) { if (slApi) slApi.set(val); });
+    slApi = slider(r.controls, "Speed", 300, 1000, 400, 10, function (val, out) { v = val; p = 0; out.textContent = val + " km/s"; readout(); });
+    slApi.set(400);
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 16.1  Which fuel could last as long as the Sun? ----------------- */
+  D["sun-fuel"] = function (host) {
+    var r = frame(host, "What could keep the Sun shining for billions of years?",
+      "Tap each idea. Its bar shows how long it could power the Sun. It has to reach the dashed line.",
+      "Each step along the bottom is 10 times longer. The Sun is about 4.5 billion years old, and water was on Earth's surface nearly 4 billion years ago — so the Sun has shone at least that long.");
+    var s = svg(r.stage, 360, 200);
+    var GX = 20, GW = 320, LO = 3, HI = 10.5;
+    function xOf(y) { return GX + GW * (Math.log10(y) - LO) / (HI - LO); }
+    [1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10].forEach(function (y, i) {
+      s.appendChild(S("line", { x1: xOf(y), y1: 20, x2: xOf(y), y2: 168, style: "stroke:var(--border);stroke-width:0.6" }));
+      var lbl = ["1000", "10,000", "100,000", "1 million", "10 million", "100 million", "1 billion", "10 billion"][i];
+      var tt = T(xOf(y), 180, lbl, "dg-lbl-mid"); tt.setAttribute("style", "font-size:7.5px"); s.appendChild(tt);
+    });
+    s.appendChild(T(GX + GW / 2, 194, "years the Sun could shine", "dg-lbl-mid"));
+    var age = xOf(4.5e9);
+    s.appendChild(S("line", { x1: age, y1: 14, x2: age, y2: 170, style: "stroke:var(--good);stroke-width:2;stroke-dasharray:5 3" }));
+    var at = T(age - 3, 12, "Sun's age: 4.5 billion", "dg-lbl"); at.setAttribute("style", "text-anchor:end;fill:var(--good);font-weight:700"); s.appendChild(at);
+    var F = [
+      { n: "Burning (chemical)", y: 3000, col: "#c98a5a", lbl: "a few thousand years",
+        text: "Even if the whole Sun were coal or wood, burning (oxidation) could keep it shining at today's rate for <b>no more than a few thousand years</b>. And nothing like solid wood or coal could survive at the Sun's temperatures. ❌" },
+      { n: "Falling meteorites", y: null, col: "#9aa3b5", lbl: "ruled out another way",
+        text: "To match the Sun's output, an <b>Earth's mass</b> of meteorites would have to fall in every <b>100 years</b>. The Sun's growing mass would change the length of our year by <b>2 seconds per year</b> (Kepler's third law). That would be easy to measure — and it isn't happening. ❌" },
+      { n: "Shrinking (gravity)", y: 1e8, col: "#7cc4ff", lbl: "about 100 million years",
+        text: "Kelvin and Helmholtz: a Sun contracting only about <b>40 m per year</b> could make today's output. But the total from shrinking out of a big gas cloud is about <b>10⁴² J</b>; at about <b>10³⁴ J per year</b>, that lasts only about <b>100 million years</b>. Too short — Earth is much older. ❌" },
+      { n: "Nuclear fusion", y: 1.2e10, col: "#ffcf6b", lbl: "billions of years",
+        text: "The twentieth-century answer: <b>fusing hydrogen into helium</b>, turning a little mass into energy (E = mc²). The Sun's huge store of hydrogen can keep it shining for <b>billions of years</b>. ✅" }
+    ];
+    var rows = [];
+    F.forEach(function (f, i) {
+      var y = 30 + i * 36;
+      s.appendChild(T(GX, y - 4, f.n, "dg-lbl"));
+      var bar = S("rect", { x: GX, y: y, width: 0, height: 14, rx: 3, style: "fill:" + f.col });
+      var lab = T(GX + 4, y + 11, "", "dg-lbl");
+      lab.setAttribute("style", "font-weight:700;fill:var(--text)");
+      s.appendChild(bar); s.appendChild(lab);
+      rows.push({ bar: bar, lab: lab, w: 0, target: 0, f: f, shown: false });
+    });
+    function frameDraw() {
+      rows.forEach(function (rw) {
+        rw.w += (rw.target - rw.w) * 0.08;
+        rw.bar.setAttribute("width", Math.max(0, rw.w).toFixed(1));
+        rw.lab.setAttribute("x", (GX + Math.max(rw.w, 0) + 4).toFixed(1));
+        if (rw.f.y > 5e9) rw.lab.setAttribute("x", (GX + rw.w - 4).toFixed(1));
+      });
+    }
+    function pick(i) {
+      var rw = rows[i];
+      rw.shown = true;
+      rw.target = rw.f.y ? xOf(rw.f.y) - GX : 0;
+      rw.lab.textContent = rw.f.lbl;
+      rw.lab.setAttribute("style", "font-weight:700;fill:var(--text)" + (rw.f.y > 5e9 ? ";text-anchor:end;fill:#3a2500" : ""));
+      r.readout.innerHTML = rw.f.text;
+    }
+    bigPick(r.controls, F.map(function (f, i) { return { label: f.n, value: i }; }), 0, pick);
+    pick(0);
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 16.2  E = mc² calculator --------------------------------------- */
+  D["emc2"] = function (host) {
+    var r = frame(host, "Turn mass into energy: E = mc²",
+      "Choose how much mass, and whether ALL of it becomes energy or it's hydrogen fusing into helium (only 0.71% becomes energy).",
+      "c = 3 × 10⁸ m/s, so c² = 9 × 10¹⁶. Oil comparison from the book: 1 gram turned completely into energy = burning 15,000 barrels of oil.");
+    var s = svg(r.stage, 360, 120);
+    var box = S("rect", { x: 30, y: 40, rx: 4, style: "fill:#9aa3b5;stroke:var(--border)" });
+    s.appendChild(box);
+    var mT = T(60, 108, "", "dg-lbl-mid"); mT.setAttribute("style", "font-weight:700;fill:var(--text)");
+    s.appendChild(mT);
+    s.appendChild(T(150, 56, "× c²", "dg-lbl-mid"));
+    s.appendChild(S("line", { x1: 115, y1: 62, x2: 185, y2: 62, style: "stroke:var(--text-dim);stroke-width:2" }));
+    s.appendChild(S("path", { d: "M 185 56 L 195 62 L 185 68 Z", style: "fill:var(--text-dim)" }));
+    var burst = S("circle", { cx: 270, cy: 62, style: "fill:#ffcf6b;opacity:0.9" });
+    var burst2 = S("circle", { cx: 270, cy: 62, style: "fill:#fff6cf" });
+    s.appendChild(burst); s.appendChild(burst2);
+    var eT = T(270, 112, "", "dg-lbl-mid"); eT.setAttribute("style", "font-weight:700;fill:var(--text)");
+    s.appendChild(eT);
+    var lg = 0, fuse = false, slApi = null;   // lg = log10(mass in kg)
+    function massText(kg) {
+      if (kg >= 1e3) {
+        var t = kg / 1000;
+        if (t >= 1e9) return Number((t / 1e9).toPrecision(2)) + " billion tons";
+        if (t >= 1e6) return Number((t / 1e6).toPrecision(2)) + " million tons";
+        return Number(t.toPrecision(2)).toLocaleString("en-US") + " tons";
+      }
+      if (kg >= 1) return Number(kg.toPrecision(2)).toLocaleString("en-US") + " kg";
+      if (kg >= 1e-3) return Number((kg * 1000).toPrecision(2)) + " g";
+      return Number((kg * 1e6).toPrecision(2)) + " mg";
+    }
+    function draw() {
+      var kg = Math.pow(10, lg), conv = fuse ? kg * 0.0071 : kg, E = conv * 9e16;
+      var side = 16 + 6 * (lg + 3);
+      box.setAttribute("width", side.toFixed(1)); box.setAttribute("height", side.toFixed(1));
+      box.setAttribute("x", (60 - side / 2).toFixed(1)); box.setAttribute("y", (62 - side / 2).toFixed(1));
+      box.setAttribute("style", "fill:" + (fuse ? "#7cc4ff" : "#9aa3b5") + ";stroke:var(--border)");
+      mT.textContent = massText(kg) + (fuse ? " of H" : "");
+      var br = 6 + 2.6 * (Math.log10(E) - 10);
+      burst.setAttribute("r", Math.max(4, br).toFixed(1)); burst2.setAttribute("r", Math.max(2, br * 0.55).toFixed(1));
+      eT.textContent = "E ≈ " + sciHTML(E, 2).replace(/<sup>(.*?)<\/sup>/, function (m, e) { return smSup(e.replace("-", "⁻")); }) + " J";
+      var barrels = conv * 1000 * 15000;
+      var html = "<b>" + massText(kg) + "</b>" + (fuse ? " of hydrogen fused into helium: only <b>0.71%</b> of it, <b>" + massText(conv) + "</b>, turns into energy." : ", all turned into energy.") +
+        "<br>E = m × c² = " + sciHTML(conv, 2) + " kg × 9 × 10<sup>16</sup> m²/s² = <b>" + sciHTML(E, 2) + " joules</b>" +
+        " — like burning about <b>" + sciHTML(barrels, 2) + " barrels of oil</b>.";
+      if (fuse && Math.abs(lg) < 0.01) html += " That's the book's number: <b>6.4 × 10<sup>14</sup> J</b> — enough electricity for a typical U.S. household for roughly <b>17,000 years</b>.";
+      if (fuse && lg > 11.7) html += " That's the Sun <b>every second</b>: about 600 million tons of hydrogen fused, about 4 million tons turned into energy — about the Sun's <b>4 × 10<sup>26</sup> watts</b>.";
+      if (!fuse && Math.abs(lg + 3) < 0.01) html += " One gram is about a paperclip.";
+      r.readout.innerHTML = html;
+    }
+    bigPick(r.controls, [{ label: "💥 All of it (E = mc²)", value: false }, { label: "☀ Fuse H → He (0.71%)", value: true }], 0, function (v) { fuse = v; draw(); });
+    var chips = E("div", { "class": "dg-chips" });
+    [["1 gram", -3, false], ["1 kg of hydrogen", 0, true], ["The Sun, each second", Math.log10(6e11), true]].forEach(function (c) {
+      var b = E("button", { type: "button", "class": "dg-chip", text: c[0] });
+      b.addEventListener("click", function () {
+        fuse = c[2];
+        var bb = r.controls.querySelectorAll(".dg-bigbtn");
+        bb[0].classList.toggle("on", !fuse); bb[1].classList.toggle("on", fuse);
+        slApi.set(c[1]);
+      });
+      chips.appendChild(b);
+    });
+    r.controls.appendChild(chips);
+    slApi = slider(r.controls, "Mass", -6, 12, -3, 0.01, function (v, out) { lg = v; out.textContent = massText(Math.pow(10, v)); draw(); });
+    slApi.set(-3);
+  };
+
+  /* ---- 16.2  The proton-proton chain, step by step -------------------- */
+  D["pp-chain"] = function (host) {
+    var r = frame(host, "Build a helium nucleus, one step at a time",
+      "Tap the steps in order. Blue = proton, red = neutron, pink = positron, green = neutrino, yellow squiggle = gamma ray.",
+      "Steps 1 and 2 each happen twice, because step 3 needs two helium-3 nuclei. Six protons go in, two come back out: four hydrogen nuclei have become one helium nucleus.");
+    var s = svg(r.stage, 360, 200);
+    var g = S("g", {});
+    s.appendChild(g);
+    var eqT = T(180, 190, "", "dg-lbl-mid"); eqT.setAttribute("style", "font-weight:700;font-size:13px;fill:var(--text)");
+    s.appendChild(eqT);
+    var COL = { p: "#3b82f6", n: "#e5484d" };
+    function nucleus(x, y, parts, label) {
+      var gg = S("g", {});
+      var off = parts.length === 1 ? [[0, 0]] : parts.length === 2 ? [[-4.5, 0], [4.5, 0]] : parts.length === 3 ? [[-4.5, 3], [4.5, 3], [0, -4.5]] : [[-4.5, -4.5], [4.5, -4.5], [-4.5, 4.5], [4.5, 4.5]];
+      parts.forEach(function (pt, i) {
+        gg.appendChild(S("circle", { cx: x + off[i][0], cy: y + off[i][1], r: 6, style: "fill:" + COL[pt] + ";stroke:#0b1020;stroke-width:0.8" }));
+      });
+      if (label) gg.appendChild(T(x, y + 20, label, "dg-lbl-mid"));
+      return gg;
+    }
+    function lepton(x, y, col, label, rad) {
+      var gg = S("g", {});
+      gg.appendChild(S("circle", { cx: x, cy: y, r: rad || 3.5, style: "fill:" + col }));
+      gg.appendChild(T(x, y + 13, label, "dg-lbl-mid"));
+      return gg;
+    }
+    function gamma(x, y) {
+      var d = "M " + x + " " + y;
+      for (var i = 1; i <= 8; i++) d += " Q " + (x + i * 4 - 2) + " " + (y + (i % 2 ? -6 : 6)) + " " + (x + i * 4) + " " + y;
+      var gg = S("g", {});
+      gg.appendChild(S("path", { d: d, style: "fill:none;stroke:#ffcf6b;stroke-width:2" }));
+      gg.appendChild(T(x + 16, y + 16, "γ ray", "dg-lbl-mid"));
+      return gg;
+    }
+    var STEPS = [
+      { n: "Start", eq: "6 protons (¹H)",
+        ins: [], outs: function () { var a = []; for (var i = 0; i < 6; i++) a.push(nucleus(55 + i * 50, 80, ["p"], "¹H")); return a; },
+        text: "We start with six hydrogen nuclei — six protons. They repel each other, so they need more than about <b>12 million K</b> (speeds of about 1000 km/s) to get close enough to fuse. The Sun's center is <b>15 million K</b>." },
+      { n: "Step 1 (×2)", eq: "¹H + ¹H → ²H + e⁺ + ν",
+        ins: [["p"], ["p"]], outs: function () { return [nucleus(250, 60, ["p", "n"], "²H deuterium"), lepton(300, 115, "#ff6ad5", "positron"), lepton(225, 120, "#57d99a", "neutrino", 2.5)]; },
+        text: "Two protons fuse into <b>deuterium</b> (one proton + one neutron) — one proton has turned into a neutron. A <b>positron</b> carries off the positive charge; it instantly meets an electron and both become <b>gamma rays</b>. A <b>neutrino</b> flies straight out of the Sun in about 2 seconds. This step is the slow one: a proton waits about <b>14 billion years</b> on average. Happens <b>twice</b>." },
+      { n: "Step 2 (×2)", eq: "²H + ¹H → ³He + γ",
+        ins: [["p", "n"], ["p"]], outs: function () { return [nucleus(250, 70, ["p", "p", "n"], "³He helium-3"), gamma(270, 125)]; },
+        text: "Another proton joins the deuterium, making <b>helium-3</b> (two protons, one neutron) and a <b>gamma ray</b>. It's helium because it has two protons, but not the usual kind. A deuterium nucleus lasts only about <b>6 seconds</b> before this happens. Happens <b>twice</b>." },
+      { n: "Step 3", eq: "³He + ³He → ⁴He + ¹H + ¹H",
+        ins: [["p", "p", "n"], ["p", "p", "n"]], outs: function () { return [nucleus(250, 75, ["p", "p", "n", "n"], "⁴He helium-4"), nucleus(310, 40, ["p"], "¹H"), nucleus(310, 125, ["p"], "¹H")]; },
+        text: "About <b>a million years</b> later (on average), two helium-3 nuclei combine into <b>helium-4</b>, the ordinary kind. <b>Two protons</b> come back out, ready to start step 1 again." },
+      { n: "The score", eq: "4 ¹H → ⁴He + energy",
+        ins: [], outs: function () { return [nucleus(70, 75, ["p"]), nucleus(100, 75, ["p"]), nucleus(130, 75, ["p"]), nucleus(160, 75, ["p"]), nucleus(280, 75, ["p", "p", "n", "n"], "⁴He")]; },
+        text: "Net result: <b>four hydrogen nuclei → one helium nucleus</b>. Masses: 4 × 1.007825 u = 4.03130 u, but helium is 4.00268 u. The missing <b>0.02862 u</b> — <b>0.71%</b> — became energy (E = mc²). The Sun does this to about <b>600 million tons</b> of hydrogen every second." }
+    ];
+    var cur = 0, t = 99, outNodes = [], inNodes = [];
+    function build(i) {
+      clr(g);
+      var st = STEPS[i];
+      eqT.textContent = st.eq;
+      inNodes = st.ins.map(function (parts, k) { var nn = nucleus(0, 0, parts); g.appendChild(nn); return nn; });
+      outNodes = st.outs();
+      outNodes.forEach(function (o) { g.appendChild(o); });
+      if (i === 4) {
+        var arrow = S("path", { d: "M 185 75 L 245 75 M 238 69 L 246 75 L 238 81", style: "fill:none;stroke:var(--text-dim);stroke-width:2" });
+        g.appendChild(arrow);
+        g.appendChild(T(215, 64, "+ energy", "dg-lbl-mid"));
+      }
+      r.readout.innerHTML = st.text;
+      t = st.ins.length ? 0 : 99;
+    }
+    var flash = S("circle", { cx: 160, cy: 80, r: 0, style: "fill:#ffe066;opacity:0" });
+    s.appendChild(flash);
+    function frameDraw() {
+      t += 1;
+      var mv = Math.min(1, t / 40), e = mv * mv * (3 - 2 * mv);
+      inNodes.forEach(function (nn, k) {
+        var sx = k === 0 ? 40 : 40, sy = k === 0 ? 30 : 140;
+        var x = sx + (160 - sx) * e, y = sy + (80 - sy) * e;
+        nn.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ")");
+        nn.style.opacity = t < 44 ? 1 : 0;
+      });
+      var f = t < 40 ? 0 : t < 60 ? (t - 40) / 20 : Math.max(0, 1 - (t - 60) / 30);
+      flash.setAttribute("r", (24 * f).toFixed(1)); flash.style.opacity = (0.9 * f).toFixed(2);
+      outNodes.forEach(function (o) { o.style.opacity = !inNodes.length || t > 55 ? 1 : 0; });
+    }
+    bigPick(r.controls, STEPS.map(function (st, i) { return { label: st.n, value: i }; }), 0, function (i) { cur = i; build(i); });
+    build(0);
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 16.3  Hydrostatic equilibrium: push it and it comes back ------- */
+  D["hydrostatic"] = function (host) {
+    var r = frame(host, "Gravity squeezes, pressure pushes",
+      "Squeeze the star or puff it up, and watch it settle back. Orange arrows = gas pressure pushing out; blue arrows = gravity (the weight of the layers above) pulling in.",
+      "Hydrostatic equilibrium: at every point, the pressure equals the weight of the layers above it. The Sun has stayed balanced like this for billions of years. To hold it up, the center must be about 15 million K.");
+    var s = svg(r.stage, 340, 220);
+    var Cx = 170, Cy = 110, R0 = 62;
+    var star = S("circle", { cx: Cx, cy: Cy, style: "fill:#ffcf6b;stroke:#e08a1e;stroke-width:1.5" });
+    var core = S("circle", { cx: Cx, cy: Cy, style: "fill:#fff6cf" });
+    s.appendChild(star); s.appendChild(core);
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R0, style: "fill:none;stroke:var(--text-faint);stroke-dasharray:4 3" }));
+    var arrows = S("g", {});
+    s.appendChild(arrows);
+    var stateT = T(Cx, 214, "", "dg-lbl-mid"); stateT.setAttribute("style", "font-weight:800;font-size:13px");
+    s.appendChild(stateT);
+    var Rr = R0, vel = 0, lastState = "";
+    function arrow(x1, y1, x2, y2, col) {
+      var a = Math.atan2(y2 - y1, x2 - x1), hx = 6;
+      var d = "M " + x1.toFixed(1) + " " + y1.toFixed(1) + " L " + x2.toFixed(1) + " " + y2.toFixed(1) +
+        " M " + (x2 - hx * Math.cos(a - 0.5)).toFixed(1) + " " + (y2 - hx * Math.sin(a - 0.5)).toFixed(1) + " L " + x2.toFixed(1) + " " + y2.toFixed(1) +
+        " L " + (x2 - hx * Math.cos(a + 0.5)).toFixed(1) + " " + (y2 - hx * Math.sin(a + 0.5)).toFixed(1);
+      return S("path", { d: d, style: "fill:none;stroke:" + col + ";stroke-width:2.6;stroke-linecap:round" });
+    }
+    function frameDraw() {
+      var x = R0 / Rr, P = x * x * x, W = x * x;  // pressure and weight per unit area, both 1 at balance
+      vel += (P - W) * 0.9 - vel * 0.12;
+      Rr = Math.max(25, Math.min(100, Rr + vel));
+      star.setAttribute("r", Rr.toFixed(1)); core.setAttribute("r", (Rr * 0.25).toFixed(1));
+      clr(arrows);
+      for (var k = 0; k < 8; k++) {
+        var a = k * Math.PI / 4 + Math.PI / 8, ca = Math.cos(a), sa = Math.sin(a);
+        var px = Cx + Rr * 0.7 * ca, py = Cy + Rr * 0.7 * sa;
+        var lp = 16 * P, lw = 16 * W;
+        arrows.appendChild(arrow(px + 2 * ca, py + 2 * sa, px + (2 + Math.min(40, lp)) * ca, py + (2 + Math.min(40, lp)) * sa, "#ff7a3d"));
+        arrows.appendChild(arrow(px - 2 * ca + 0 , py - 2 * sa, px - (2 + Math.min(30, lw)) * ca, py - (2 + Math.min(30, lw)) * sa, "#3b82f6"));
+      }
+      var st = Math.abs(P - W) < 0.03 && Math.abs(vel) < 0.08 ? "bal" : P > W ? "out" : "in";
+      if (st !== lastState) {
+        lastState = st;
+        stateT.textContent = st === "bal" ? "balanced ✓" : st === "out" ? "pressure wins → expanding" : "gravity wins → contracting";
+        stateT.style.fill = st === "bal" ? "var(--good)" : st === "out" ? "#ff7a3d" : "#3b82f6";
+        r.readout.innerHTML = st === "bal" ? "<b>Hydrostatic equilibrium.</b> Outward gas pressure exactly balances the inward pull of gravity, so the star neither expands nor contracts." :
+          st === "out" ? "The pressure is <b>greater</b> than the weight of the layers above, so the star <b>expands</b> — which lowers the pressure until it balances again." :
+            "The pressure <b>isn't enough</b> to hold up the outer layers, so the star <b>contracts</b> — which builds up the pressure until it balances again.";
+      }
+    }
+    var row = E("div", { "class": "dg-bigrow" });
+    [["🤏 Squeeze it", 0.62], ["🎈 Puff it up", 1.45], ["↺ Reset", 1]].forEach(function (b) {
+      var btn = E("button", { type: "button", "class": "dg-bigbtn", text: b[0] });
+      btn.addEventListener("click", function () { Rr = R0 * b[1]; vel = 0; });
+      row.appendChild(btn);
+    });
+    r.controls.appendChild(row);
+    frameDraw();
+    runWhileShown(s, frameDraw);
+  };
+
+  /* ---- 16.3  A photon's random walk vs. a neutrino's straight shot ---- */
+  D["photon-walk"] = function (host) {
+    var r = frame(host, "Escape from the Sun: photon vs. neutrino",
+      "Release a photon and a neutrino from the center at the same moment. Count the photon's bounces.",
+      "A toy version: here the photon's steps are huge. In the real Sun it goes only about 0.01 m before being absorbed and sent off in a random direction, so the trip takes 100,000 to 1,000,000 years. The neutrino isn't stopped at all: a little over 2 seconds.");
+    var s = svg(r.stage, 300, 240);
+    var Cx = 150, Cy = 112, R = 100;
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:#ffe39a;stroke:#e08a1e;stroke-width:1.5" }));
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R * 0.25, style: "fill:#fff6cf" }));
+    var path = S("polyline", { style: "fill:none;stroke:#e5484d;stroke-width:1.2;stroke-linejoin:round" });
+    var nu = S("line", { x1: Cx, y1: Cy, style: "stroke:#1f9d5f;stroke-width:2.2" });
+    var ph = S("circle", { r: 3.5, style: "fill:#e5484d" });
+    var nuDot = S("circle", { r: 3.5, style: "fill:#1f9d5f" });
+    s.appendChild(path); s.appendChild(nu); s.appendChild(ph); s.appendChild(nuDot);
+    var cnt = T(Cx, 232, "", "dg-lbl-mid"); cnt.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--text)");
+    s.appendChild(cnt);
+    var pts, x, y, bounces, done, nuR, nuA, rnd = Math.random, STEP = 7;
+    function reset() {
+      x = Cx; y = Cy; pts = [[x, y]]; bounces = 0; done = false; nuR = 0; nuA = rnd() * Math.PI * 2;
+      r.readout.innerHTML = "Both start in the <b>core</b>. The neutrino barely interacts with matter, so it flies straight out. The photon is absorbed and re-emitted in a <b>random direction</b> — almost as likely to head back in as out.";
+    }
+    function frameDraw() {
+      if (nuR < R + 12) nuR += 6;
+      var nx = Cx + nuR * Math.cos(nuA), ny = Cy + nuR * Math.sin(nuA);
+      nu.setAttribute("x2", nx.toFixed(1)); nu.setAttribute("y2", ny.toFixed(1));
+      nuDot.setAttribute("cx", nx.toFixed(1)); nuDot.setAttribute("cy", ny.toFixed(1));
+      if (!done) {
+        for (var k = 0; k < 3 && !done; k++) {
+          var a = rnd() * Math.PI * 2;
+          x += STEP * Math.cos(a); y += STEP * Math.sin(a); bounces++;
+          pts.push([x, y]);
+          if (Math.hypot(x - Cx, y - Cy) > R) {
+            done = true;
+            r.readout.innerHTML = "The photon finally escaped after <b>" + bounces + " bounces</b> — the neutrino was out almost immediately. " +
+              "In the real Sun the steps are only about <b>0.01 m</b>, so it takes vastly more bounces: <b>100,000 to 1,000,000 years</b>. Each collision usually leaves the photon with a bit less energy — gamma rays become X-rays, then ultraviolet, then the ordinary light we see.";
+          }
+        }
+        if (pts.length > 900) pts = pts.slice(pts.length - 900);
+        path.setAttribute("points", pts.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" "));
+      }
+      ph.setAttribute("cx", x.toFixed(1)); ph.setAttribute("cy", y.toFixed(1));
+      cnt.textContent = "photon bounces: " + bounces + (done ? " — escaped!" : "") + "   ·   neutrino: " + (nuR >= R ? "out ✓" : "…");
+    }
+    var row = E("div", { "class": "dg-bigrow" });
+    var go = E("button", { type: "button", "class": "dg-bigbtn", text: "☀ Release a new photon" });
+    go.addEventListener("click", reset);
+    row.appendChild(go);
+    r.controls.appendChild(row);
+    var key = E("p", { "class": "dg-how", html: "<span style='color:#e5484d'>●</span> photon &nbsp; <span style='color:#1f9d5f'>●</span> neutrino" });
+    r.controls.appendChild(key);
+    reset();
+    autoTicker(r.controls, frameDraw);
+  };
+
+  /* ---- 16.4  The breathing Sun (helioseismology) ---------------------- */
+  D["sun-pulse"] = function (host) {
+    var r = frame(host, "The Sun breathes",
+      "Watch patches of the surface move toward us (blue) and away from us (red), each on its own rhythm of about 5 minutes.",
+      "Like Figure 16.17. Each patch is 4000 to 15,000 km across and moves only a few hundred meters per second; the Sun's size changes by no more than a few kilometers. The waves that cause this come from deep inside, so their timing reveals the interior.");
+    var s = svg(r.stage, 300, 220);
+    var Cx = 150, Cy = 105, R = 95;
+    var clipId = "sp-clip-" + Math.floor(Math.random() * 1e9);
+    var defs = S("defs", {});
+    defs.appendChild(S("clipPath", { id: clipId }, [S("circle", { cx: Cx, cy: Cy, r: R })]));
+    s.appendChild(defs);
+    var g = S("g", { "clip-path": "url(#" + clipId + ")" });
+    s.appendChild(g);
+    var cells = [], rnd = seeded(1617), N = 14, sz = 2 * R / N;
+    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) {
+      var cx = Cx - R + (i + 0.5) * sz, cy = Cy - R + (j + 0.5) * sz;
+      if (Math.hypot(cx - Cx, cy - Cy) > R + sz) continue;
+      var c = S("rect", { x: (cx - sz / 2).toFixed(1), y: (cy - sz / 2).toFixed(1), width: (sz + 0.4).toFixed(1), height: (sz + 0.4).toFixed(1) });
+      g.appendChild(c);
+      cells.push({ c: c, ph: 2.2 * Math.sin(i * 0.55) + 2.2 * Math.cos(j * 0.45) + 1.6 * Math.sin((i + j) * 0.3) + rnd() * 0.5, f: 0.92 + rnd() * 0.16 });
+    }
+    s.appendChild(S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:none;stroke:var(--border);stroke-width:1.5" }));
+    var clock = T(Cx, 215, "", "dg-lbl-mid"); clock.setAttribute("style", "font-weight:700;fill:var(--text)");
+    s.appendChild(clock);
+    var tm = 0;   // minutes
+    function frameDraw() {
+      tm += 0.04;
+      cells.forEach(function (cl) {
+        var v = Math.sin(2 * Math.PI * tm * cl.f / 5 + cl.ph);
+        var col = v > 0 ? "rgb(" + Math.round(255 - 200 * v) + "," + Math.round(255 - 130 * v) + ",255)" : "rgb(255," + Math.round(255 + 170 * v) + "," + Math.round(255 + 190 * v) + ")";
+        cl.c.setAttribute("style", "fill:" + col);
+      });
+      clock.textContent = "minute " + (tm % 60).toFixed(1);
+    }
+    r.readout.innerHTML = "<b>Blue</b> = moving toward us (outward), <b>red</b> = moving away (inward). A full in-and-out cycle takes about <b>5 minutes</b>. " +
+      "The waves cross the Sun in a little over an hour, so — like neutrinos — they show what the inside is like <b>right now</b>. This is <b>helioseismology</b>.";
+    frameDraw();
+    autoTicker(r.controls, frameDraw);
+  };
+
+  /* ---- 16.4  The case of the missing neutrinos ------------------------ */
+  D["neutrino-catch"] = function (host) {
+    var r = frame(host, "The case of the missing neutrinos",
+      "Pick a detector. Neutrinos leave the Sun as electron neutrinos (green); on the way, two out of three change into the other types (purple).",
+      "Simplified: the real detectors caught only a handful — Davis about one argon atom a day, Sudbury about 1 neutrino an hour. The proportions are the point.");
+    var s = svg(r.stage, 360, 180);
+    var SX = 30, DX = 320, Y = 80;
+    s.appendChild(S("circle", { cx: SX - 4, cy: Y, r: 30, "class": "dg-sun" }));
+    var det = S("rect", { x: DX - 18, y: Y - 40, width: 40, height: 80, rx: 8 });
+    s.appendChild(det);
+    var detT = T(DX + 2, Y + 54, "", "dg-lbl-mid");
+    s.appendChild(detT);
+    var dots = S("g", {});
+    s.appendChild(dots);
+    var tally = T(180, 168, "", "dg-lbl-mid"); tally.setAttribute("style", "font-weight:800;font-size:13px;fill:var(--text)");
+    s.appendChild(tally);
+    var mode = 0, nus = [], made = 0, caught = 0, tick = 0, rnd = seeded(2002), SWITCH = 0.55;
+    var MODES = [
+      { n: "Davis: chlorine (1970)", all: false, col: "#9aa3b5", lbl: "C₂Cl₄ tank",
+        text: "<b>Raymond Davis</b>'s tank held nearly <b>400,000 liters</b> of cleaning fluid, <b>1.5 km</b> down a South Dakota gold mine. A neutrino can turn chlorine into radioactive argon — but only an <b>electron neutrino</b>. Result: only about <b>one-third</b> of the neutrinos solar models predicted. Were the models wrong?" },
+      { n: "Sudbury: heavy water", all: true, col: "#7cc4ff", lbl: "heavy water",
+        text: "The <b>Sudbury Neutrino Observatory</b>: <b>1000 metric tons of heavy water</b> in a 12-m sphere, 2 km underground, watched by <b>9600 photomultipliers</b>. It catches <b>all three types</b>. The <b>total</b> was just what the models predicted — but only one-third were electron neutrinos. They hadn't vanished; they had <b>changed type</b> (neutrino oscillation), which means neutrinos have mass." }
+    ];
+    function setMode(i) {
+      mode = i; made = 0; caught = 0; nus = [];
+      var m = MODES[i];
+      det.setAttribute("style", "fill:" + m.col + ";opacity:0.55;stroke:var(--border)");
+      detT.textContent = m.lbl;
+      r.readout.innerHTML = m.text;
+    }
+    function frameDraw() {
+      tick++;
+      if (tick % 9 === 0) {
+        nus.push({ x: SX + 26, y: Y + (rnd() - 0.5) * 60, other: (made % 3) !== 0, done: false });
+        made++;
+      }
+      clr(dots);
+      nus.forEach(function (nu) {
+        if (nu.done) return;
+        nu.x += 2.4;
+        var p = (nu.x - SX) / (DX - SX), isOther = nu.other && p > SWITCH;
+        if (nu.x >= DX - 18) {
+          nu.done = true;
+          if (!isOther || MODES[mode].all) { caught++; nu.hit = true; }
+        }
+        dots.appendChild(S("circle", { cx: nu.x.toFixed(1), cy: nu.y.toFixed(1), r: 3, style: "fill:" + (isOther ? "#a855f7" : "#22c55e") }));
+      });
+      nus = nus.filter(function (nu) { return !nu.done; });
+      var arrived = Math.max(0, made - nus.length);
+      tally.textContent = "predicted " + arrived + " · detected " + caught + (arrived > 5 ? "  (" + Math.round(100 * caught / arrived) + "%)" : "");
+    }
+    s.appendChild(S("line", { x1: SX + (DX - SX) * SWITCH, y1: Y - 46, x2: SX + (DX - SX) * SWITCH, y2: Y + 46, "class": "dg-dash" }));
+    var swT = T(SX + (DX - SX) * SWITCH, Y - 50, "changing type on the way", "dg-lbl-mid");
+    s.appendChild(swT);
+    bigPick(r.controls, MODES.map(function (m, i) { return { label: m.n, value: i }; }), 0, setMode);
+    setMode(0);
+    autoTicker(r.controls, frameDraw);
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();
