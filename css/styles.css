@@ -1962,3 +1962,33 @@ textarea.notes:focus { outline: 2px solid var(--accent); }
   height: 100%;
   border: 0;
 }
+
+/* ---- Unit review (Ch 5, 7, 15, 16) ---- */
+.ex-banner { display: block; width: 100%; margin: 18px 0 4px; border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.ex-progress { margin: 14px 0 16px; }
+.ex-progress .bar { margin-top: 8px; }
+.ex-chapters, .ex-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ex-chapters { margin-bottom: 10px; }
+.ex-links { margin-top: 10px; }
+.ex-obj > summary { justify-content: space-between; }
+.ex-obj-text { flex: 1; }
+.ex-mark { color: var(--good); visibility: hidden; font-weight: 700; }
+.ex-obj.known .ex-mark { visibility: visible; }
+.ex-obj.known { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); }
+.ex-points { margin: 0; padding-left: 18px; color: var(--text); }
+.ex-points li { margin: 6px 0; }
+.ex-hide-defs .ex-def { filter: blur(6px); cursor: pointer; user-select: none; }
+.ex-hide-defs .ex-def.peek { filter: none; }
+.ex-hide-defs .review-item { cursor: pointer; }
+
+/* ----- Read the Graph activity ------------------------------------- */
+.gr-fig { margin: 16px 0; max-width: 760px; }
+.gr-grid .gr-fig { max-width: none; }
+.gr-fig img { background: #fff; }
+.gr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; }
+.gr-grid .gr-fig { margin: 0; }
+.gr-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+.gr-table th, .gr-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+.gr-table th { color: var(--text-dim); font-weight: 600; }
+.prose:has(.gr-table) { overflow-x: auto; }
+.gr-qimg { display: block; width: 100%; max-width: 420px; margin: 10px 0 2px; border-radius: 8px; background: #fff; }

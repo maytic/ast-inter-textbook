@@ -61,6 +61,7 @@
     gravitation: ["t/gravitation", "Universal Gravitation", "Every mass pulls every mass — F = G·m₁m₂ ÷ R²"],
     physicists: ["t/physicists", "Match the Physicists", "Pair each scientist with what they worked out"],
     sizesort: ["t/sizesort", "Sort by Size", "Order cosmic sizes from Chapter 1 — smallest to largest"],
+    graphs: ["t/graphs", "Read the Graph", "Kepler’s 3rd law, orbit ellipses, atmosphere absorption, blackbody curves"],
     skycoords: ["t/skycoords", "Earth and Sky", "Latitude/longitude and declination/right ascension"],
     seasons: ["t/seasons", "The Seasons", "Why the 23.5° tilt makes summer and winter"],
     keepingtime: ["t/keepingtime", "Keeping Time", "Solar days, sidereal days, and time zones"],
@@ -118,7 +119,10 @@
   /* Hands-on activities — no arithmetic, just doing something. Also
      chapter-independent; reached from the dashboard "Activities" hub
      (#/activities), so their routes skip the hasTool() gate too. */
-  var ACTIVITY_TOOLS = ["sizesort"];
+  var ACTIVITY_TOOLS = ["sizesort", "graphs"];
+
+  // Unit review (js/data-review.js) — a dashboard-level page, see renderReview
+  var REVIEW = window.ASTRO_REVIEW || null;
   function isActivityRoute(hash) {
     for (var i = 0; i < ACTIVITY_TOOLS.length; i++) {
       if (TOOL_INFO[ACTIVITY_TOOLS[i]][0] === hash) return true;
@@ -425,13 +429,14 @@
     if (!sidebarEl) return;
     var mathMode = isMathContext();
     var actMode = isActivityContext();
-    var hubMode = mathMode || actMode;
+    var reviewMode = currentHash() === "review";
+    var hubMode = mathMode || actMode || reviewMode;
 
     var brand = qs("#brandBox", sidebarEl);
     clear(brand);
     brand.appendChild(h("div", { class: "ch", text: hubMode ? "Study guide" : "Chapter " + D.meta.chapter }));
     brand.appendChild(h("div", { class: "title", text:
-      mathMode ? "Math warm-ups" : actMode ? "Hands-on activities" : D.meta.chapterTitle }));
+      mathMode ? "Math warm-ups" : actMode ? "Hands-on activities" : reviewMode ? "Unit review" : D.meta.chapterTitle }));
     brand.appendChild(h("div", { class: "book", text: D.meta.book }));
 
     var read = qs("#navRead", sidebarEl);
@@ -449,6 +454,8 @@
     if (mathLink) mathLink.style.display = hubMode ? "none" : "";
     var actLink = qs("#navActivitiesLink", sidebarEl);
     if (actLink) actLink.style.display = hubMode ? "none" : "";
+    var reviewLink = qs("#navReviewHubLink", sidebarEl);
+    if (reviewLink) reviewLink.style.display = hubMode || !REVIEW ? "none" : "";
 
     var toolsLabel = qs("#navToolsLabel", sidebarEl);
     var tools = qs("#navTools", sidebarEl);
@@ -479,6 +486,20 @@
       tools.appendChild(navLink("activities", "", "All activities"));
       ACTIVITY_TOOLS.forEach(function (key) {
         tools.appendChild(navLink(TOOL_INFO[key][0], "", TOOL_INFO[key][1]));
+      });
+      refreshSidebar();
+      return;
+    }
+
+    if (reviewMode) {
+      toolsLabel.style.display = "";
+      toolsLabel.textContent = "Chapters in this review";
+      tools.appendChild(navLink("review", "", "Unit review"));
+      if (REVIEW) reviewChapters(null).forEach(function (n) {
+        tools.appendChild(h("button", { class: "nav-link", "data-hash": "ch" + n,
+          onclick: function () { setActiveChapter(n); go("overview"); closeSidebar(); } }, [
+          h("span", { class: "num", text: n }), h("span", { text: CHAPTERS[n].meta.chapterTitle })
+        ]));
       });
       refreshSidebar();
       return;
@@ -527,6 +548,7 @@
     sidebar.appendChild(h("div", { id: "navTools" }));
     sidebar.appendChild(h("div", { id: "navMathLink" }, navLink("math", "", "Math warm-ups")));
     sidebar.appendChild(h("div", { id: "navActivitiesLink" }, navLink("activities", "", "Hands-on activities")));
+    sidebar.appendChild(h("div", { id: "navReviewHubLink" }, navLink("review", "", "Unit review: Ch 5, 7, 15, 16")));
 
     sidebar.appendChild(h("div", { class: "nav-group-label", id: "navReviewLabel", text: "Review" }));
     sidebar.appendChild(h("div", { id: "navReview" }, [
@@ -653,6 +675,7 @@
     });
     if ("dashboard chapters".indexOf(q) > -1) out.push({ kind: "Go", label: "All chapters", hash: "dashboard" });
     if ("math warm-ups arithmetic".indexOf(q) > -1) out.push({ kind: "Go", label: "Math warm-ups", hash: "math" });
+    if (REVIEW && "unit review practice test objectives".indexOf(q) > -1) out.push({ kind: "Go", label: "Unit review", hash: "review" });
     if ("activities hands-on sorting".indexOf(q) > -1) out.push({ kind: "Go", label: "Hands-on activities", hash: "activities" });
 
     if (!out.length) {
@@ -701,6 +724,18 @@
     v.appendChild(h("p", { class: "lede", text:
       "Pick a chapter to study. Each has section-by-section reading, key ideas, self-checks, flashcards, " +
       "and a self-test quiz. Your progress on every chapter is saved in this browser." }));
+
+    if (REVIEW) {
+      var exKnown = lsJSON("astro.review.known", []).length;
+      var exTotal = 0;
+      REVIEW.modules.forEach(function (m) { exTotal += m.objectives.length; });
+      v.appendChild(h("button", { class: "tile ex-banner", onclick: function () { go("review"); } }, [
+        h("div", { class: "t-num", text: "UNIT REVIEW" }),
+        h("div", { class: "t-title", text: "Review — Chapters 5, 7, 15, 16 →" }),
+        h("div", { class: "t-meta", text: "Every objective explained, a mixed practice test, and key-term matching · " +
+          exKnown + " of " + exTotal + " objectives checked off" })
+      ]));
+    }
 
     var grid = h("div", { class: "chapter-grid" });
     chapterNums.forEach(function (n) {
@@ -753,7 +788,7 @@
 
     v.appendChild(h("h2", { text: "Hands-on activities", style: "margin-top:30px" }));
     v.appendChild(h("p", { class: "lede", style: "margin-top:4px", text:
-      "No arithmetic — just move things around and see if you got it right. Also not tied to any one chapter." }));
+      "Hands-on practice — sort things, read graphs, and see if you got it right. Not tied to any one chapter." }));
     var agrid = h("div", { class: "tiles" });
     ACTIVITY_TOOLS.forEach(function (key) {
       var info = TOOL_INFO[key];
@@ -827,8 +862,8 @@
     v.appendChild(h("div", { class: "eyebrow", text: "Interactive study guide" }));
     v.appendChild(h("h1", { text: "Hands-on activities" }));
     v.appendChild(h("p", { class: "lede", html:
-      "No formulas here — just drag, sort, and match, then check your answer. A good way to get a feel " +
-      "for the sizes and distances the book throws around." }));
+      "Sort things and read graphs, then check your answer. A good way to get a feel for the sizes and " +
+      "distances the book throws around, and for reading the graphs on assignments." }));
 
     var list = h("div", { class: "tiles" });
     ACTIVITY_TOOLS.forEach(function (key) {
@@ -840,6 +875,355 @@
     });
     v.appendChild(list);
     mount(v);
+  }
+
+  /* ---- UNIT REVIEW (dashboard-level, spans Ch 5, 7, 15, 16) ---------
+     Objectives come from js/data-review.js (window.ASTRO_REVIEW). The practice
+     test and matching game draw on the covered chapters' own quiz and glossary
+     data, so they grow automatically if those chapters gain questions/terms. */
+  var reviewStore = {
+    get: function (k, fallback) { return lsJSON("astro.review." + k, fallback); },
+    set: function (k, v) { try { localStorage.setItem("astro.review." + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  function reviewChapters(modId) {   // chapters for one module, or all covered chapters
+    var out = [];
+    REVIEW.modules.forEach(function (m) {
+      if (modId && m.id !== modId) return;
+      m.chapters.forEach(function (n) { if (CHAPTERS[n] && out.indexOf(n) < 0) out.push(n); });
+    });
+    return out;
+  }
+  function chapterOfSection(id) { return Number(String(id).split(".")[0]); }
+  function chapterOfTool(key) {
+    for (var i = 0; i < chapterNums.length; i++) {
+      var c = CHAPTERS[chapterNums[i]];
+      if (c.tools && c.tools.indexOf(key) > -1) return chapterNums[i];
+    }
+    return null;
+  }
+  function anySectionPages(id) {
+    var c = CHAPTERS[chapterOfSection(id)];
+    var s = c && c.sections.filter(function (x) { return x.id === id; })[0];
+    return s && s.pages ? s.pages : "";
+  }
+  function openTool(key) {
+    var n = chapterOfTool(key);
+    if (n != null) { setActiveChapter(n); rebuildNav(); }
+    go(TOOL_INFO[key][0]);
+  }
+
+  function renderReview() {
+    crumbEl.innerHTML = "<b>" + D.meta.book + "</b> &middot; Unit review";
+    document.title = "Astronomy 2e · Unit review";
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("dashboard"); },
+      text: "← All chapters" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Unit review · Chapters 5, 7, 15, 16" }));
+    v.appendChild(h("h1", { text: "Review: Chapters 5, 7, 15, 16" }));
+    if (!REVIEW) { v.appendChild(h("p", { class: "lede", text: "Review data didn’t load." })); mount(v); return; }
+
+    var allObj = [];
+    REVIEW.modules.forEach(function (m) {
+      m.objectives.forEach(function (o, i) { allObj.push(m.id + "-" + i); });
+    });
+    var known = reviewStore.get("known", []);
+    var progText = h("div");
+    var progFill = h("span");
+    function paintProgress() {
+      var n = allObj.filter(function (id) { return known.indexOf(id) > -1; }).length;
+      progText.textContent = n + " of " + allObj.length + " objectives marked “I can explain this”";
+      progFill.style.width = Math.round(n / allObj.length * 100) + "%";
+    }
+    paintProgress();
+
+    v.appendChild(h("p", { class: "lede", html:
+      "Radiation and spectra, the solar system, and the Sun — Chapters 5, 7, 15, and 16 — with every learning " +
+      "objective explained. These chapters build on the earlier ones, so don’t forget those either. Work through " +
+      "each objective until you can explain it without peeking, then drill with the practice test and matching game." }));
+    v.appendChild(h("div", { class: "card ex-progress" }, [progText, h("div", { class: "bar" }, progFill)]));
+    v.appendChild(h("div", { class: "ex-links", style: "margin:0 0 16px" }, [
+      h("button", { class: "btn small", text: "Practice reading graphs (blackbody curves, Kepler, atmosphere) →",
+        onclick: function () { go(TOOL_INFO.graphs[0]); } })
+    ]));
+
+    var host = h("div");
+    var modeKey = "astro.review.mode";
+    var mode = 0;
+    try { mode = Number(localStorage.getItem(modeKey)) || 0; } catch (e) {}
+    v.appendChild(segControl(["Objectives", "Practice test", "Matching", "Key terms"], mode, function (i) {
+      try { localStorage.setItem(modeKey, String(i)); } catch (e) {}
+      show(i);
+    }, true));
+    v.appendChild(host);
+    show(mode);
+    mount(v);
+
+    function show(i) {
+      stopMatch();
+      clear(host);
+      [showObjectives, showTest, showMatching, showTerms][i]();
+    }
+
+    /* -- objectives checklist -- */
+    function showObjectives() {
+      host.appendChild(h("p", { class: "tool-intro", html:
+        "Each objective opens into what you should be able to say about it. Tap <b>I can explain this</b> once " +
+        "you can say it in your own words — it’s saved in this browser." }));
+      REVIEW.modules.forEach(function (m) {
+        var card = h("div", { class: "card" }, [
+          h("h2", { text: m.title, style: "margin-top:0" }),
+          h("div", { class: "ex-chapters" }, m.chapters.map(function (n) {
+            return CHAPTERS[n] ? h("button", { class: "btn small ghost", text: "Ch " + n + " · " + CHAPTERS[n].meta.chapterTitle,
+              onclick: function () { setActiveChapter(n); rebuildNav(); go("overview"); } }) : null;
+          }))
+        ]);
+        m.objectives.forEach(function (o, i) {
+          var id = m.id + "-" + i;
+          var mark = h("span", { class: "ex-mark", text: "✓" });
+          var det = h("details", { class: "qa ex-obj" + (known.indexOf(id) > -1 ? " known" : "") }, [
+            h("summary", {}, [h("span", { class: "ex-obj-text", html: o.text }), mark])
+          ]);
+          var body = h("div", { class: "answer" });
+          body.appendChild(h("ul", { class: "ex-points" }, o.points.map(function (p) { return h("li", { html: p }); })));
+          var links = h("div", { class: "ex-links" });
+          [o.sec].concat(o.alsoSec || []).forEach(function (sid) {
+            if (!CHAPTERS[chapterOfSection(sid)]) return;
+            var pg = anySectionPages(sid);
+            links.appendChild(h("button", { class: "btn small", text: "Read §" + sid + (pg ? " · " + pg : ""),
+              onclick: function () { go("s/" + sid); } }));
+          });
+          (o.tools || []).forEach(function (key) {
+            if (!TOOL_INFO[key] || chapterOfTool(key) == null) return;
+            links.appendChild(h("button", { class: "btn small ghost", text: "Tool: " + TOOL_INFO[key][1],
+              onclick: function () { openTool(key); } }));
+          });
+          body.appendChild(links);
+          var kb = h("button", { class: "btn small" + (known.indexOf(id) > -1 ? " done" : ""), onclick: function () {
+            var at = known.indexOf(id);
+            if (at > -1) known.splice(at, 1); else known.push(id);
+            reviewStore.set("known", known);
+            var on = at < 0;
+            det.classList.toggle("known", on);
+            kb.classList.toggle("done", on);
+            kb.textContent = on ? "✓ I can explain this" : "I can explain this";
+            paintProgress();
+          }, text: known.indexOf(id) > -1 ? "✓ I can explain this" : "I can explain this" });
+          body.appendChild(h("div", { style: "margin-top:10px" }, kb));
+          det.appendChild(body);
+          card.appendChild(det);
+        });
+        if (m.id === "m5") {
+          card.appendChild(h("p", { class: "tool-intro", style: "margin:12px 0 0", html:
+            "Know the <b>key terms from Chapter 7</b> too — see the <i>Key terms</i> tab and the matching game." }));
+        }
+        if (m.id === "m6") {
+          card.appendChild(h("p", { class: "tool-intro", style: "margin:12px 0 0", html:
+            "Know the <b>key terms from Chapters 15 and 16</b> too — see the <i>Key terms</i> tab and the matching game." }));
+        }
+        host.appendChild(card);
+      });
+    }
+
+    /* -- module filter shared by test / matching / terms -- */
+    function moduleFilter(onPick) {
+      var labels = ["All"].concat(REVIEW.modules.map(function (m) {
+        return "Ch " + m.chapters.join(" + ");
+      }));
+      var cur = reviewStore.get("filter", 0);
+      if (cur >= labels.length) cur = 0;
+      var seg = segControl(labels, cur, function (i) { reviewStore.set("filter", i); onPick(i ? REVIEW.modules[i - 1].id : null); }, true);
+      return { node: seg, modId: cur ? REVIEW.modules[cur - 1].id : null };
+    }
+
+    /* -- practice test: questions from the chapters' own quizzes -- */
+    function showTest() {
+      var slot = h("div");
+      var f = moduleFilter(function (modId) { setup(modId); });
+      host.appendChild(h("p", { class: "tool-intro", text:
+        "Multiple choice, mixed across all four chapters, with an explanation after every answer." }));
+      host.appendChild(f.node);
+      host.appendChild(slot);
+      setup(f.modId);
+
+      function setup(modId) {
+        clear(slot);
+        var pool = [];
+        reviewChapters(modId).forEach(function (n) { pool = pool.concat(CHAPTERS[n].quiz || []); });
+        var best = reviewStore.get("best", null);
+        slot.appendChild(h("div", { class: "card quiz-setup" }, [
+          h("p", { class: "tool-intro", style: "margin-top:0", text: pool.length + " questions in this pool." }),
+          h("div", { class: "ex-links" }, [
+            h("button", { class: "btn primary", text: "Quick test (15)", onclick: function () { run(pool, Math.min(15, pool.length), modId); } }),
+            h("button", { class: "btn", text: "Long test (40)", onclick: function () { run(pool, Math.min(40, pool.length), modId); } }),
+            h("button", { class: "btn", text: "Everything (" + pool.length + ")", onclick: function () { run(pool, pool.length, modId); } })
+          ]),
+          best != null ? h("div", { class: "best-badge", text: "★ Best mixed-test score: " + best + "%" }) : null
+        ]));
+      }
+
+      function run(pool, count, modId) {
+        var qs2 = shuffle(pool).slice(0, count).map(function (q) {
+          var choices = q.choices.map(function (c, i) {
+            return { text: c, correct: i === q.answer, why: (q.whyWrong && q.whyWrong[i]) || "" };
+          });
+          return { q: q.q, section: q.section, explain: q.explain, choices: shuffle(choices) };
+        });
+        var idx = 0, score = 0, missed = [];
+        showQ();
+
+        function showQ() {
+          clear(slot);
+          var q = qs2[idx];
+          var card = h("div", { class: "card" });
+          card.appendChild(h("div", { class: "quiz-meta" }, [
+            h("span", { text: "Question " + (idx + 1) + " of " + qs2.length }),
+            h("span", { text: "Ch " + chapterOfSection(q.section) + " · §" + q.section + "  ·  score " + score })
+          ]));
+          card.appendChild(h("div", { class: "quiz-progress-bar" }, h("span", { style: "width:" + (idx / qs2.length * 100) + "%" })));
+          card.appendChild(h("div", { class: "q-text", text: q.q }));
+          var answered = false;
+          var explainBox = h("div");
+          var nextWrap = h("div", { class: "quiz-nav" });
+          q.choices.forEach(function (c, i) {
+            var btn = h("button", { class: "q-choice" }, [
+              h("span", { class: "letter", text: "ABCD"[i] }), document.createTextNode(c.text)
+            ]);
+            btn.addEventListener("click", function () {
+              if (answered) return;
+              answered = true;
+              var all = card.querySelectorAll(".q-choice");
+              for (var k = 0; k < all.length; k++) {
+                all[k].disabled = true;
+                if (q.choices[k].correct) all[k].classList.add("correct");
+              }
+              var right = q.choices.filter(function (x) { return x.correct; })[0];
+              if (c.correct) {
+                btn.classList.add("correct"); score++;
+                explainBox.appendChild(h("div", { class: "q-explain ok" }, [
+                  h("strong", { text: "Correct. " }), document.createTextNode(q.explain)]));
+              } else {
+                btn.classList.add("wrong");
+                q._picked = c; missed.push(q);
+                explainBox.appendChild(h("div", { class: "q-explain no" }, [
+                  h("strong", { text: "Not quite. " }),
+                  document.createTextNode(c.why || ("“" + c.text + "” isn't right here."))]));
+                explainBox.appendChild(h("div", { class: "q-explain ok" }, [
+                  h("strong", { text: "The answer: " }),
+                  document.createTextNode((right ? right.text + " — " : "") + q.explain)]));
+              }
+              var pg = anySectionPages(q.section);
+              explainBox.appendChild(h("div", { class: "q-source" }, [
+                h("span", { text: "From Section " + q.section + (pg ? " · " + pg + " (printed book)" : "") }),
+                h("button", { class: "btn small ghost", text: "Reread this section ↗",
+                  onclick: function () { window.open(location.pathname + location.search + "#/s/" + q.section, "_blank", "noopener"); } })
+              ]));
+              var nb = h("button", { class: "btn primary", text: idx === qs2.length - 1 ? "See results →" : "Next question →",
+                onclick: function () { idx++; if (idx >= qs2.length) finish(); else showQ(); } });
+              nextWrap.appendChild(nb);
+              nb.focus();
+            });
+            card.appendChild(btn);
+          });
+          card.appendChild(explainBox);
+          card.appendChild(nextWrap);
+          slot.appendChild(card);
+        }
+
+        function finish() {
+          clear(slot);
+          var pct = Math.round(score / qs2.length * 100);
+          var isBest = false;
+          if (!modId) {   // only a mixed test counts toward the saved best
+            var prev = reviewStore.get("best", null);
+            isBest = prev == null || pct > prev;
+            if (isBest) reviewStore.set("best", pct);
+          }
+          // which sections to reread, most-missed first
+          var bySec = {};
+          missed.forEach(function (q) { bySec[q.section] = (bySec[q.section] || 0) + 1; });
+          var weak = Object.keys(bySec).sort(function (a, b) { return bySec[b] - bySec[a]; });
+          slot.appendChild(h("div", { class: "card quiz-result" }, [
+            h("h2", { text: pct >= 80 ? "Strong work." : pct >= 60 ? "Good — review the misses." : "Keep going — revisit the sections below.", style: "margin-top:0" }),
+            h("div", { class: "score-ring", style: "--p:" + pct }, [h("div", {}, [
+              h("div", { class: "pct", text: pct + "%" }),
+              h("div", { class: "frac", text: score + " / " + qs2.length })
+            ])]),
+            isBest ? h("div", { class: "best-badge", text: "★ New best mixed-test score!" }) : null,
+            weak.length ? h("div", { class: "ex-links", style: "margin-top:14px;justify-content:center" }, weak.map(function (sid) {
+              return h("button", { class: "btn small", text: "Reread §" + sid + " (" + bySec[sid] + " missed)",
+                onclick: function () { go("s/" + sid); } });
+            })) : null,
+            h("div", { style: "margin-top:14px" }, [
+              h("button", { class: "btn primary", text: "Another test", onclick: function () { setup(modId); } })
+            ])
+          ]));
+          if (missed.length) {
+            var rev = h("div", { class: "card" }, [h("h2", { text: "Review: " + missed.length + " missed", style: "margin-top:0" })]);
+            missed.forEach(function (q) {
+              var right = q.choices.filter(function (c) { return c.correct; })[0];
+              rev.appendChild(h("div", { class: "review-item" }, [
+                h("div", { class: "ri-q", text: q.q }),
+                h("div", { class: "ri-line ri-yours", text: "You picked: " + q._picked.text + (q._picked.why ? " — " + q._picked.why : "") }),
+                h("div", { class: "ri-line ri-correct", text: "Answer: " + right.text }),
+                h("div", { class: "ri-line", style: "color:var(--text-dim)", text: q.explain })
+              ]));
+            });
+            slot.appendChild(rev);
+          }
+          window.scrollTo(0, 0);
+        }
+      }
+    }
+
+    /* -- matching: key terms <-> definitions, 6 per round -- */
+    function showMatching() {
+      var slot = h("div", { class: "card" });
+      var f = moduleFilter(function (modId) { play(modId); });
+      host.appendChild(h("p", { class: "tool-intro", text:
+        "Pair each key term with its definition. Six per round." }));
+      host.appendChild(f.node);
+      host.appendChild(slot);
+      play(f.modId);
+      function play(modId) {
+        var terms = [];
+        reviewChapters(modId).forEach(function (n) { terms = terms.concat(CHAPTERS[n].glossary || []); });
+        var pairs = shuffle(terms).slice(0, 6).map(function (g) { return { a: g.term, b: g.def }; });
+        renderMatchGame(slot, pairs, { leftLabel: "Term", rightLabel: "Definition",
+          onRestart: function () { play(modId); } });
+      }
+    }
+
+    /* -- key terms list -- */
+    function showTerms() {
+      var slot = h("div");
+      var f = moduleFilter(function (modId) { list(modId); });
+      host.appendChild(h("p", { class: "tool-intro", text:
+        "Every key term from the four chapters, grouped by chapter. Hide the definitions to quiz yourself." }));
+      host.appendChild(f.node);
+      var hidden = false;
+      var hideBtn = h("button", { class: "btn small", style: "margin-top:10px", text: "Hide definitions", onclick: function () {
+        hidden = !hidden;
+        hideBtn.textContent = hidden ? "Show definitions" : "Hide definitions";
+        slot.classList.toggle("ex-hide-defs", hidden);
+      } });
+      host.appendChild(hideBtn);
+      host.appendChild(slot);
+      list(f.modId);
+      function list(modId) {
+        clear(slot);
+        reviewChapters(modId).forEach(function (n) {
+          var c = CHAPTERS[n];
+          var card = h("div", { class: "card" }, [h("h2", { text: "Ch " + n + " · " + c.meta.chapterTitle, style: "margin-top:0" })]);
+          (c.glossary || []).forEach(function (g) {
+            var def = h("div", { class: "ex-def", style: "color:var(--text-dim);margin-top:4px", text: g.def });
+            card.appendChild(h("div", { class: "review-item", onclick: function () { def.classList.toggle("peek"); } }, [
+              h("div", { class: "ri-q", text: g.term + "  ·  §" + g.section }), def
+            ]));
+          });
+          slot.appendChild(card);
+        });
+      }
+    }
   }
 
   /* ---- ACTIVITY: Sort by Size --------------------------------------
@@ -1206,6 +1590,228 @@
       drag = null;
       if (to !== from) arr.splice(to, 0, arr.splice(from, 1)[0]);
       paint();
+    }
+  }
+
+  /* ---- READ THE GRAPH (activity) -------------------------------------
+     Practice reading the graph/diagram types that show up on assignments:
+     Kepler's 3rd-law plot, an orbit ellipse, atmospheric absorption, and
+     blackbody curves. Images live in img/graphs/. */
+  function renderGraphs() {
+    activityTitle("Read the Graph");
+    var IMG = "img/graphs/";
+    // Blackbody curves: peak read off each graph, T = 2.9×10⁶ nm·K ÷ peak (Wien's law, §5.2)
+    var BB = [
+      { k: "l", peak: 240, T: "12,000", look: "blue-white", note: "peaks in the ultraviolet — the hottest" },
+      { k: "k", peak: 385, T: "7,500", look: "white", note: "peaks just short of visible, in the near ultraviolet" },
+      { k: "j", peak: 500, T: "5,800", look: "yellow-white", note: "peaks in the middle of visible — like the Sun" },
+      { k: "i", peak: 720, T: "4,000", look: "orange", note: "peaks just past red, in the near infrared" },
+      { k: "h", peak: 970, T: "3,000", look: "red", note: "peaks in the infrared — the coolest" }
+    ];
+    function fig(file, cap) {
+      return h("figure", { class: "tb-figure gr-fig" }, [
+        h("img", { src: IMG + file, alt: cap }),
+        h("figcaption", { html: cap })
+      ]);
+    }
+    function bbImg(k) { return "<img class=\"gr-qimg\" src=\"" + IMG + "blackbody-" + k + ".jpg\" alt=\"Blackbody curve " + k.toUpperCase() + "\">"; }
+
+    var TOPICS = [
+      {
+        tab: "Kepler’s 3rd law",
+        figs: [["kepler3-plot.jpg", "<b>Kepler’s Third Law.</b> Orbital period (Earth years) vs. orbital semimajor axis (AU)."]],
+        read:
+          "<p><b>The rule:</b> <b>P² = a³</b> — P is the period in <b>Earth years</b>, a is the average distance in <b>AU</b>.</p>" +
+          "<p><b>Reading it forwards:</b> find the distance on the bottom (x) axis → go straight <b>up</b> to the blue curve → go <b>left</b> and read the period.</p>" +
+          "<p><b>Reading it backwards:</b> given a period, start on the left (y) axis → go <b>right</b> to the curve → go <b>down</b> to read the distance.</p>" +
+          "<table class=\"gr-table\"><tr><th>a (AU)</th><th>a³</th><th>P = √(a³)</th><th>On the graph</th></tr>" +
+          "<tr><td>1</td><td>1</td><td><b>1 yr</b></td><td>Earth — the curve passes (1, 1)</td></tr>" +
+          "<tr><td>4</td><td>64</td><td><b>8 yr</b></td><td>straight up from 4, the curve is at 8</td></tr>" +
+          "<tr><td>9</td><td>729</td><td><b>27 yr</b></td><td>exactly on (9, 27)</td></tr>" +
+          "<tr><td>10</td><td>1000</td><td><b>≈ 31.6 yr</b></td><td>the right end of the curve</td></tr></table>",
+        ideas: [
+          "The curve <b>bends upward</b>: farther planets have a longer path <i>and</i> move slower, so the period grows faster than the distance.",
+          "Doubling the distance makes the period about <b>2.8×</b> longer (because √(2³) = √8 ≈ 2.83), not 2×.",
+          "Use the formula to check a graph reading: square the period and cube the distance — they should match."
+        ],
+        qs: [
+          { q: "Using the graph, a planet orbits at <b>a = 4 AU</b>. What is its period?", choices: ["8 years", "4 years", "16 years", "64 years"], answer: 0,
+            why: "Up from 4 on the x-axis hits the curve at 8. Check: 4³ = 64 and 8² = 64." },
+          { q: "An asteroid has a period of <b>27 years</b>. Using the graph, what is its semimajor axis?", choices: ["9 AU", "3 AU", "27 AU", "5 AU"], answer: 0,
+            why: "Go right from 27 on the y-axis to the curve, then down: 9 AU. Check: 9³ = 729 = 27²." },
+          { q: "What is the period of an object at <b>1 AU</b>?", choices: ["1 year", "0 years", "2 years", "3 years"], answer: 0,
+            why: "1 AU is Earth’s distance, so the period is Earth’s: 1 year (1² = 1³)." },
+          { q: "Reading the graph, an object at <b>a = 2 AU</b> has a period of about…", choices: ["2.8 years", "2 years", "4 years", "8 years"], answer: 0,
+            why: "2³ = 8, and √8 ≈ 2.83 — the curve sits just under 3 at x = 2." },
+          { q: "A comet takes <b>10 years</b> to orbit. Reading the graph, its average distance is about…", choices: ["4.6 AU", "10 AU", "3.2 AU", "1 AU"], answer: 0,
+            why: "Right from 10 to the curve, then down: just under 5. Check: 10² = 100, and 4.6³ ≈ 97." },
+          { q: "Why is the line on this graph <b>curved</b> instead of straight?", choices: ["Period grows faster than distance (P² = a³)", "The planets’ orbits are ellipses", "The graph uses a log scale", "Distant planets move faster"], answer: 0,
+            why: "P = a^1.5, so each extra AU adds more years than the last. (Distant planets actually move <i>slower</i>.)" },
+          { q: "If one planet is <b>twice as far</b> from the Sun as another, its period is…", choices: ["about 2.8 times longer", "exactly 2 times longer", "4 times longer", "8 times longer"], answer: 0,
+            why: "a³ goes up 2³ = 8 times, so P² must go up 8 times too — and P goes up √8 ≈ 2.83 times." },
+          { q: "Using the graph, about how long does an object at <b>a = 5 AU</b> take to orbit?", choices: ["about 11 years", "about 5 years", "about 25 years", "about 125 years"], answer: 0,
+            why: "5³ = 125 and √125 ≈ 11.2 — the curve crosses x = 5 just above 10. (Jupiter is at 5.20 AU with an 11.86-year period.)" }
+        ]
+      },
+      {
+        tab: "Orbit shape",
+        figs: [["orbit-ellipse.jpg", "<b>An elliptical orbit.</b> Points A–F; the blue line runs from D to F."]],
+        read:
+          "<p>Name every point first — most questions just ask “which letter is…?”</p>" +
+          "<table class=\"gr-table\"><tr><th>Point</th><th>What it is</th></tr>" +
+          "<tr><td><b>D</b></td><td>the <b>center</b> of the ellipse</td></tr>" +
+          "<tr><td><b>B</b> and <b>E</b></td><td>the two <b>foci</b> — same distance from D on each side. The Sun sits at <b>one</b> focus; the other is empty.</td></tr>" +
+          "<tr><td><b>A</b> and <b>F</b></td><td>the two ends of the long axis (the <b>major axis</b>, A to F)</td></tr>" +
+          "<tr><td><b>D → F</b> (blue)</td><td>the <b>semimajor axis, a</b> — half of the long axis. This is the “a” in P² = a³.</td></tr>" +
+          "<tr><td><b>C</b></td><td>just an ordinary point along the orbit</td></tr></table>" +
+          "<p><b>If the Sun is at E:</b> the planet is <b>closest at F</b> (perihelion) and <b>farthest at A</b> (aphelion). " +
+          "Put the Sun at B instead and those swap.</p>",
+        ideas: [
+          "<b>Kepler’s 1st law:</b> the orbit is an ellipse with the Sun at one focus — not at the center (unless the orbit is a perfect circle).",
+          "<b>Kepler’s 2nd law:</b> the planet moves <b>fastest</b> at its closest point and <b>slowest</b> at its farthest.",
+          "<b>Eccentricity</b> = (center-to-focus distance) ÷ a. Here DE ÷ DF ≈ 0.7 — quite stretched. 0 is a circle; the closer to 1, the flatter.",
+          "Pick any point on the ellipse (like C): its distance to B plus its distance to E always adds up to the same total — the length A to F."
+        ],
+        qs: [
+          { q: "In the orbit diagram, which point is the <b>center</b> of the ellipse?", choices: ["D", "E", "B", "C"], answer: 0,
+            why: "D sits exactly halfway between A and F. The foci B and E are off to either side of it." },
+          { q: "Which two points are the <b>foci</b>?", choices: ["B and E", "A and F", "D and E", "C and D"], answer: 0,
+            why: "B and E are inside the ellipse, the same distance from the center D on opposite sides." },
+          { q: "The blue line from D to F shows the…", choices: ["semimajor axis", "major axis", "eccentricity", "focus"], answer: 0,
+            why: "Center to the end of the long axis = half the major axis = the semimajor axis, a." },
+          { q: "The Sun is at <b>E</b>. At which point is the planet <b>closest</b> to the Sun?", choices: ["F", "A", "C", "D"], answer: 0,
+            why: "F is the end of the orbit nearest E — that’s perihelion." },
+          { q: "The Sun is at <b>E</b>. Where does the planet move <b>slowest</b>?", choices: ["A", "F", "C", "it moves at the same speed everywhere"], answer: 0,
+            why: "Slowest at the farthest point (aphelion). A is the end farthest from E." },
+          { q: "The Sun is at <b>B</b>. Where does the planet move <b>fastest</b>?", choices: ["A", "F", "C", "D"], answer: 0,
+            why: "Fastest at the closest point. With the Sun at B, the nearest end is A." },
+          { q: "The Sun sits at one focus. What is at the <b>other</b> focus?", choices: ["Nothing — it’s an empty point", "Another star", "The planet’s moon", "The center of mass of the planet"], answer: 0,
+            why: "Kepler’s 1st law: the Sun is at one focus and the other focus is empty." },
+          { q: "If B and E were moved <b>closer to D</b>, the orbit would become…", choices: ["more circular (lower eccentricity)", "more stretched (higher eccentricity)", "a straight line", "no different"], answer: 0,
+            why: "When both foci sit on the center, the ellipse is a circle (eccentricity 0)." },
+          { q: "Planet at point C. Distance from C to B plus distance from C to E equals…", choices: ["the length from A to F", "the length from D to F", "zero", "the distance from B to E"], answer: 0,
+            why: "That is the definition of an ellipse: the two focus distances always add up to the major axis (2a)." }
+        ]
+      },
+      {
+        tab: "Atmosphere",
+        figs: [["atmosphere-absorption.jpg", "<b>Absorption by Earth’s atmosphere</b> vs. wavelength (in microns, µm)."]],
+        read:
+          "<p><b>Y-axis:</b> how much light the air <b>blocks</b>. 100% = none reaches the ground; near 0% = it comes through.</p>" +
+          "<p><b>X-axis:</b> wavelength in microns, on a <b>log scale</b> — 0.1 → 1 → 10 → 100 are evenly spaced, each step 10× bigger.</p>" +
+          "<p><b>So:</b> <b>high = blocked</b> (needs a space telescope), <b>low dip = a “window”</b> (ground telescopes work).</p>" +
+          "<table class=\"gr-table\"><tr><th>Band</th><th>Absorbed?</th><th>Why / by what</th></tr>" +
+          "<tr><td>Ultraviolet shorter than ~0.3 µm</td><td><b>~100%</b></td><td>O₂ and ozone (O₃)</td></tr>" +
+          "<tr><td>Near ultraviolet (~0.3–0.4 µm)</td><td><b>drops fast</b></td><td>the curve falls from 100% to under 10%</td></tr>" +
+          "<tr><td>Visible (~0.4–0.7 µm)</td><td><b>low</b></td><td>the <b>optical window</b></td></tr>" +
+          "<tr><td>Infrared (~0.7–20 µm)</td><td><b>patchy</b></td><td>H₂O and CO₂ block some bands; gaps between them let some through (e.g. near 10 µm only ~20% absorbed)</td></tr>" +
+          "<tr><td>Far infrared (above ~20 µm)</td><td><b>90–100%</b></td><td>water vapor (H₂O)</td></tr></table>",
+        ideas: [
+          "Ground-based telescopes work where the curve is <b>low</b>: visible light, a few infrared windows (and radio, off the right edge of this graph).",
+          "UV must be observed from <b>space</b> — O₂ and ozone block nearly all of it (everything shorter than about 0.3 µm).",
+          "Most infrared absorption is by <b>water vapor</b>, so infrared telescopes go on <b>high, dry mountains</b>, airplanes, or into space.",
+          "Because the scale is logarithmic, “halfway between 1 and 10” is about <b>3 µm</b>, not 5.5."
+        ],
+        qs: [
+          { q: "Using the graph, which wavelength gets through the atmosphere best?", choices: ["0.5 µm (visible)", "0.2 µm (ultraviolet)", "6 µm (infrared)", "50 µm (far infrared)"], answer: 0,
+            why: "The curve is lowest in the visible band — the optical window." },
+          { q: "About what percent of <b>0.2 µm</b> ultraviolet light is absorbed?", choices: ["about 100%", "about 50%", "about 10%", "about 0%"], answer: 0,
+            why: "Everything left of ~0.3 µm is flat at 100%, blocked by O₂ and ozone." },
+          { q: "Which molecule causes the most <b>infrared</b> absorption on this graph?", choices: ["H₂O (water vapor)", "O₃ (ozone)", "N₂ (nitrogen)", "He (helium)"], answer: 0,
+            why: "Most of the infrared peaks are labeled H₂O, plus a few CO₂ bands." },
+          { q: "To study the <b>ultraviolet</b>, astronomers must…", choices: ["put the telescope in space", "build it on a high mountain", "observe only at night", "use a bigger mirror"], answer: 0,
+            why: "UV shorter than about 0.3 µm is ~100% absorbed by O₂ and ozone high in the atmosphere, so no ground site works." },
+          { q: "Why are infrared telescopes built on <b>high, dry</b> mountaintops?", choices: ["To get above most of the water vapor", "To be closer to the stars", "To make the stars look bigger", "To avoid ozone"], answer: 0,
+            why: "Water vapor does most of the IR absorbing, and it sits mostly in the low atmosphere." },
+          { q: "About how much light is absorbed near <b>10 µm</b>?", choices: ["about 20% — a partial window", "about 100%", "about 0%", "about 70%"], answer: 0,
+            why: "Around 8–13 µm the curve dips to roughly 20% (except one narrow ozone spike near 9.6 µm) — one of the infrared windows." },
+          { q: "The x-axis of this graph is <b>logarithmic</b>. That means…", choices: ["each equal step is 10× the wavelength", "each equal step adds 1 µm", "the wavelengths are in nanometers", "absorption is measured in decibels"], answer: 0,
+            why: "0.1, 1, 10, 100 are evenly spaced — each gridline step multiplies by 10." },
+          { q: "Light at <b>50 µm</b> (far infrared) reaching a ground telescope is…", choices: ["almost all absorbed", "almost all transmitted", "about half absorbed", "only absorbed at night"], answer: 0,
+            why: "Beyond about 20 µm the curve stays at 90–100%, blocked by water vapor (labeled “H₂O rotation”)." }
+        ]
+      },
+      {
+        tab: "Blackbody curves",
+        figs: BB.map(function (b) {
+          return ["blackbody-" + b.k + ".jpg", "<b>Curve " + b.k.toUpperCase() + "</b> · peak ≈ " + b.peak + " nm → T ≈ " + b.T + " K (" + b.look + ")"];
+        }),
+        figGrid: true,
+        read:
+          "<p><b>The rule (Wien’s law):</b> λ<sub>peak</sub> = 2.9×10⁶ ÷ T, with λ in <b>nanometers</b> and T in <b>kelvins</b>. Flipped around: " +
+          "<b>T = 2,900,000 ÷ λ<sub>peak</sub></b>.</p>" +
+          "<p><b>How to read one:</b> find the <b>top of the hump</b> (where it hits 100) → read the wavelength straight below it → divide.</p>" +
+          "<table class=\"gr-table\"><tr><th>Curve</th><th>Peak λ</th><th>T = 2,900,000 ÷ λ</th><th>Looks</th></tr>" +
+          BB.map(function (b) {
+            return "<tr><td><b>" + b.k.toUpperCase() + "</b></td><td>≈ " + b.peak + " nm</td><td><b>≈ " + b.T + " K</b></td><td>" + b.look + " — " + b.note + "</td></tr>";
+          }).join("") + "</table>" +
+          "<p><b>Hottest → coolest:</b> L, K, J, I, H.</p>",
+        ideas: [
+          "<b>Hotter → peak shifts left</b> (shorter wavelength, bluer). <b>Cooler → peak shifts right</b> (longer wavelength, redder).",
+          "Visible light is only about <b>400–700 nm</b>. A star peaking in the UV (curve L) still looks <b>bluish</b>; one peaking in the infrared (curve H) still looks <b>red</b>.",
+          "These graphs are all <b>scaled to 100</b>, so you <b>can’t</b> compare their heights. In reality the hotter object gives off far more energy per square meter — Stefan-Boltzmann says it goes as <b>T⁴</b>.",
+          "The Sun (about 5,800 K) peaks near <b>500 nm</b> — curve J is the Sun-like one."
+        ],
+        qs: [
+          { q: "Wien’s law in this guide is…", choices: ["λ(peak) = 2.9×10⁶ ÷ T  (nm, K)", "λ(peak) = 2.9×10⁶ × T", "P² = a³", "E = σT⁴"], answer: 0,
+            why: "Peak wavelength is inversely proportional to temperature: double T, half the peak wavelength." },
+          { q: "A blackbody peaks at <b>500 nm</b>. What is its temperature?", choices: ["about 5,800 K", "about 500 K", "about 2,900 K", "about 12,000 K"], answer: 0,
+            why: "2,900,000 ÷ 500 = 5,800 K — about the Sun’s surface temperature." },
+          { q: "If a curve’s peak moves to a <b>shorter</b> wavelength, the object is…", choices: ["hotter", "cooler", "the same temperature but closer", "the same temperature but bigger"], answer: 0,
+            why: "Wien’s law: shorter peak wavelength ↔ higher temperature." },
+          { q: "Curve L peaks in the ultraviolet (~240 nm). What color would it look to your eye?", choices: ["bluish (blue-white)", "invisible", "red", "yellow"], answer: 0,
+            why: "Within 400–700 nm its curve is highest at the blue end and falls toward red, so it looks bluish-white — not invisible, because it still gives off plenty of visible light." },
+          { q: "Curves L and H both peak at 100 on their graphs. Does that mean they give off the <b>same energy</b>?", choices: ["No — each graph is rescaled to 100; the hotter one (L) gives off far more per square meter", "Yes — equal peaks mean equal energy", "No — H gives off more because its hump is wider", "Yes — all blackbodies give off the same energy"], answer: 0,
+            why: "Each graph is rescaled so its own peak is 100, so heights can’t be compared. Use the peaks instead: L (~12,000 K) is about 4× hotter than H (~3,000 K), so by σT⁴ it gives off about 4⁴ = 256 times more energy per square meter." }
+        ].concat(BB.map(function (b) {
+          var wrong = BB.filter(function (x) { return x.k !== b.k; }).slice(0, 3).map(function (x) { return "about " + x.T + " K"; });
+          return { q: "What is the temperature of this blackbody?" + bbImg(b.k), choices: ["about " + b.T + " K"].concat(wrong), answer: 0,
+            why: "The peak is at about " + b.peak + " nm, so T ≈ 2,900,000 ÷ " + b.peak + " ≈ " + b.T + " K. It " + b.note + "." };
+        })).concat([
+          { q: "Which curve is the <b>coolest</b>?" + bbImg("h"), choices: ["This one, H (peak ≈ 970 nm)", "L (peak ≈ 240 nm)", "J (peak ≈ 500 nm)", "K (peak ≈ 385 nm)"], answer: 0,
+            why: "Its peak is farthest right (longest wavelength), so it is the coolest, about 3,000 K." }
+        ])
+      }
+    ];
+
+    var v = h("div", { class: "view" });
+    v.appendChild(h("button", { class: "back-link", onclick: function () { go("activities"); }, text: "← All activities" }));
+    v.appendChild(h("div", { class: "eyebrow", text: "Activity · reading graphs" }));
+    v.appendChild(h("h1", { text: "Read the Graph" }));
+    v.appendChild(h("p", { class: "lede", text:
+      "Four kinds of graphs that show up on astronomy assignments. Pick one, learn how to read it, then practice. " +
+      "Kepler’s laws are Chapter 3, blackbody curves are Chapter 5, and the atmosphere graph is Chapter 6." }));
+
+    var host = h("div");
+    var tab = 0;
+    try { tab = Number(localStorage.getItem("astro.graphs.tab")) || 0; } catch (e) {}
+    if (tab >= TOPICS.length) tab = 0;
+    v.appendChild(segControl(TOPICS.map(function (t) { return t.tab; }), tab, function (i) {
+      try { localStorage.setItem("astro.graphs.tab", String(i)); } catch (e) {}
+      show(i);
+    }, true));
+    v.appendChild(host);
+    show(tab);
+    mount(v);
+
+    function show(i) {
+      var T = TOPICS[i];
+      clear(host);
+      var figs = T.figs.map(function (f) { return fig(f[0], f[1]); });
+      host.appendChild(T.figGrid ? h("div", { class: "gr-grid" }, figs) : figs[0]);
+      host.appendChild(h("div", { class: "card" }, [
+        h("h2", { text: "How to read it", style: "margin-top:0" }),
+        h("div", { class: "prose", html: T.read })
+      ]));
+      host.appendChild(h("div", { class: "card" }, [
+        h("h2", { text: "Key ideas", style: "margin-top:0" }),
+        h("ul", { class: "ex-points" }, T.ideas.map(function (s) { return h("li", { html: s }); }))
+      ]));
+      host.appendChild(h("h2", { text: "Practice" }));
+      host.appendChild(h("p", { class: "tool-intro", text: "Look back at the graph above as you answer. Questions come in random order." }));
+      var drill = h("div");
+      host.appendChild(drill);
+      mcDrill(drill, T.qs);
     }
   }
 
@@ -4995,6 +5601,7 @@
     "t/gravitation": ["gravitation", function () { renderLawTool(LAW_TOOLS.gravitation); }],
     "t/physicists": ["physicists", function () { renderPhysicists(); }],
     "t/sizesort": ["sizesort", function () { renderSizeSort(); }],
+    "t/graphs": ["graphs", function () { renderGraphs(); }],
     "t/skycoords": ["skycoords", function () { renderLawTool(CH4_TOOLS.skycoords); }],
     "t/seasons": ["seasons", function () { renderLawTool(CH4_TOOLS.seasons); }],
     "t/keepingtime": ["keepingtime", function () { renderLawTool(CH4_TOOLS.keepingtime); }],
@@ -5042,6 +5649,7 @@
     if (hash === "dashboard") { rebuildNav(); renderDashboard(); refreshSidebar(); return; }
     if (hash === "math") { rebuildNav(); renderMathHub(); refreshSidebar(); return; }
     if (hash === "activities") { rebuildNav(); renderActivitiesHub(); refreshSidebar(); return; }
+    if (hash === "review") { rebuildNav(); renderReview(); refreshSidebar(); return; }
 
     // keep the active chapter in sync with a section deep-link
     var sm = hash.match(/^s\/(\d+)\./);
