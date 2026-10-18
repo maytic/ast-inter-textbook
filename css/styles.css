@@ -345,6 +345,7 @@ body::before {
   border-bottom: 1px dotted color-mix(in srgb, var(--term) 60%, transparent);
   cursor: help;
 }
+.term.term-nodef { border-bottom: 0; cursor: text; }
 .callout-inline {
   background: var(--panel);
   border: 1px solid var(--border);

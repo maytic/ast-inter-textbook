@@ -4818,5 +4818,536 @@
     autoTicker(r.controls, frameDraw);
   };
 
+  /* ---- 8.1  Earth's layers, drawn to scale --------------------------- */
+  D["earth-layers"] = function (host) {
+    var r = frame(host, "Slice Earth open",
+      "Tap a layer. The big circle is the whole Earth drawn to scale — at that size the crust is thinner than the outline, so the box on the right magnifies the top 100 km below the small square to show the crust under an ocean and under a continent.",
+      "Depths and sizes from the book: crust 6 km (ocean) to 20–70 km (continent), mantle to 2900 km, core 7000 km across, inner core about 2400 km across. Earth's radius is 6378 km.");
+    var s = svg(r.stage, 420, 240);
+    var Cx = 120, Cy = 124, R = 108, k = R / 6378;
+    var LAYERS = {
+      crust: { r0: 6378 - 35, r1: 6378, c: "#8a6a4a" },
+      mantle: { r0: 3478, r1: 6378, c: "#d99a5b" },
+      outer: { r0: 1200, r1: 3478, c: "#e8662f" },
+      inner: { r0: 0, r1: 1200, c: "#ffd34d" }
+    };
+    var discs = {};
+    ["mantle", "outer", "inner"].forEach(function (key) {
+      discs[key] = S("circle", { cx: Cx, cy: Cy, r: (LAYERS[key].r1 * k).toFixed(1), style: "fill:" + LAYERS[key].c });
+      s.appendChild(discs[key]);
+    });
+    discs.crust = S("circle", { cx: Cx, cy: Cy, r: R, style: "fill:none;stroke:#8a6a4a;stroke-width:1.4" });
+    s.appendChild(discs.crust);
+    var ring = S("circle", { cx: Cx, cy: Cy, style: "fill:none;stroke:var(--text);stroke-width:2.2;stroke-dasharray:5 3" });
+    s.appendChild(ring);
+    // close-up box: the top 100 km under an ocean (left) and under a continent (right), 1.4 px per km
+    var ZX = 262, ZY = 44, ZW = 112, ZH = 140, pk = ZH / 100, MID = ZX + ZW / 2;
+    // marker on the globe's surface + magnifier lines to the box
+    s.appendChild(S("rect", { x: Cx - 5, y: Cy - R - 3, width: 10, height: 6, style: "fill:none;stroke:var(--text);stroke-width:1.2" }));
+    s.appendChild(S("line", { x1: Cx + 5, y1: Cy - R - 3, x2: ZX, y2: ZY, "class": "dg-dash" }));
+    s.appendChild(S("line", { x1: Cx + 5, y1: Cy - R + 3, x2: ZX, y2: ZY + ZH, "class": "dg-dash" }));
+    var zt = T(MID, ZY - 24, "Close-up of the surface", "dg-lbl-mid"); zt.setAttribute("style", "font-weight:700;fill:var(--text)"); s.appendChild(zt);
+    s.appendChild(T(MID, ZY - 11, "(top 100 km, magnified)", "dg-lbl-mid"));
+    s.appendChild(S("rect", { x: ZX, y: ZY, width: ZW, height: ZH, style: "fill:#d99a5b" }));
+    var zOcean = S("rect", { x: ZX, y: ZY, width: ZW / 2, height: 6 * pk, style: "fill:#8a6a4a" });
+    // continental crust: one wedge, 20 km thick at one side and 70 km at the other
+    var zCont = S("polygon", { points: [MID, ZY, ZX + ZW, ZY, ZX + ZW, ZY + 70 * pk, MID, ZY + 20 * pk].join(" "), style: "fill:#8a6a4a" });
+    s.appendChild(zOcean); s.appendChild(zCont);
+    s.appendChild(S("line", { x1: MID, y1: ZY, x2: MID, y2: ZY + ZH, style: "stroke:var(--bg);stroke-width:1.5" }));
+    s.appendChild(S("rect", { x: ZX, y: ZY, width: ZW, height: ZH, style: "fill:none;stroke:var(--border);stroke-width:1.2" }));
+    function zl(x, y, txt, light) {
+      var t = T(x, y, txt, "dg-lbl-mid"); t.setAttribute("style", "font-size:10px;font-weight:700;fill:" + (light ? "#fff" : "#4a2e14")); s.appendChild(t);
+    }
+    zl(ZX + ZW / 4, ZY + 6 * pk + 12, "crust 6 km");
+    zl(MID + ZW / 4 + 4, ZY + 28 * pk, "crust", true);
+    zl(MID + ZW / 4 + 4, ZY + 28 * pk + 12, "20–70 km", true);
+    zl(ZX + ZW / 4, ZY + 82 * pk, "MANTLE");
+    zl(MID + ZW / 4, ZY + 88 * pk, "MANTLE");
+    s.appendChild(T(ZX + ZW / 4, ZY + ZH + 13, "under ocean", "dg-lbl-mid"));
+    s.appendChild(T(MID + ZW / 4, ZY + ZH + 13, "under land", "dg-lbl-mid"));
+    [0, 50, 100].forEach(function (d) {
+      s.appendChild(S("line", { x1: ZX + ZW, y1: ZY + d * pk, x2: ZX + ZW + 4, y2: ZY + d * pk, style: "stroke:var(--text-faint)" }));
+      s.appendChild(T(ZX + ZW + 7, ZY + d * pk + 3, d + " km", "dg-lbl"));
+    });
+    var INFO = {
+      crust: "<b>Crust</b> — the thin outer skin, the part we know best. <b>Oceanic</b> crust is basalt, about <b>6 km</b> thick (55% of the surface); <b>continental</b> crust is granite, <b>20–70 km</b> thick (45%). Both are about 3 g/cm³. On the big circle it's thinner than the outline — only about <b>0.3%</b> of Earth's mass.",
+      mantle: "<b>Mantle</b> — the largest part of the solid Earth, from the base of the crust down to <b>2900 km</b>. It's more or less solid, but the rock can <b>flow slowly</b>. Its density rises from about 3.5 to more than 5 g/cm³ as the rock above squeezes it.",
+      outer: "<b>Outer core</b> — <b>liquid</b> metal (iron, probably with nickel and sulfur), starting <b>2900 km</b> down. The whole core is <b>7000 km</b> across, bigger than the planet Mercury. Its circulating liquid metal makes Earth's <b>magnetic field</b>.",
+      inner: "<b>Inner core</b> — about <b>2400 km</b> across and probably <b>solid</b>, squeezed to a very high density at the center of the planet."
+    };
+    function pick(key) {
+      var L = LAYERS[key];
+      ring.setAttribute("r", (L.r1 * k).toFixed(1));
+      ["mantle", "outer", "inner"].forEach(function (x) { discs[x].setAttribute("opacity", x === key || key === "crust" ? 1 : 0.45); });
+      zOcean.setAttribute("opacity", key === "crust" ? 1 : 0.5); zCont.setAttribute("opacity", key === "crust" ? 1 : 0.5);
+      r.readout.innerHTML = INFO[key];
+    }
+    bigPick(r.controls, [
+      { label: "Crust", value: "crust" }, { label: "Mantle", value: "mantle" },
+      { label: "Outer core", value: "outer" }, { label: "Inner core", value: "inner" }
+    ], 0, pick);
+    pick("crust");
+  };
+
+  /* ---- 8.2  A block of quartzite through all four kinds of rock -------- */
+  D["rock-cycle"] = function (host) {
+    var r = frame(host, "The life story of a block of quartzite",
+      "Step through the four stages. Each kind of rock is named for what happened to it.",
+      "The book's example: quartzite has gone through all four rock states. Primitive rock is the one kind no longer found on Earth.");
+    var s = svg(r.stage, 360, 210);
+    var NODES = [
+      { x: 80, y: 50, n: "Primitive", c: "#9aa4b2", sub: "never heated" },
+      { x: 280, y: 50, n: "Igneous", c: "#ff7a45", sub: "cooled from melt" },
+      { x: 280, y: 160, n: "Sedimentary", c: "#d6b36a", sub: "cemented bits" },
+      { x: 80, y: 160, n: "Metamorphic", c: "#b38cff", sub: "heat & pressure" }
+    ];
+    var ARROWS = [["heated in the young Earth", 0, 1], ["laid down again", 1, 2], ["buried several km deep", 2, 3]];
+    s.appendChild(S("defs", {}, [S("marker", { id: "rc-arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" },
+      [S("path", { d: "M0,0 L10,5 L0,10 z", style: "fill:var(--text-faint)" })])]));
+    var arrowEls = ARROWS.map(function (a) {
+      var A = NODES[a[1]], B = NODES[a[2]];
+      var dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy), ux = dx / len, uy = dy / len;
+      var line = S("line", { x1: A.x + ux * 44, y1: A.y + uy * 26, x2: B.x - ux * 44, y2: B.y - uy * 26, "marker-end": "url(#rc-arrow)", style: "stroke:var(--text-faint);stroke-width:1.6" });
+      s.appendChild(line);
+      var mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+      var lbl = T(dy ? mx - 8 : mx, dy ? my + 3 : my - 30, a[0], dy ? "dg-lbl" : "dg-lbl-mid");
+      if (dy) lbl.style.textAnchor = "end";
+      s.appendChild(lbl);
+      return line;
+    });
+    // "perhaps many times" loop on sedimentary
+    s.appendChild(S("path", { d: "M 318 172 C 350 194, 350 130, 318 148", "marker-end": "url(#rc-arrow)", style: "fill:none;stroke:var(--text-faint);stroke-width:1.3" }));
+    s.appendChild(T(280, 200, "(perhaps many times)", "dg-lbl-mid"));
+    var boxes = NODES.map(function (nd) {
+      var g = S("g", {});
+      var rect = S("rect", { x: nd.x - 46, y: nd.y - 22, width: 92, height: 44, rx: 10, style: "fill:color-mix(in srgb, " + nd.c + " 22%, transparent);stroke:" + nd.c + ";stroke-width:1.5" });
+      var t1 = T(nd.x, nd.y - 2, nd.n, "dg-lbl-mid"); t1.setAttribute("style", "font-weight:700;font-size:12px;fill:var(--text)");
+      var t2 = T(nd.x, nd.y + 13, nd.sub, "dg-lbl-mid");
+      g.appendChild(rect); g.appendChild(t1); g.appendChild(t2);
+      s.appendChild(g);
+      return rect;
+    });
+    var STEPS = [
+      "<b>1. Primitive.</b> The quartzite's material began as <b>primitive rock</b> — original stuff of the planetary system, before Earth was born. Primitive rock has largely escaped any change by heating. Today <b>none is left on Earth</b>; we find it in comets, asteroids, and small moons.",
+      "<b>2. Igneous.</b> The young Earth was <b>heated</b>, and the material became <b>igneous rock</b> — rock that cooled from a molten state. All volcanic rock is igneous, including ocean-floor <b>basalt</b> and continental <b>granite</b>.",
+      "<b>3. Sedimentary.</b> It was changed chemically and <b>laid down again</b> — perhaps many times — as <b>sedimentary rock</b>: pieces deposited by wind or water and cemented together <b>without melting</b>, like sandstone, shale, and limestone.",
+      "<b>4. Metamorphic.</b> Finally, several kilometers below the surface, heat and pressure turned it into the hard, white <b>metamorphic</b> stone we see today (<em>metamorphic</em> = “changed in form”). Geological activity then brought it back up to the surface."
+    ];
+    function show(i) {
+      boxes.forEach(function (b, j) { b.setAttribute("stroke-width", j === i ? 3.5 : 1.5); b.parentNode.setAttribute("opacity", j <= i ? 1 : 0.4); });
+      arrowEls.forEach(function (a, j) { a.setAttribute("opacity", j < i ? 1 : 0.25); });
+      r.readout.innerHTML = STEPS[i];
+    }
+    bigPick(r.controls, NODES.map(function (nd, i) { return { label: (i + 1) + ". " + nd.n, value: i }; }), 0, show);
+    show(0);
+  };
+
+  /* ---- 8.2  Four ways plates meet, plus a hot spot -------------------- */
+  D["plate-boundary"] = function (host) {
+    var r = frame(host, "What happens where plates meet?",
+      "Tap a kind of boundary. The motion is sped up enormously — real plates creep 4 to 5 cm a year.",
+      "Simplified cross-sections, not to scale. The book's four boundary types: pull apart, burrow under, slide alongside, jam together — plus hot spots, which sit far from plate edges.");
+    var s = svg(r.stage, 360, 200);
+    var g = S("g", {});
+    s.appendChild(g);
+    var mode = "apart", t = 0;
+    var CRUST = "#8a6a4a", OCEAN = "#5f6f7f", MANTLE = "color-mix(in srgb, #d99a5b 45%, transparent)", MAGMA = "#ff6a3d";
+    function rect(x, y, w, h, c, op) { g.appendChild(S("rect", { x: x, y: y, width: Math.max(0, w), height: h, style: "fill:" + c, opacity: op == null ? 1 : op })); }
+    function arrow(x1, y1, x2, y2, c) {
+      g.appendChild(S("line", { x1: x1, y1: y1, x2: x2, y2: y2, style: "stroke:" + (c || "var(--text)") + ";stroke-width:2" }));
+      var a = Math.atan2(y2 - y1, x2 - x1), hx = x2 - 7 * Math.cos(a), hy = y2 - 7 * Math.sin(a);
+      g.appendChild(S("path", { d: "M " + x2 + " " + y2 + " L " + (hx - 4 * Math.sin(a)) + " " + (hy + 4 * Math.cos(a)) + " L " + (hx + 4 * Math.sin(a)) + " " + (hy - 4 * Math.cos(a)) + " Z", style: "fill:" + (c || "var(--text)") }));
+    }
+    function stripes(x0, x1, y, h, off) {
+      for (var x = x0 + ((off % 24) + 24) % 24; x < x1; x += 24) g.appendChild(S("line", { x1: x, y1: y + 2, x2: x, y2: y + h - 2, style: "stroke:rgba(0,0,0,.25);stroke-width:2" }));
+    }
+    function label(x, y, s_) { var tt = T(x, y, s_, "dg-lbl-mid"); tt.setAttribute("style", "font-size:11px;font-weight:700;fill:var(--text-dim)"); g.appendChild(tt); }
+    var DRAW = {
+      apart: function () {
+        rect(0, 110, 360, 90, MANTLE);
+        var gap = 10 + 6 * Math.sin(t * 0.8);
+        rect(0, 96, 180 - gap, 16, OCEAN); rect(180 + gap, 96, 180 - gap, 16, OCEAN);
+        stripes(0, 180 - gap, 96, 16, -t * 12); stripes(180 + gap, 360, 96, 16, t * 12);
+        rect(180 - gap, 96, gap * 2, 16, MAGMA);
+        for (var i = 0; i < 4; i++) { var yy = 190 - ((t * 20 + i * 22) % 80); g.appendChild(S("circle", { cx: 180 + 6 * Math.sin(i + t), cy: yy, r: 4, style: "fill:" + MAGMA })); }
+        arrow(150, 86, 90, 86); arrow(210, 86, 270, 86);
+        label(180, 30, "RIFT ZONE — plates pull apart");
+        label(180, 48, "rising lava fills the gap: new crust");
+      },
+      under: function () {
+        rect(0, 110, 360, 90, MANTLE);
+        rect(0, 100, 190, 12, OCEAN); stripes(0, 190, 100, 12, t * 12);
+        var d = "M 190 100 Q 230 104 260 150 L 270 196 L 254 196 L 246 156 Q 222 116 190 112 Z";
+        g.appendChild(S("path", { d: d, style: "fill:" + OCEAN }));
+        rect(200, 82, 160, 26, CRUST);
+        g.appendChild(S("path", { d: "M 186 100 L 196 120 L 206 100 Z", style: "fill:var(--bg, #0b1020)", opacity: 0.6 }));
+        g.appendChild(S("path", { d: "M 268 82 L 284 58 L 300 82 Z", style: "fill:" + CRUST }));
+        g.appendChild(S("circle", { cx: 284, cy: 52 - 3 * Math.abs(Math.sin(t)), r: 4, style: "fill:#999", opacity: 0.8 }));
+        g.appendChild(S("circle", { cx: 262, cy: 178, r: 7, style: "fill:" + MAGMA, opacity: 0.6 + 0.3 * Math.sin(t * 2) }));
+        arrow(60, 90, 140, 90);
+        label(170, 28, "SUBDUCTION ZONE — one plate dives under");
+        label(170, 46, "trench at the edge; volcanoes and earthquakes above");
+        g.appendChild(T(100, 130, "oceanic plate", "dg-lbl-mid")); g.appendChild(T(320, 76, "continent", "dg-lbl-mid"));
+      },
+      past: function () {
+        // top-down view: a fence crosses the fault; stress builds, then it snaps
+        var cyc = (t * 0.5) % 4, n = Math.floor(t * 0.5 / 4) % 4;
+        var base = 120 - n * 18; // where the fence meets the fault after n earthquakes
+        rect(40, 40, 140, 140, "#7c8a5a", 0.55); rect(180, 40, 140, 140, "#9a8a5a", 0.55);
+        g.appendChild(S("line", { x1: 180, y1: 36, x2: 180, y2: 184, style: "stroke:var(--bad);stroke-width:2;stroke-dasharray:6 3" }));
+        if (cyc < 3) {
+          var bend = 18 * cyc / 3; // far end creeps north, the part at the fault is stuck
+          g.appendChild(S("path", { d: "M 40 " + (base - bend) + " C 130 " + (base - bend) + " 165 " + base + " 180 " + base, style: "fill:none;stroke:var(--text);stroke-width:2.5" }));
+        } else {
+          g.appendChild(S("line", { x1: 40, y1: base - 18, x2: 180, y2: base - 18, style: "stroke:var(--text);stroke-width:2.5" }));
+        }
+        g.appendChild(S("line", { x1: 180, y1: 120, x2: 320, y2: 120, style: "stroke:var(--text);stroke-width:2.5" }));
+        arrow(100, 172, 100, 146);
+        label(180, 20, cyc < 3 ? "FAULT — stress builds as the plates creep…" : "…then it slips all at once: an EARTHQUAKE");
+        g.appendChild(T(110, 194, "Pacific plate (moving north)", "dg-lbl-mid")); g.appendChild(T(250, 194, "North American plate", "dg-lbl-mid"));
+      },
+      together: function () {
+        rect(0, 120, 360, 80, MANTLE);
+        var h = 18 + 34 * (0.5 + 0.5 * Math.sin(t * 0.4 - 1.57));
+        rect(0, 96, 160, 26, CRUST); rect(200, 96, 160, 26, "#9a7a56");
+        stripes(0, 160, 96, 26, t * 12); stripes(200, 360, 96, 26, -t * 12);
+        g.appendChild(S("path", { d: "M 130 98 L 180 " + (98 - h) + " L 230 98 L 230 140 L 180 " + (140 + h * 0.5) + " L 130 140 Z", style: "fill:#7a5a3a" }));
+        arrow(40, 86, 110, 86); arrow(320, 86, 250, 86);
+        label(180, 26, "COLLISION — continents jam together");
+        label(180, 44, "the crust buckles and folds into mountains (like the Alps)");
+      },
+      hotspot: function () {
+        rect(0, 120, 360, 80, MANTLE);
+        rect(0, 104, 360, 16, OCEAN); stripes(0, 360, 104, 16, -t * 12);
+        // fixed plume
+        g.appendChild(S("path", { d: "M 250 200 Q 244 160 250 120 L 270 120 Q 276 160 270 200 Z", style: "fill:" + MAGMA, opacity: 0.75 }));
+        // islands carried west by the plate, newest over the plume
+        var shift = (t * 12) % 60;
+        for (var i = 0; i < 5; i++) {
+          var x = 260 - i * 60 - shift, hgt = Math.max(4, 30 - i * 6 - shift / 10);
+          if (x < -20) continue;
+          g.appendChild(S("path", { d: "M " + (x - 18) + " 104 L " + x + " " + (104 - hgt) + " L " + (x + 18) + " 104 Z", style: "fill:" + (i === 0 ? "#b0563a" : CRUST), opacity: i === 0 ? 1 : 0.85 - i * 0.12 }));
+        }
+        arrow(200, 140, 120, 140);
+        label(180, 26, "HOT SPOT — heat rising far from any plate edge");
+        label(180, 44, "the plate slides over it, leaving a chain of islands (Hawaii)");
+      }
+    };
+    var INFO = {
+      apart: "<b>Pull apart → rift zone.</b> Rising mantle currents pull plates apart, as at the <b>Mid-Atlantic ridge</b> or the <b>central African rift</b>. Basaltic lava rises to fill the gap, making <b>new crust</b>: about 2 km² a year along 60,000 km of rifts.",
+      under: "<b>Burrow under → subduction zone.</b> A thin <b>oceanic</b> plate is forced beneath another (thick continents can't be subducted), often at a deep <b>ocean trench</b> like the Japan trench. It melts several hundred kilometers down. About as much crust is destroyed here as is made at rifts. Earthquakes and volcanoes mark the plate's “death throes.”",
+      past: "<b>Slide alongside → fault.</b> Plates grind past each other, like the <b>Pacific</b> and <b>North American</b> plates along the <b>San Andreas Fault</b>. The motion isn't smooth: stress builds up and is released in sudden slips — <b>earthquakes</b>. The longer the wait, the bigger the slip.",
+      together: "<b>Jam together → mountains.</b> When two continents collide, the crust buckles and folds, dragging some rock deep down and raising other folds many kilometers high. The <b>Alps</b> come from the African plate bumping into the Eurasian plate. Then ice and water carve the sharp peaks.",
+      hotspot: "<b>Hot spot.</b> Heat rises from deep inside Earth far from any plate edge. The <b>Hawaii</b> hot spot has been active for at least 100 million years; as the plate moved over it, it built a <b>3500-km</b> chain of volcanic islands. Today it feeds three active volcanoes."
+    };
+    function frameDraw() { clr(g); t += 0.03; DRAW[mode](); }
+    bigPick(r.controls, [
+      { label: "↔ Pull apart", value: "apart" }, { label: "↘ Dive under", value: "under" }, { label: "⇅ Slide past", value: "past" },
+      { label: "→← Jam together", value: "together" }, { label: "🔥 Hot spot", value: "hotspot" }
+    ], 0, function (v) { mode = v; r.readout.innerHTML = INFO[v]; frameDraw(); });
+    r.readout.innerHTML = INFO.apart;
+    frameDraw();
+    autoTicker(r.controls, frameDraw);
+  };
+
+  /* ---- 8.2  Example 8.1: how far will the fault slip? ------------------ */
+  D["fault-slip"] = function (host) {
+    var r = frame(host, "When will Los Angeles' fault let go?",
+      "Pick the year of the next big earthquake and how much of the built-up strain it releases. The fence shows the slip.",
+      "Example 8.1 from the book: the plates move about 5 cm per year (5 m per century), and the last slip near Los Angeles was in 1857.");
+    var s = svg(r.stage, 360, 190);
+    var FX = 180, PX = 12; // px per meter
+    s.appendChild(S("rect", { x: 20, y: 20, width: 160, height: 150, style: "fill:#7c8a5a", opacity: 0.45 }));
+    s.appendChild(S("rect", { x: 180, y: 20, width: 160, height: 150, style: "fill:#9a8a5a", opacity: 0.45 }));
+    s.appendChild(S("line", { x1: FX, y1: 16, x2: FX, y2: 174, style: "stroke:var(--bad);stroke-width:2;stroke-dasharray:6 3" }));
+    s.appendChild(T(100, 184, "Pacific plate ↑ north", "dg-lbl-mid"));
+    s.appendChild(T(260, 184, "North American plate", "dg-lbl-mid"));
+    var left = S("line", { x1: 20, x2: FX, style: "stroke:var(--text);stroke-width:3" });
+    var right = S("line", { x1: FX, y1: 150, x2: 340, y2: 150, style: "stroke:var(--text);stroke-width:3" });
+    var gapL = S("line", { x1: FX - 4, x2: FX - 4, y2: 150, style: "stroke:var(--warn);stroke-width:2" });
+    var gapT = T(FX - 10, 0, "", "dg-lbl"); gapT.style.textAnchor = "end";
+    gapT.setAttribute("style", "font-weight:800;font-size:13px;fill:var(--warn);text-anchor:end");
+    [left, right, gapL, gapT].forEach(function (n) { s.appendChild(n); });
+    var year = 2027, frac = 1;
+    function draw() {
+      var yrs = year - 1857, cent = yrs / 100, slip = 5 * cent * frac, y = 150 - slip * PX;
+      left.setAttribute("y1", y); left.setAttribute("y2", y);
+      gapL.setAttribute("y1", y);
+      gapT.setAttribute("y", (y + 150) / 2 + 4); gapT.textContent = slip.toFixed(2).replace(/\.?0+$/, "") + " m";
+      r.readout.innerHTML = "From 1857 to <b>" + year + "</b> is " + yrs + " years = <b>" + cent.toFixed(2).replace(/0$/, "") + " centuries</b>. " +
+        (frac === 1 ? "Releasing all the strain: 5 m/century × " : "Releasing half the strain: 0.5 × 5 m/century × ") +
+        cent.toFixed(2).replace(/0$/, "") + " centuries = <b>" + slip.toFixed(2).replace(/\.?0+$/, "") + " m</b> of slip." +
+        (year === 2027 && frac === 1 ? " That's the book's worked answer: <b>8.5 m</b>." : "") +
+        (year === 2047 && frac === 0.5 ? " That's the book's check-your-learning answer: <b>4.75 m</b>." : "") +
+        " (For comparison, the average slip in a major Los Angeles–area quake is about 7 m.)";
+    }
+    slider(r.controls, "Year of next quake", 1860, 2100, 2027, 1, function (v, out) { year = v; out.textContent = v; draw(); }).set(2027);
+    var tog = E("div", { "class": "dg-toggle" });
+    [["All the strain", 1], ["Half the strain", 0.5]].forEach(function (o, i) {
+      var b = E("button", { type: "button", text: o[0], "class": i === 0 ? "on" : "" });
+      b.addEventListener("click", function () {
+        Array.prototype.forEach.call(tog.children, function (x) { x.classList.remove("on"); });
+        b.classList.add("on"); frac = o[1]; draw();
+      });
+      tog.appendChild(b);
+    });
+    r.controls.appendChild(tog);
+    draw();
+  };
+
+  /* ---- 8.3  Climb through the atmosphere ------------------------------ */
+  D["air-layers"] = function (host) {
+    var r = frame(host, "Climb up through Earth's atmosphere",
+      "Drag the slider to rise from the ground to 120 km.",
+      "Layer heights from the book: troposphere up to about 10 km, stratosphere to about 50 km, ionosphere above 100 km. The mesosphere in between is named on the book's Figure 8.12.");
+    var s = svg(r.stage, 360, 230);
+    var X = 70, W = 200, Y0 = 210, H = 190;
+    function yOf(km) { return Y0 - H * km / 120; }
+    var BANDS = [[0, 10, "#5aa9e6", "troposphere"], [10, 50, "#3c78b4", "stratosphere"], [50, 100, "#2a4f86", "mesosphere"], [100, 120, "#1d2f5a", "ionosphere"]];
+    BANDS.forEach(function (b) {
+      s.appendChild(S("rect", { x: X, y: yOf(b[1]), width: W, height: yOf(b[0]) - yOf(b[1]), style: "fill:" + b[2], opacity: 0.55 }));
+      var lbl = T(X + W + 6, (yOf(b[0]) + yOf(b[1])) / 2 + 4, b[3], "dg-lbl"); s.appendChild(lbl);
+    });
+    // ozone near the top of the stratosphere
+    s.appendChild(S("rect", { x: X, y: yOf(50), width: W, height: yOf(42) - yOf(50), style: "fill:#7fd3a0", opacity: 0.55 }));
+    s.appendChild(T(X + W / 2, yOf(46) + 3, "ozone layer", "dg-lbl-mid")).setAttribute("style", "fill:#0b1020;font-weight:700;font-size:9px");
+    [0, 10, 50, 100, 120].forEach(function (km) {
+      s.appendChild(S("line", { x1: X - 4, y1: yOf(km), x2: X, y2: yOf(km), style: "stroke:var(--text-faint)" }));
+      var t = T(X - 7, yOf(km) + 3, km + " km", "dg-lbl"); t.style.textAnchor = "end"; s.appendChild(t);
+    });
+    s.appendChild(S("line", { x1: X, y1: Y0, x2: X + W, y2: Y0, "class": "dg-ground" }));
+    s.appendChild(T(X + 40, yOf(4), "☁", "dg-lbl-mid")).setAttribute("style", "font-size:14px;fill:#fff");
+    s.appendChild(T(X + 150, yOf(9) + 4, "✈", "dg-lbl-mid")).setAttribute("style", "font-size:12px;fill:#fff");
+    s.appendChild(S("rect", { x: X + 134, y: yOf(110) - 4, width: 12, height: 8, style: "fill:#cfd8e3" }));
+    s.appendChild(S("rect", { x: X + 120, y: yOf(110) - 2, width: 12, height: 4, style: "fill:#5aa9e6" }));
+    s.appendChild(S("rect", { x: X + 148, y: yOf(110) - 2, width: 12, height: 4, style: "fill:#5aa9e6" }));
+    s.appendChild(T(X + 140, yOf(110) + 16, "satellite", "dg-lbl-mid"));
+    var you = S("circle", { cx: X + W / 2 - 30, r: 6, style: "fill:var(--warn);stroke:var(--text);stroke-width:1.2" });
+    s.appendChild(you);
+    function draw(km, out) {
+      you.setAttribute("cy", yOf(km));
+      out.textContent = km + " km";
+      var msg;
+      if (km <= 10) msg = "<b>Troposphere</b> — the bottom ~10 km, where most of the air is. Air warmed by the ground rises and cooler air sinks (<b>convection</b>), making clouds and wind: this is where <b>weather</b> happens and airplanes fly. It gets colder as you climb, to about <b>50 °C below freezing</b> at the top.";
+      else if (km <= 50) msg = "<b>Stratosphere</b> — up to about 50 km, mostly cold and free of clouds. Near its top is the <b>ozone layer</b> (O₃), which absorbs much of the Sun's dangerous <b>ultraviolet</b> light. Ozone breaking apart heats this layer, reversing the troposphere's cooling.";
+      else if (km < 100) msg = "<b>Mesosphere</b> — the layer between the stratosphere and the ionosphere, shown on the book's Figure 8.12. The air is very thin up here.";
+      else msg = "<b>Ionosphere</b> — above 100 km, the air is so thin that satellites orbit through it with very little friction. Many atoms have lost an electron (they're <b>ionized</b>), and lightweight atoms like <b>hydrogen and helium</b> slowly leak away into space.";
+      r.readout.innerHTML = msg;
+    }
+    slider(r.controls, "Height", 0, 120, 2, 1, draw).set(2);
+  };
+
+  /* ---- 8.3  What if Earth were warmer? -------------------------------- */
+  D["warm-earth"] = function (host) {
+    var r = frame(host, "Turn up Earth's thermostat",
+      "Tap the steps to heat Earth and see how much gas the air would gain.",
+      "The book's numbers: boiled oceans → about 300 bars of water vapor; heated carbonate rocks → about 70 bars of CO₂. Today's whole atmosphere is about 1 bar.");
+    var s = svg(r.stage, 360, 120);
+    var X = 20, W = 320, Y = 40, Hh = 34, MAX = 400;
+    s.appendChild(S("rect", { x: X, y: Y, width: W, height: Hh, rx: 4, style: "fill:none;stroke:var(--border);stroke-width:1.2" }));
+    var air = S("rect", { x: X, y: Y, height: Hh, style: "fill:#7fb2ff" });
+    var water = S("rect", { y: Y, height: Hh, style: "fill:#4aa3df" });
+    var co2 = S("rect", { y: Y, height: Hh, style: "fill:#b0a090" });
+    [air, water, co2].forEach(function (n) { s.appendChild(n); });
+    [0, 100, 200, 300, 400].forEach(function (b) {
+      s.appendChild(S("line", { x1: X + W * b / MAX, y1: Y + Hh, x2: X + W * b / MAX, y2: Y + Hh + 5, style: "stroke:var(--text-faint)" }));
+      s.appendChild(T(X + W * b / MAX, Y + Hh + 16, b + " bars", "dg-lbl-mid"));
+    });
+    var wT = T(0, Y + Hh / 2 + 4, "", "dg-lbl-mid"), cT = T(0, Y + Hh / 2 + 4, "", "dg-lbl-mid"), totT = T(X + W / 2, Y - 10, "", "dg-lbl-mid");
+    wT.setAttribute("style", "fill:#fff;font-weight:700"); cT.setAttribute("style", "fill:#222;font-weight:700");
+    totT.setAttribute("style", "font-weight:800;font-size:13px;fill:var(--text)");
+    [wT, cT, totT].forEach(function (n) { s.appendChild(n); });
+    function draw(step) {
+      var w = step >= 1 ? 300 : 0, c = step >= 2 ? 70 : 0, px = function (b) { return W * b / MAX; };
+      air.setAttribute("width", Math.max(2, px(1)));
+      water.setAttribute("x", X + px(1)); water.setAttribute("width", px(w));
+      co2.setAttribute("x", X + px(1 + w)); co2.setAttribute("width", px(c));
+      wT.setAttribute("x", X + px(1 + w / 2)); wT.textContent = w ? "water vapor 300" : "";
+      cT.setAttribute("x", X + px(1 + w + c / 2)); cT.textContent = c ? "CO₂ 70" : "";
+      totT.textContent = step === 0 ? "Today: about 1 bar (a sliver at the left)" : step === 1 ? "About 300 bars" : "About 370 bars — “nearing 400 bars”";
+      r.readout.innerHTML = [
+        "<b>Today:</b> about <b>1 bar</b> of air — 78% nitrogen, 21% oxygen, 1% argon. Carbon dioxide is only about <b>0.0005 bar</b>, far too little to see here.",
+        "<b>Heat Earth above 100 °C (373 K)</b> and the oceans boil. There's enough water to cover Earth about <b>300 m</b> deep, and every 10 m of water presses with about 1 bar, so the air gains about <b>300 bars</b> of water vapor. Nitrogen and oxygen become mere traces.",
+        "<b>Also heat the carbonate rocks</b> of the crust and they release about <b>70 bars</b> of CO₂. Now the air is mostly water vapor and carbon dioxide, with a surface pressure the book calls <b>nearing 400 bars</b>."
+      ][step];
+    }
+    bigPick(r.controls, [{ label: "🌍 Today", value: 0 }, { label: "🌊 Boil the oceans", value: 1 }, { label: "🪨 + Bake the rocks", value: 2 }], 0, draw);
+    draw(0);
+  };
+
+  /* ---- 8.4  Life on the clock of Earth's history ----------------------- */
+  D["life-timeline"] = function (host) {
+    var r = frame(host, "Earth's history on one line",
+      "Tap an event to see where it falls. The line runs from Earth's birth (left) to today (right).",
+      "Earth's age (about 4.5 billion years) is from Chapter 7; the events are from Chapter 8. Everything with abundant fossils is squeezed into the right-hand sliver.");
+    var s = svg(r.stage, 360, 130);
+    var X0 = 20, X1 = 340, Y = 70, AGE = 4.5;
+    function xOf(bya) { return X0 + (X1 - X0) * (AGE - bya) / AGE; }
+    // first 700 million years: giant impacts
+    s.appendChild(S("rect", { x: xOf(4.5), y: Y - 10, width: xOf(3.8) - xOf(4.5), height: 20, style: "fill:#ff6a3d", opacity: 0.25 }));
+    // oxygen era
+    var oxy = S("rect", { x: xOf(2.0), y: Y - 10, width: xOf(0) - xOf(2.0), height: 20, style: "fill:#4ad295", opacity: 0.18 });
+    s.appendChild(oxy);
+    s.appendChild(S("line", { x1: X0, y1: Y, x2: X1, y2: Y, style: "stroke:var(--text-faint);stroke-width:3" }));
+    [4.5, 4, 3, 2, 1, 0].forEach(function (b) {
+      s.appendChild(S("line", { x1: xOf(b), y1: Y + 10, x2: xOf(b), y2: Y + 16, style: "stroke:var(--text-faint)" }));
+      s.appendChild(T(xOf(b), Y + 27, b === 0 ? "today" : b + " bya", "dg-lbl-mid"));
+    });
+    s.appendChild(T(X0 + 30, Y + 42, "bya = billion years ago", "dg-lbl"));
+    var mark = S("path", { style: "fill:var(--warn);stroke:var(--text);stroke-width:1" });
+    var mT = T(0, Y - 26, "", "dg-lbl-mid");
+    mT.setAttribute("style", "font-weight:800;font-size:12px;fill:var(--text)");
+    s.appendChild(mark); s.appendChild(mT);
+    var EV = [
+      { b: 4.5, n: "Earth forms", t: "<b>About 4.5 billion years ago:</b> Earth forms (Chapter 7). For its first <b>700 million years</b> (red band) it was hit by huge leftovers of planet formation — some violent enough to boil away the oceans and sterilize the planet. Life may have started and been wiped out several times." },
+      { b: 4.0, n: "Life takes hold", t: "<b>About 4 billion years ago:</b> our microbial ancestors took hold. The oldest surviving microbes are <b>thermophiles</b> (heat-lovers) — perhaps survivors of an “evolutionary bottleneck” caused by repeated large impacts." },
+      { b: 3.9, n: "Oldest rocks", t: "<b>About 3.9 billion years ago:</b> the oldest surviving rocks formed — and chemical evidence shows <b>life already existed</b>. The air then had lots of CO₂, some methane, and <b>no oxygen</b>." },
+      { b: 3.5, n: "Stromatolites", t: "<b>By 3.5 billion years ago:</b> life was building large colonies called <b>stromatolites</b> — so successful that they still grow today." },
+      { b: 2.0, n: "Oxygen builds up", t: "<b>About 2 billion years ago:</b> free <b>oxygen</b> from photosynthesis finally began to accumulate (green band), forming the <b>ozone layer</b>. Shielded from ultraviolet light, life could at last move onto the land." },
+      { b: 1.0, n: "Snowball Earth?", t: "<b>About a billion years ago</b> (less certain): evidence that the entire ocean froze over at least once, perhaps twice — “<b>snowball Earth</b>.”" },
+      { b: 0.6, n: "Abundant fossils", t: "<b>The last 600 million years:</b> the only stretch with <b>abundant fossils</b> — less than 15% of Earth's history." },
+      { b: 0.065, n: "Dinosaurs end", t: "<b>65 million years ago:</b> the Chicxulub impact causes a mass extinction that ends the dinosaurs; <b>mammals</b>, our ancestors, begin to thrive. On this line it's barely left of “today.”" },
+      { b: 0.00005, n: "Big animals & humans", t: "<b>50,000 years ago:</b> much of the planet still had giant animals, until early human hunters killed many of them and early farmers cut down most of the forests. (Meteor Crater formed around then.) The last ice age ended only about <b>14,000 years ago</b> — all this is a hair's width from “today.”" }
+    ];
+    function show(i) {
+      var e = EV[i], x = xOf(e.b);
+      mark.setAttribute("d", "M " + x + " " + (Y - 4) + " l -6 -12 l 12 0 z");
+      mT.setAttribute("x", Math.max(52, Math.min(308, x))); mT.textContent = e.n;
+      r.readout.innerHTML = e.t;
+    }
+    bigPick(r.controls, EV.map(function (e, i) { return { label: e.n, value: i }; }), 0, show);
+    show(0);
+  };
+
+  /* ---- 8.4  The greenhouse blanket ------------------------------------ */
+  D["greenhouse-blanket"] = function (host) {
+    var r = frame(host, "Sunlight in, heat out — or not",
+      "Choose how much greenhouse gas the air holds. Yellow dots are sunlight; red dots are infrared (heat) radiation.",
+      "A cartoon of the book's Figure 8.17: visible sunlight passes through the air, the ground re-emits the energy as infrared, and greenhouse gases (CO₂, methane, water vapor) absorb some of it and send it back down.");
+    var s = svg(r.stage, 360, 220);
+    var GY = 196, AT = 60, AB = 120;
+    s.appendChild(S("rect", { x: 0, y: 0, width: 360, height: GY, style: "fill:#0d1a33", opacity: 0.35 }));
+    var band = S("rect", { x: 0, y: AT, width: 300, height: AB - AT, style: "fill:#9ad0ff" });
+    s.appendChild(band);
+    var bandT = T(150, AT + 14, "greenhouse gases", "dg-lbl-mid"); s.appendChild(bandT);
+    s.appendChild(S("rect", { x: 0, y: GY, width: 300, height: 24, style: "fill:#8a6a4a" }));
+    s.appendChild(T(150, GY + 15, "ground", "dg-lbl-mid")).setAttribute("style", "fill:#fff");
+    s.appendChild(S("circle", { cx: 30, cy: 14, r: 10, "class": "dg-sun" }));
+    var dots = S("g", {}); s.appendChild(dots);
+    // thermometer
+    var TX = 330, TT = 30, TB = 170;
+    s.appendChild(S("rect", { x: TX - 7, y: TT, width: 14, height: TB - TT, rx: 7, style: "fill:none;stroke:var(--border);stroke-width:1.5" }));
+    s.appendChild(S("circle", { cx: TX, cy: TB + 9, r: 11, style: "fill:#ff6a3d" }));
+    var merc = S("rect", { x: TX - 4, width: 8, rx: 4, style: "fill:#ff6a3d" });
+    s.appendChild(merc);
+    var todayY = TT + 60;
+    s.appendChild(S("line", { x1: TX - 12, y1: todayY, x2: TX + 12, y2: todayY, style: "stroke:var(--text);stroke-width:1.2" }));
+    var tl = T(TX - 14, todayY + 3, "today", "dg-lbl"); tl.style.textAnchor = "end"; s.appendChild(tl);
+    var fz = TT + 100;
+    s.appendChild(S("line", { x1: TX - 12, y1: fz, x2: TX + 12, y2: fz, "class": "dg-dash" }));
+    var fl = T(TX - 14, fz + 3, "freezing", "dg-lbl"); fl.style.textAnchor = "end"; s.appendChild(fl);
+    var MODES = {
+      none: { p: 0, op: 0, top: TT + 128, text: "<b>No greenhouse gases:</b> the infrared heat from the ground escapes straight to space. The book says Earth's average temperature would then be <b>well below freezing</b> — about 23 °C colder than today — locked in a global ice age." },
+      today: { p: 0.45, op: 0.18, top: todayY, text: "<b>Today:</b> CO₂, methane, and water vapor absorb some of the outgoing infrared and send it back down, like a <b>blanket</b>. The surface warms until Earth radiates as much energy to space as it gets from the Sun — about <b>23 °C warmer</b> than with no greenhouse effect." },
+      more: { p: 0.65, op: 0.32, top: TT + 25, text: "<b>More CO₂</b> (from burning fossil fuels): more of the infrared is trapped, so the surface must get <b>hotter</b> before Earth sends out as much energy as it receives. The more CO₂, the higher the balance temperature — that's <b>global warming</b>." }
+    };
+    var mode = "today", P = [], tick = 0, level = MODES.today.top;
+    function setMode(m) {
+      mode = m; band.setAttribute("opacity", MODES[m].op); bandT.setAttribute("opacity", MODES[m].op ? 1 : 0.3);
+      r.readout.innerHTML = MODES[m].text;
+    }
+    function frameDraw() {
+      tick++;
+      if (tick % 9 === 0) P.push({ x: 50 + Math.random() * 230, y: 0, vy: 2.4, ir: false });
+      level += (MODES[mode].top - level) * 0.02;
+      merc.setAttribute("y", level); merc.setAttribute("height", TB - level + 4);
+      clr(dots);
+      P.forEach(function (p) {
+        p.y += p.vy;
+        if (!p.ir && p.y >= GY) { p.ir = true; p.vy = -1.6; p.x += (Math.random() - 0.5) * 20; p.tried = false; }
+        if (p.ir && p.vy < 0 && !p.tried && p.y < (AT + AB) / 2) { p.tried = true; if (Math.random() < MODES[mode].p) p.vy = 1.6; }
+        if (p.ir && p.vy > 0 && p.y >= GY) { p.vy = -1.6; p.tried = false; }
+        dots.appendChild(S("circle", { cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: p.ir ? 3 : 2.6, style: "fill:" + (p.ir ? "#ff5a3d" : "#ffd34d") }));
+      });
+      P = P.filter(function (p) { return p.y > -6 && P.length < 400; });
+    }
+    bigPick(r.controls, [{ label: "No greenhouse gases", value: "none" }, { label: "Today", value: "today" }, { label: "More CO₂", value: "more" }], 1, setMode);
+    setMode("today");
+    frameDraw();
+    autoTicker(r.controls, frameDraw);
+  };
+
+  /* ---- 8.5  Four impacts, side by side -------------------------------- */
+  D["impact-compare"] = function (host) {
+    var r = frame(host, "Air burst or crater?",
+      "Tap an impact. The left panel shows where it exploded (height up to 25 km); the right panel compares the object's size with a 50-m office building.",
+      "All numbers are from the book. Small or stony objects tend to break up in the air; a larger or stronger (metal) one reaches the ground and digs a crater.");
+    var s = svg(r.stage, 360, 210);
+    var GY = 180, KM = 6.2; // px per km of height
+    s.appendChild(S("rect", { x: 10, y: GY - 25 * KM, width: 220, height: 25 * KM, style: "fill:#0d1a33", opacity: 0.3 }));
+    [0, 10, 20].forEach(function (km) {
+      s.appendChild(S("line", { x1: 10, y1: GY - km * KM, x2: 16, y2: GY - km * KM, style: "stroke:var(--text-faint)" }));
+      s.appendChild(T(20, GY - km * KM + 3, km + " km", "dg-lbl"));
+    });
+    var g = S("g", {}); s.appendChild(g);
+    var ground = S("path", { style: "fill:#8a6a4a" }); s.appendChild(ground);
+    // size panel
+    var PX0 = 250, PY = GY;
+    s.appendChild(S("line", { x1: PX0 - 5, y1: PY, x2: 352, y2: PY, "class": "dg-ground" }));
+    s.appendChild(S("rect", { x: 320, y: PY - 50 * 1.6, width: 22, height: 50 * 1.6, style: "fill:var(--text-faint)", opacity: 0.5 }));
+    s.appendChild(T(331, PY + 12, "50 m", "dg-lbl-mid"));
+    var obj = S("circle", { cx: 280, style: "stroke:var(--text);stroke-width:1" }); s.appendChild(obj);
+    var sizeT = T(280, PY + 12, "", "dg-lbl-mid"); s.appendChild(sizeT);
+    var big = T(296, 70, "", "dg-lbl-mid"), big2 = T(296, 84, "", "dg-lbl-mid"); s.appendChild(big); s.appendChild(big2);
+    big2.setAttribute("style", "font-size:10px;fill:var(--text-dim)");
+    big.setAttribute("style", "font-size:10px;fill:var(--text-dim)");
+    var EV = [
+      { n: "Chelyabinsk 2013", d: 20, alt: 21, crater: false, c: "#a8a29e",
+        t: "<b>Chelyabinsk, Russia, 2013.</b> A <b>20-m</b> object exploded <b>21 km</b> up in a flash brighter than the Sun. The <b>0.5-megaton</b> shock wave broke tens of thousands of windows and sent hundreds of people to the hospital. No crater — but meteorites were easy to collect from the fresh snow." },
+      { n: "Tunguska 1908", d: 50, alt: 8, crater: false, c: "#a8a29e",
+        t: "<b>Tunguska, Siberia, June 30, 1908.</b> A stony object about <b>50 m</b> across (the size of a small office building) shattered and exploded about <b>8 km</b> up — the book gives both 5 and 10 megatons. It flattened more than <b>1000 km²</b> of forest, but made <b>no crater</b>: only heat and the shock wave reached the ground." },
+      { n: "Meteor Crater", d: 40, alt: 0, crater: 1.6, c: "#6b7280",
+        t: "<b>Meteor Crater, Arizona, about 50,000 years ago.</b> A <b>40-m lump of iron</b> — strong enough to reach the ground — dug a crater about <b>a mile across</b>, with energy like a <b>10-megaton</b> bomb. Devastating locally, but no global effects." },
+      { n: "Chicxulub, 65 million years ago", d: 0, alt: 0, crater: 200, c: "#6b7280",
+        t: "<b>Chicxulub, Yucatán, 65 million years ago.</b> An object of more than <b>a trillion tons</b> (the book puts the dinosaur killer at 10–15 km across) released energy like <b>5 billion Hiroshima bombs</b> and dug a crater <b>200 km</b> across. About <b>100 trillion tons</b> of dust blocked sunlight for months — with fires and acid rain, it caused the <b>mass extinction</b> that ended the dinosaurs." }
+    ];
+    function show(i) {
+      var e = EV[i];
+      clr(g);
+      if (!e.crater) {
+        var y = GY - e.alt * KM;
+        for (var k = 0; k < 10; k++) {
+          var a = k / 10 * Math.PI * 2;
+          g.appendChild(S("line", { x1: 120, y1: y, x2: 120 + 18 * Math.cos(a), y2: y + 18 * Math.sin(a), style: "stroke:#ffb347;stroke-width:2" }));
+        }
+        g.appendChild(S("circle", { cx: 120, cy: y, r: 7, style: "fill:#fff3c4" }));
+        g.appendChild(S("line", { x1: 40, y1: y - 40, x2: 112, y2: y - 4, "class": "dg-dash" }));
+        var lt = T(120, y - 24, "exploded " + e.alt + " km up", "dg-lbl-mid"); lt.setAttribute("style", "font-weight:700;fill:var(--text)"); g.appendChild(lt);
+        g.appendChild(S("path", { d: "M 70 " + (GY - 2) + " Q 120 " + (GY - 12) + " 170 " + (GY - 2), style: "fill:none;stroke:#ffb347;stroke-width:1.5", opacity: 0.7 }));
+        ground.setAttribute("d", "M 10 " + GY + " L 230 " + GY + " L 230 " + (GY + 12) + " L 10 " + (GY + 12) + " Z");
+        g.appendChild(T(120, GY + 24, "no crater", "dg-lbl-mid"));
+      } else {
+        var wide = e.crater > 100, w = wide ? 210 : 40;
+        ground.setAttribute("d", "M 10 " + GY + " L " + (120 - w / 2) + " " + GY + " Q 120 " + (GY + (wide ? 12 : 10)) + " " + (120 + w / 2) + " " + GY + " L 230 " + GY + " L 230 " + (GY + 12) + " L 10 " + (GY + 12) + " Z");
+        if (!wide) { g.appendChild(S("path", { d: "M " + (120 - w / 2 - 6) + " " + GY + " L " + (120 - w / 2) + " " + (GY - 4) + " L " + (120 - w / 2 + 3) + " " + GY + " Z", style: "fill:#8a6a4a" })); g.appendChild(S("path", { d: "M " + (120 + w / 2 - 3) + " " + GY + " L " + (120 + w / 2) + " " + (GY - 4) + " L " + (120 + w / 2 + 6) + " " + GY + " Z", style: "fill:#8a6a4a" })); }
+        g.appendChild(S("line", { x1: 60, y1: GY - 120, x2: 116, y2: GY - 4, "class": "dg-dash" }));
+        var ct = T(120, GY - 30, wide ? "a 200-km crater — wider than this view" : "crater about a mile across", "dg-lbl-mid");
+        ct.setAttribute("style", "font-weight:700;fill:var(--text)"); g.appendChild(ct);
+        g.appendChild(T(120, GY - 16, "reached the ground", "dg-lbl-mid"));
+        if (wide) g.appendChild(S("rect", { x: 10, y: GY - 25 * KM, width: 220, height: 25 * KM - 2, style: "fill:#6b5a4a", opacity: 0.35 }));
+      }
+      if (e.d) {
+        obj.setAttribute("r", e.d * 1.6 / 2); obj.setAttribute("cy", PY - e.d * 1.6 / 2); obj.setAttribute("style", "fill:" + e.c + ";stroke:var(--text);stroke-width:1");
+        sizeT.textContent = e.d + " m"; big.textContent = ""; big2.textContent = "";
+      } else {
+        obj.setAttribute("r", 0); sizeT.textContent = "";
+        big.textContent = "10–15 km across:"; big2.textContent = "far too big to draw here";
+      }
+      r.readout.innerHTML = e.t;
+    }
+    bigPick(r.controls, EV.map(function (e, i) { return { label: e.n.replace(", 65 million years ago", ""), value: i }; }), 0, show);
+    show(0);
+  };
+
   window.ASTRO_DIAGRAMS = D;
 })();

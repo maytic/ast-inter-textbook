@@ -87,6 +87,13 @@
     planetmakeup: ["t/planetmakeup", "Composition and Structure", "What planets are made of, differentiation, and heat"],
     datingsurfaces: ["t/datingsurfaces", "Dating Planetary Surfaces", "Crater counts and radioactive half-lives"],
     solarorigin: ["t/solarorigin", "Origin of the Solar System", "The solar nebula, planetesimals, and collisions"],
+    earthinterior: ["t/earthinterior", "Inside Earth", "Crust, mantle, core — and the magnetosphere"],
+    rocktypes: ["t/rocktypes", "Four Kinds of Rock", "Igneous, sedimentary, metamorphic, and primitive"],
+    platetectonics: ["t/platetectonics", "Plate Tectonics", "Rifts, subduction, faults, mountains, and volcanoes"],
+    earthatmosphere: ["t/earthatmosphere", "Earth's Atmosphere", "Layers, ozone, composition, weather and climate"],
+    lifeclimate: ["t/lifeclimate", "Life and the Atmosphere", "Early life, photosynthesis, and oxygen"],
+    greenhouse: ["t/greenhouse", "The Greenhouse Effect", "How CO₂ traps heat — and global warming"],
+    impacts: ["t/impacts", "Impacts on Earth", "Tunguska, Meteor Crater, Chicxulub, and Spaceguard"],
     sunlayers: ["t/sunlayers", "Layers of the Sun", "Core, radiative zone, convective zone, and photosphere"],
     solaratmosphere: ["t/solaratmosphere", "The Sun's Atmosphere", "Chromosphere, corona, solar wind, and auroras"],
     sunspots: ["t/sunspots", "Sunspots and Rotation", "Cool magnetic spots and differential rotation"],
@@ -227,7 +234,8 @@
     clear(host);
     var left = shuffle(pairs.map(function (p, i) { return { i: i, t: p.a }; }));
     var right = shuffle(pairs.map(function (p, i) { return { i: i, t: p.b }; }));
-    var matched = {}, selL = null, selR = null, moves = 0, done = 0, t0 = Date.now();
+    // matched per side: two pairs may share the same right-hand text, and either copy is a correct match
+    var matchedL = {}, matchedR = {}, selL = null, selR = null, moves = 0, done = 0, t0 = Date.now();
 
     var movesEl = h("b", { text: "0" });
     var pairsEl = h("b", { text: "0/" + pairs.length });
@@ -259,15 +267,15 @@
     host.appendChild(winSlot);
 
     function pick(side, item, btn) {
-      if (matched[item.i]) return;
+      if ((side === "L" ? matchedL : matchedR)[item.i]) return;
       if (side === "L") { if (selL) selL.btn.classList.remove("sel"); selL = { item: item, btn: btn }; }
       else { if (selR) selR.btn.classList.remove("sel"); selR = { item: item, btn: btn }; }
       btn.classList.add("sel");
       if (!selL || !selR) return;
       moves++; movesEl.textContent = moves;
       var a = selL, b = selR;
-      if (a.item.i === b.item.i) {
-        matched[a.item.i] = true; done++;
+      if (a.item.i === b.item.i || pairs[a.item.i].b === b.item.t) {
+        matchedL[a.item.i] = true; matchedR[b.item.i] = true; done++;
         [a, b].forEach(function (x) {
           x.btn.classList.remove("sel"); x.btn.classList.add("matched"); x.btn.disabled = true;
         });
@@ -1913,6 +1921,11 @@
 
     var prose = h("div", { class: "prose", html: s.html });
     v.appendChild(prose);
+
+    // a highlighted term with no glossary entry stays bold but drops the "hover for a definition" cue
+    qsa(".term", prose).forEach(function (el) {
+      if (!lookupTerm(el.textContent)) el.classList.add("term-nodef");
+    });
 
     // mount any inline interactive diagrams the section HTML asks for
     if (window.ASTRO_DIAGRAMS) {
@@ -4079,6 +4092,213 @@
     }
   };
 
+  var CH8_TOOLS = {
+    earthinterior: {
+      title: "Inside Earth",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "Crust, mantle, core — and a magnetic bubble",
+      intro: "No one can dig to the center, so scientists listen to <b>seismic waves</b> instead. They reveal a thin " +
+        "<b>crust</b>, a thick <b>mantle</b>, and a metal <b>core</b> — liquid outside, probably solid inside.",
+      explain:
+        "<p><b>Seismic waves</b> from earthquakes travel through Earth like sound through a struck bell. They bend as they " +
+        "cross different layers, so some stations receive them and others are in “shadows.”</p>" +
+        "<p><b>Crust:</b> oceanic basalt (~6 km thick, 55% of the surface) and continental granite (20–70 km, 45%), " +
+        "about 3 g/cm³ — just 0.3% of Earth's mass. <b>Mantle:</b> down to 2900 km, solid but able to flow slowly. " +
+        "<b>Core:</b> 7000 km across, iron with nickel and sulfur; liquid outer core, probably solid inner core about " +
+        "2400 km across.</p>" +
+        "<p>Moving liquid metal in the core makes Earth's <b>magnetic field</b>. Out in space it forms the " +
+        "<b>magnetosphere</b>, which traps charged particles from the <b>solar wind</b> — about 60,000 km (10 Earth radii) " +
+        "toward the Sun, and as far as the Moon's orbit on the far side.</p>",
+      diagram: "earth-layers",
+      showLead: "Tap each layer — it's drawn to scale, so watch how thin the crust is.",
+      matchKey: "earthinteriormatch", matchLabels: ["Layer or term", "What to know"],
+      recap: "<b>Crust</b> (thin, ~3 g/cm³) → <b>mantle</b> (to 2900 km, flows slowly) → <b>liquid outer core</b> → " +
+        "<b>solid inner core</b>. Average density 5.5 vs. surface 3 = <b>differentiated</b>. Liquid core → magnetic field → " +
+        "<b>magnetosphere</b>.",
+      questions: [
+        { q: "What do scientists use to map Earth's interior?", choices: ["Seismic waves", "Deep drill holes to the core", "Telescopes", "Magnetic rocks"], answer: 0, why: "Seismic waves bend through different layers, revealing which are liquid and which are solid." },
+        { q: "Which layer is the largest part of the solid Earth?", choices: ["The mantle", "The crust", "The inner core", "The outer core"], answer: 0, why: "The mantle reaches from the base of the crust down to 2900 km." },
+        { q: "About how much of Earth's mass is in the crust?", choices: ["About 0.3%", "About 30%", "About half", "About 3%"], answer: 0, why: "The crust is the easiest layer to study, but only about 0.3% of the mass." },
+        { q: "Which part of the core is liquid?", choices: ["The outer core", "The inner core", "Both", "Neither"], answer: 0, why: "The innermost part, about 2400 km across, is probably solid." },
+        { q: "What makes Earth's magnetic field?", choices: ["Moving liquid metal in the core", "The solar wind", "The Moon", "The ozone layer"], answer: 0, why: "Circulating liquid metal sets up an electric current, which makes a magnetic field." },
+        { q: "What discovered the magnetosphere in 1958?", choices: ["Explorer 1", "Apollo 17", "Voyager", "The Hubble Space Telescope"], answer: 0, why: "Explorer 1, the first US Earth satellite, recorded ions trapped in the Van Allen belts." }
+      ]
+    },
+    rocktypes: {
+      title: "Four Kinds of Rock",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "Igneous, sedimentary, metamorphic — and primitive",
+      intro: "Rocks record what has happened to them. Melted? <b>Igneous</b>. Cemented from bits? <b>Sedimentary</b>. " +
+        "Squeezed and heated? <b>Metamorphic</b>. Never changed at all? <b>Primitive</b>.",
+      explain:
+        "<p><b>Igneous</b> rock cooled from a molten state. All volcanic rock is igneous — including the <b>basalt</b> of " +
+        "the ocean floors and the <b>granite</b> of the continents.</p>" +
+        "<p><b>Sedimentary</b> rock is made of bits of igneous rock or shells, laid down by wind or water and cemented " +
+        "together <b>without melting</b> (sandstone, shale, limestone). <b>Metamorphic</b> rock is igneous or sedimentary " +
+        "rock changed by high temperature or pressure. These two kinds are not common on other planets.</p>" +
+        "<p><b>Primitive</b> rock was never changed by heating — it's the original material of the planetary system. " +
+        "<b>None is left on Earth</b>; we find it in comets, asteroids, and small moons.</p>",
+      diagram: "rock-cycle",
+      showLead: "Follow a block of quartzite through all four kinds of rock.",
+      matchKey: "rocktypesmatch", matchLabels: ["Rock or term", "What it means"],
+      recap: "<b>Igneous</b> = cooled from melt. <b>Sedimentary</b> = cemented, no melting. <b>Metamorphic</b> = changed by " +
+        "heat/pressure. <b>Primitive</b> = never heated; not on Earth.",
+      questions: [
+        { q: "Basalt and granite are both what kind of rock?", choices: ["Igneous", "Sedimentary", "Metamorphic", "Primitive"], answer: 0, why: "Both cooled from a molten state." },
+        { q: "Sandstone, shale, and limestone are what kind of rock?", choices: ["Sedimentary", "Igneous", "Metamorphic", "Primitive"], answer: 0, why: "They are made of fragments or shells cemented together without melting." },
+        { q: "What does “metamorphic” mean?", choices: ["Changed in form", "Cooled from fire", "Laid down by water", "Original material"], answer: 0, why: "Metamorphic rock is changed by high temperature or pressure." },
+        { q: "Where can we find primitive rock?", choices: ["In comets, asteroids, and small moons", "Deep in Earth's mantle", "In the oldest mountains", "On the ocean floor"], answer: 0, why: "Earth was heated early on, so none of its primitive material is left." },
+        { q: "Why do metamorphic rocks exist at Earth's surface?", choices: ["Geological activity carries rocks deep down and brings them back up", "Meteorites deliver them", "They form in the air", "They are made by plants"], answer: 0, why: "Without such activity, these changed rocks wouldn't be at the surface." },
+        { q: "Which rock has been through all four states?", choices: ["Quartzite", "Basalt", "Granite", "Limestone"], answer: 0, why: "Primitive → igneous → sedimentary → metamorphic: the hard, white stone we see today." }
+      ]
+    },
+    platetectonics: {
+      title: "Plate Tectonics",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "A planet in slow motion",
+      intro: "Earth's crust is broken into about <b>a dozen plates</b>, moved <b>4–5 cm per year</b> by slow convection in " +
+        "the mantle. Where they meet, they make rifts, trenches, faults, mountains, and volcanoes.",
+      explain:
+        "<p>At their boundaries, plates can do four things: <b>pull apart</b> (rift zones, like the Mid-Atlantic ridge, " +
+        "where new crust forms), <b>dive under</b> (subduction zones, often with deep trenches, where old crust is " +
+        "destroyed), <b>slide past</b> (faults, like the San Andreas), or <b>jam together</b> (mountains, like the Alps).</p>" +
+        "<p>Stress builds along faults and is released in sudden <b>earthquakes</b> — the longer the wait, the bigger the slip. " +
+        "<b>Volcanoes</b> appear at mid-ocean ridges, subduction zones, colliding continents, and <b>hot spots</b> such as " +
+        "Hawaii's.</p>" +
+        "<p><b>Alfred Wegener</b> proposed continental drift (and the supercontinent <b>Pangaea</b>), but he had no " +
+        "mechanism. Plate tectonics later supplied one.</p>",
+      diagram: "plate-boundary",
+      showLead: "Tap each kind of boundary and watch the plates move.",
+      matchKey: "platetectonicsmatch", matchLabels: ["Term or place", "What to know"],
+      recap: "Apart = <b>rift</b> (new crust). Under = <b>subduction</b> (crust destroyed). Past = <b>fault</b> " +
+        "(earthquakes). Together = <b>mountains</b>. Middle of a plate = <b>hot spot</b>. Power = <b>mantle convection</b>.",
+      questions: [
+        { q: "What moves Earth's plates?", choices: ["Slow convection in the mantle", "Earthquakes", "The Moon's tides", "Ocean currents"], answer: 0, why: "Warm mantle material rises and cool material sinks, carrying heat out." },
+        { q: "How fast do the plates move?", choices: ["About 4 to 5 cm per year", "About 1 km per year", "About 1 mm per century", "About 5 m per day"], answer: 0, why: "About the rate your hair grows." },
+        { q: "What happens at a subduction zone?", choices: ["One plate is forced under another", "Two plates pull apart", "Two plates slide past each other", "A hot spot erupts"], answer: 0, why: "Thin oceanic plates are thrust down into the mantle, often at an ocean trench." },
+        { q: "What made the Alps?", choices: ["The African plate bumping into the Eurasian plate", "A hot spot", "A rift zone", "Erosion alone"], answer: 0, why: "Colliding continents buckle and fold the crust upward." },
+        { q: "A fault last slipped in 1857 and plates move 5 m per century. How far will it slip in 2027 if all the strain is released?", choices: ["8.5 m", "5 m", "17 m", "0.85 m"], answer: 0, why: "5 m/century × 1.7 centuries = 8.5 m." },
+        { q: "What was missing from Wegener's case for continental drift?", choices: ["A mechanism to move the continents", "Fossil evidence", "Maps of the coastlines", "A name for the supercontinent"], answer: 0, why: "No one could explain how solid continents could drift thousands of miles." }
+      ]
+    },
+    earthatmosphere: {
+      title: "Earth's Atmosphere",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "Our ocean of air",
+      intro: "Air presses down with <b>1 bar</b> at sea level. It's <b>78% nitrogen, 21% oxygen, 1% argon</b>, piled in " +
+        "layers — with the weather at the bottom and an ozone shield above.",
+      explain:
+        "<p><b>Troposphere</b> (bottom ~10 km): convection makes clouds and wind; temperature drops to about −50 °C at the " +
+        "top. <b>Stratosphere</b> (to ~50 km): cold and cloud-free, with the <b>ozone</b> layer near its top absorbing " +
+        "ultraviolet light. <b>Ionosphere</b> (above 100 km): so thin satellites orbit through it, and light atoms like " +
+        "hydrogen and helium leak away.</p>" +
+        "<p>Heat Earth above 100 °C and the oceans would add about <b>300 bars</b> of water vapor; carbonate rocks would " +
+        "add about <b>70 bars</b> of CO₂ — nearly <b>400 bars</b> in all.</p>" +
+        "<p><b>Weather</b> is the atmosphere's circulation, powered by sunlight. <b>Climate</b> is what lasts decades to " +
+        "centuries. Ice ages came mainly from changes in the <b>tilt</b> of Earth's axis.</p>",
+      diagram: "air-layers",
+      showLead: "Slide upward from the ground and see which layer you're in.",
+      matchKey: "earthatmospherematch", matchLabels: ["Term or number", "What it means"],
+      recap: "<b>Troposphere</b> = weather. <b>Stratosphere</b> = ozone. <b>Ionosphere</b> = ionized, leaking. " +
+        "Air = <b>N₂ 78%, O₂ 21%, Ar 1%</b>. Weather = what you get; climate = what you expect.",
+      questions: [
+        { q: "What is the air pressure at sea level?", choices: ["About 1 bar", "About 300 bars", "About 0.0005 bar", "About 90 bars"], answer: 0, why: "1 bar — about 1.03 kg pressing on each square centimeter." },
+        { q: "In which layer do clouds form and airplanes fly?", choices: ["Troposphere", "Stratosphere", "Ionosphere", "Mesosphere"], answer: 0, why: "The troposphere is the bottom ~10 km of the atmosphere." },
+        { q: "Where is the ozone layer?", choices: ["Near the top of the stratosphere", "At ground level", "In the ionosphere", "In the core"], answer: 0, why: "Ozone there absorbs ultraviolet light and heats the stratosphere." },
+        { q: "Which gases slowly leak out of Earth's atmosphere into space?", choices: ["Light ones like hydrogen and helium", "Nitrogen and oxygen", "Argon", "Carbon dioxide"], answer: 0, why: "Lightweight atoms move faster than heavy ones, so they escape." },
+        { q: "“Climate is what you expect, and weather is…”", choices: ["what you get", "what you forecast", "what lasts centuries", "what the Sun makes"], answer: 0, why: "Weather is day to day; climate is what lasts decades and centuries." },
+        { q: "What mainly caused the ice ages?", choices: ["Changes in the tilt of Earth's axis", "The ozone hole", "Volcanoes", "The magnetic field flipping"], answer: 0, why: "The tilt changes are produced by the gravity of the other planets." }
+      ]
+    },
+    lifeclimate: {
+      title: "Life and the Atmosphere",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "How life changed the air",
+      intro: "Life began early — it already existed <b>3.9 billion years ago</b>. Over billions of years, " +
+        "<b>photosynthesis</b> filled the air with <b>oxygen</b> and built the <b>ozone</b> shield that let life onto land.",
+      explain:
+        "<p>The early atmosphere had lots of <b>carbon dioxide</b>, some methane, and <b>no oxygen</b> — conditions in " +
+        "which amino acids and other building blocks of life form easily. By <b>3.5 billion years ago</b>, microbes " +
+        "built colonies called <b>stromatolites</b>, which still grow today.</p>" +
+        "<p><b>Blue-green algae</b> took in CO₂ and gave off oxygen (<b>photosynthesis</b>). At first the crust soaked up " +
+        "the oxygen; free oxygen built up only about <b>2 billion years ago</b>. It formed the <b>ozone layer</b>, which " +
+        "blocks deadly ultraviolet light, so life could leave the oceans.</p>" +
+        "<p>Genetics shows all life shares a <b>common ancestor</b>, and the <b>tree of life</b> is mostly microbes — " +
+        "plants and animals are small twigs.</p>",
+      diagram: "life-timeline",
+      showLead: "Tap through Earth's history — see how recent the familiar parts are.",
+      matchKey: "lifeclimatematch", matchLabels: ["When or what", "What happened"],
+      recap: "Life by <b>3.9 billion</b> years ago; stromatolites by <b>3.5</b>; oxygen builds up ~<b>2 billion</b> years ago " +
+        "→ ozone → life on land. Abundant fossils only in the last <b>600 million</b> years.",
+      questions: [
+        { q: "What gas did Earth's early atmosphere lack?", choices: ["Oxygen", "Carbon dioxide", "Methane", "Nitrogen"], answer: 0, why: "Early air had abundant CO₂, some methane, and no oxygen gas." },
+        { q: "What are stromatolites?", choices: ["Large colonies of microbes", "Ancient meteorites", "Volcanic rocks", "Ice-age glaciers"], answer: 0, why: "Life built them by 3.5 billion years ago, and they still grow today." },
+        { q: "About when did free oxygen begin to build up in the air?", choices: ["About 2 billion years ago", "About 4.5 billion years ago", "About 65 million years ago", "About 14,000 years ago"], answer: 0, why: "Before that, reactions with the crust removed oxygen as fast as it formed." },
+        { q: "What let life move out of the oceans onto land?", choices: ["The ozone layer, made from oxygen", "The magnetic field", "The ice ages", "Plate tectonics"], answer: 0, why: "Ozone shields the surface from deadly ultraviolet light." },
+        { q: "How long ago does the record of abundant fossils begin?", choices: ["About 600 million years", "About 3.9 billion years", "About 65 million years", "About 50,000 years"], answer: 0, why: "That's less than 15% of Earth's history." },
+        { q: "Most of the diversity in the tree of life is…", choices: ["microbial", "animal", "plant", "fungal"], answer: 0, why: "Plants and animals are just small branches at the far right." }
+      ]
+    },
+    greenhouse: {
+      title: "The Greenhouse Effect",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "A blanket of gases",
+      intro: "Sunlight gets in easily; heat has trouble getting out. That <b>greenhouse effect</b> keeps Earth about " +
+        "<b>23 °C</b> warmer — but adding more CO₂ turns the warming up.",
+      explain:
+        "<p><b>1.</b> Visible sunlight passes through the air and heats the ground. <b>2.</b> The warm ground gives off " +
+        "<b>infrared</b> (heat) radiation. <b>3.</b> <b>Greenhouse gases</b> — carbon dioxide, methane, and water vapor — " +
+        "absorb that infrared, like a blanket. The surface warms until Earth sends out as much energy as it gets.</p>" +
+        "<p>Without it, Earth would be well below freezing, locked in a global ice age. But <b>more CO₂ means a higher " +
+        "balance temperature</b>. Burning fossil fuels (100 times the CO₂ of volcanoes) and cutting forests raised CO₂ " +
+        "about <b>30%</b> in the past century; it's expected to <b>double</b> its preindustrial level before 2100.</p>" +
+        "<p>The signs are here: all but one of the hottest recorded years came since 2000, glaciers are retreating, " +
+        "Arctic ice is thinning, and sea levels are rising.</p>",
+      diagram: "greenhouse-blanket",
+      showLead: "Change the amount of greenhouse gas and watch the heat.",
+      matchKey: "greenhousematch", matchLabels: ["Term or number", "What it means"],
+      recap: "Light <b>in</b> → ground warms → infrared <b>out</b> → greenhouse gases <b>absorb</b> it. Natural effect: " +
+        "<b>+23 °C</b>. More CO₂ → <b>higher</b> balance temperature → global warming.",
+      questions: [
+        { q: "What kind of radiation do greenhouse gases trap?", choices: ["Infrared (heat)", "Visible light", "Ultraviolet", "X-rays"], answer: 0, why: "Visible light passes through; the infrared given off by the warm ground is absorbed." },
+        { q: "Which of these is a greenhouse gas?", choices: ["Methane", "Nitrogen", "Argon", "Helium"], answer: 0, why: "On Earth the main greenhouse gases are carbon dioxide, methane, and water vapor." },
+        { q: "Without the greenhouse effect, Earth's average temperature would be…", choices: ["well below freezing", "about the same", "much hotter", "exactly 0 °C"], answer: 0, why: "The greenhouse effect raises the surface temperature by about 23 °C." },
+        { q: "How much has atmospheric CO₂ risen in the past century?", choices: ["About 30%", "About 3%", "About 300%", "It has fallen"], answer: 0, why: "And it continues to rise more than 0.5% per year." },
+        { q: "What is the main source of the added CO₂?", choices: ["Burning fossil fuels", "Volcanoes", "Breathing", "The oceans boiling"], answer: 0, why: "Isotope measurements show the added CO₂ comes mostly from fossil fuels — 100 times more than volcanoes release." },
+        { q: "What is like the greenhouse effect?", choices: ["A car left in the Sun with the windows up", "A refrigerator", "A fan", "A mirror reflecting sunlight away"], answer: 0, why: "The glass lets sunlight in but slows the heat getting out." }
+      ]
+    },
+    impacts: {
+      title: "Impacts on Earth",
+      eyebrow: "Study tool · Chapter 8",
+      h1: "Visitors from space",
+      intro: "Earth has been hit as often as the Moon — our geology just erases the scars. Some impacts were small and " +
+        "local; one, <b>65 million years ago</b>, ended the age of the dinosaurs.",
+      explain:
+        "<p><b>Tunguska (1908):</b> a ~50-m stony object exploded about 8 km over Siberia — forest flattened, no crater. " +
+        "<b>Chelyabinsk (2013):</b> a 20-m object exploded 21 km up, breaking tens of thousands of windows. " +
+        "<b>Meteor Crater</b>, Arizona: a 40-m lump of iron made a crater about a mile across, 50,000 years ago.</p>" +
+        "<p><b>Chicxulub</b>, 65 million years ago: a more-than-trillion-ton object made a 200-km crater in the Yucatán. " +
+        "A worldwide <b>iridium</b>-rich layer records it. Dust blocked sunlight for months; with fires and acid rain, it " +
+        "caused a <b>mass extinction</b> — and let mammals thrive.</p>" +
+        "<p>Today, the <b>Spaceguard Survey</b> hunts for dangerous asteroids (more than 98% of those over 1 km found by " +
+        "2021), and NASA's <b>DART</b> nudged an asteroid's orbit in 2022.</p>",
+      diagram: "impact-compare",
+      showLead: "Compare four impacts — size, what reached the ground, and the damage.",
+      matchKey: "impactsmatch", matchLabels: ["Event or term", "What happened"],
+      recap: "Few craters = active geology. Small/stony → <b>air burst</b> (Tunguska, Chelyabinsk). Metal → " +
+        "<b>crater</b> (Meteor Crater). Huge → <b>mass extinction</b> (Chicxulub, 65 million years ago).",
+      questions: [
+        { q: "Why does Earth show so few impact craters?", choices: ["Plate tectonics and erosion erase them", "The air stops every impactor", "Earth is rarely hit", "The Moon blocks them"], answer: 0, why: "Earth must have been hit as heavily as the Moon; its active geology erases the craters." },
+        { q: "Why did Tunguska leave no crater?", choices: ["The stony object exploded in the air", "It landed in the ocean", "It was made of ice that melted", "It missed Earth"], answer: 0, why: "It was shattered by atmospheric pressure and exploded about 8 km up." },
+        { q: "What made Meteor Crater in Arizona?", choices: ["A 40-m lump of iron, about 50,000 years ago", "A 10-km asteroid, 65 million years ago", "A volcano", "A 20-m rock in 2013"], answer: 0, why: "It's about a mile across and one of the few well-preserved craters on Earth." },
+        { q: "Where is the Chicxulub crater?", choices: ["Mexico's Yucatán peninsula", "Arizona", "Siberia", "Algeria"], answer: 0, why: "It's 200 km across and now buried under sediment." },
+        { q: "What actually wiped out the dinosaurs?", choices: ["The impact's environmental effects: darkness, cold, fires, acid rain", "The blast wave alone", "An ice age caused by axial tilt", "Mammals"], answer: 0, why: "The book says these effects, not the explosion itself, caused the mass extinction." },
+        { q: "What did DART do in 2022?", choices: ["Crashed into a small asteroid and slightly changed its orbit", "Landed on Mars", "Found the Chicxulub crater", "Photographed Tunguska"], answer: 0, why: "It demonstrated one way we might protect Earth from an impact." }
+      ]
+    }
+  };
+
   var CH15_TOOLS = {
     sunlayers: {
       title: "Layers of the Sun",
@@ -5627,6 +5847,13 @@
     "t/planetmakeup": ["planetmakeup", function () { renderLawTool(CH7_TOOLS.planetmakeup); }],
     "t/datingsurfaces": ["datingsurfaces", function () { renderLawTool(CH7_TOOLS.datingsurfaces); }],
     "t/solarorigin": ["solarorigin", function () { renderLawTool(CH7_TOOLS.solarorigin); }],
+    "t/earthinterior": ["earthinterior", function () { renderLawTool(CH8_TOOLS.earthinterior); }],
+    "t/rocktypes": ["rocktypes", function () { renderLawTool(CH8_TOOLS.rocktypes); }],
+    "t/platetectonics": ["platetectonics", function () { renderLawTool(CH8_TOOLS.platetectonics); }],
+    "t/earthatmosphere": ["earthatmosphere", function () { renderLawTool(CH8_TOOLS.earthatmosphere); }],
+    "t/lifeclimate": ["lifeclimate", function () { renderLawTool(CH8_TOOLS.lifeclimate); }],
+    "t/greenhouse": ["greenhouse", function () { renderLawTool(CH8_TOOLS.greenhouse); }],
+    "t/impacts": ["impacts", function () { renderLawTool(CH8_TOOLS.impacts); }],
     "t/sunlayers": ["sunlayers", function () { renderLawTool(CH15_TOOLS.sunlayers); }],
     "t/solaratmosphere": ["solaratmosphere", function () { renderLawTool(CH15_TOOLS.solaratmosphere); }],
     "t/sunspots": ["sunspots", function () { renderLawTool(CH15_TOOLS.sunspots); }],
